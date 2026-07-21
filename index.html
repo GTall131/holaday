@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+ HOLADAY — TRIP-READY LANGUAGE & CULTURE COURSES
+ Product Requirements Document, embedded as HTML comments, wrapping a working
+ click-through prototype of the core flow. View this file in a browser to
+ experience the demo; read the source (comments) for the PRD.
+================================================================================
+
+1. PROBLEM
+--------------------------------------------------------------------------------
+Mainstream language apps (Duolingo, Babbel, Rosetta Stone) teach general
+proficiency across months or years. Most people booking a holiday don't want
+general proficiency — they have a specific trip, a specific window of time
+(often 6-8 weeks out), and a narrow set of situations they'll actually face:
+airport and arrival, ordering food, asking directions, basic courtesy, local
+customs that prevent embarrassing mistakes. General courses don't prioritise
+for that, so people either quit a generic course before the trip or never
+start one at all.
+
+2. SOLUTION
+--------------------------------------------------------------------------------
+Holaday generates a short, finite course (6-8 weeks) scoped to ONE upcoming
+trip: the destination country and the kind of trip (city break, food & wine,
+family trip, etc). The course ends when the trip is ready to happen — it is
+not an ongoing subscription-style curriculum. Content is prioritised by
+situational usefulness over grammatical completeness.
+
+3. TARGET USER
+--------------------------------------------------------------------------------
+Someone who has already booked or is about to book international travel,
+wants to be a more respectful and capable visitor, and has weeks (not years)
+to prepare. Low tolerance for busywork; high tolerance for short, dense,
+trip-relevant lessons.
+
+4. KEY DIFFERENTIATOR
+--------------------------------------------------------------------------------
+- Scoped by TRIP, not by LANGUAGE. Course = country + trip type + duration.
+- Finite and disposable by design: a course "completes" before departure and
+  is archived, rather than continuing indefinitely.
+- Culture, not just vocabulary: etiquette/customs content is a first-class
+  lesson type alongside phrases, because "don't accidentally offend anyone"
+  is as valuable to this user as "can order a coffee."
+- Visual identity of each course is themed from the destination's national
+  flag colours, so a user's course list is instantly scannable and each
+  course feels bespoke to that trip.
+
+5. CORE USER JOURNEY (what this prototype demonstrates)
+--------------------------------------------------------------------------------
+  Home (My Trips)                     — airport-departure-board metaphor;
+                                         shows active + past courses.
+    -> [no active course] "Book a course" CTA in the empty active slot
+    -> Step 1: Choose a country        (grid of destinations)
+    -> Step 2: Describe the trip       (trip-type chips + free-text notes)
+    -> Generating course               (brief synthesis moment)
+    -> Course dashboard                (flag-themed, week-by-week outline,
+                                         first three weeks unlocked)
+    -> Lesson: Airport & Arrival Essentials  (info page, then separate quiz page)
+    -> Lesson: trip-type-flavoured lesson 2  (info page, then separate quiz page)
+    -> Lesson: Public Transport & Getting Around (CULTURE lesson — etiquette
+                                         + transit phrases — info page, then
+                                         separate quiz page)
+    -> Back to Home                    — new course now shows as "current",
+                                         previous course still listed below.
+
+Every lesson is two pages, not one long scroll (see PRD §11): an info page
+told as a single walk-through scenario, then a separate quiz page with
+nothing else on it. The split is deliberate — a quick-check that shares
+a scrollable page with the answers isn't really testing recall.
+
+Note on emoji use: the UI is otherwise emoji-free by design (see PRD §12)
+except for each country's flag, which doubles as its primary visual
+identifier on cards and course rows.
+
+6. WHY THE AIRPORT-BOARD METAPHOR
+--------------------------------------------------------------------------------
+The home screen borrows split-flap departure-board language because it maps
+cleanly onto the product's own mental model, not just decoration:
+  - A "flight" = a course. It has a destination, a status, and a countdown.
+  - BOARDING   = course just generated, not yet started.
+  - IN PROGRESS = course underway, shows current week like a "gate."
+  - LANDED      = course completed (trip has presumably happened).
+This gives users a familiar, glanceable status language instead of a generic
+progress bar, and reinforces "this course exists to get you on a plane
+prepared," not "this is a permanent subscription."
+
+7. CONTENT MODEL (as implemented in this prototype's JS — see DATA below)
+--------------------------------------------------------------------------------
+Course = { country, tripType, durationWeeks, currentWeek, status, notes }
+Country = { name, capital, colours{primary, secondary, tertiary},
+            phrasebank[8 phrases], cultureTip,
+            transport{ intro, phrases[3], etiquette[3], scenario, beatPlan } }
+(Flags are looked up separately, by country key, from a constant map of
+inline SVGs — see PRD §12 — rather than stored as a field on Country.)
+TripType = { label, durationWeeks, lesson2Title }
+In production, `durationWeeks` and the week-by-week syllabus would likely be
+generated by a content model + curated phrase/etiquette database keyed by
+country, with trip-type acting as a weighting/prioritisation signal rather
+than a hard-coded lesson swap. This prototype hard-codes 6 countries and 6
+trip types, and reuses each country's 8-phrase bank across lessons 1 & 2
+(rather than authoring 36 unique phrase sets) to keep the demo honest about
+scope while still proving the concept end-to-end with real translations.
+Week 3 (Public Transport) is the one lesson type that is NOT phrase-bank
+reuse — it has its own per-country intro paragraph, 3 transit-specific
+phrases, 3 etiquette bullets, and a scenario question, because it exists
+specifically to prove out the "culture, not just vocabulary" differentiator
+from PRD §4 with real content rather than a placeholder.
+
+Every built lesson (weeks 1-3) IS a 5-question multiple-choice sequence, one
+question per page (`buildLessonBeats` in the JS — see §11a), mixing question
+styles rather than one repeated drill. "Mark lesson complete" only appears
+on the final question and stays disabled until it's answered — a deliberate,
+if small, gate so the prototype feels like it's testing retention rather
+than just displaying content to scroll past.
+
+8. MVP SCOPE vs OUT OF SCOPE (for a v1 build)
+--------------------------------------------------------------------------------
+ In scope for v1:
+  - Country + trip-type intake, generated course with weekly structure
+  - Progressive unlock (future weeks locked until prior week complete)
+  - Phrase lessons AND at least one distinct culture/etiquette lesson type
+  - Lessons delivered as a sequence of graded questions gating completion,
+    not passive content followed by a separate quiz
+  - Flag-derived colour theming per course
+  - Downloadable offline phrasebook, unlocked once a course is completed
+ Explicitly out of scope for v1 (visible in this prototype as disabled stubs):
+  - "Explore" and "Profile" bottom-tab destinations
+  - Audio pronunciation playback
+  - Real spaced-repetition / adaptive quizzing
+  - Multi-trip mixing (e.g. multi-city itineraries spanning >1 country)
+  - Offline access
+
+9. SUCCESS METRICS (proposed, not instrumented in this prototype)
+--------------------------------------------------------------------------------
+CORE ASSUMPTION THIS SECTION TESTS: Scoping a course to one finite, dated
+trip — rather than an open-ended subscription — is what drives people to
+actually FINISH, not just start. General apps fail on completion because
+they're open-ended; the bet here is that finiteness + trip-relevance fixes
+that.
+
+HYPOTHESIS: We believe trip-scoped, dated courses will produce meaningfully
+higher completion rates than general-purpose language apps' typically low
+completion. We'll know this is wrong if trip-scoped completion isn't
+meaningfully better than general-app baseline once we have real data —
+i.e. finiteness and relevance alone aren't enough to overcome the same
+drop-off patterns everyone else sees.
+
+  - % of started courses reaching "trip-ready" (all weeks complete) before
+    the user's stated travel date (the direct test of the hypothesis above)
+  - Completion rate segmented by weeks-to-departure at signup (does more
+    urgency at signup predict higher completion?)
+  - Completion rate benchmarked against published/estimated completion
+    rates for general-purpose language apps, as an external baseline —
+    without this, "our number" has nothing to be better than
+  - Lesson completion rate in the final 2 weeks before departure (proxy for
+    "did this actually get used right before the trip, when it matters")
+  - Self-reported confidence delta (pre/post course, 1-5 scale)
+  - Post-trip customer satisfaction / NPS, collected once the user's actual
+    travel date has passed (see `needsFeedback` / `screenFeedback` in the JS
+    below — trip dates are now captured on the trip-details step and stored
+    on the course object as `travelStart` / `travelEnd`)
+
+10. OPEN QUESTIONS
+--------------------------------------------------------------------------------
+  - We now capture actual departure/return dates (see PRD §9 and §14), but
+    only to know when to trigger the post-trip feedback prompt — do we also
+    use them to back-calculate lesson pacing instead of the flat 6-8 week
+    default per trip type?
+  - What happens to a course if the trip is postponed/cancelled? (Its
+    `travelStart`/`travelEnd` would need to be editable after course
+    creation, which isn't supported yet.)
+  - Should trip type be multi-select (a trip is rarely just one archetype)?
+
+11. LESSON = A SEQUENCE OF ONE-QUESTION PAGES
+--------------------------------------------------------------------------------
+Revision history: the very first builds put vocab/etiquette content and a
+3-question quiz on one long scrollable page (bad — the quiz measured how far
+someone would scroll, not what they remembered). The next revision split that
+into an "info" page (a walk-through of phrases/etiquette) followed by a
+separate "quiz" page. User testing on THAT version said it still didn't feel
+like a lesson — it read as a reference card you skimmed, then a quiz on
+content you'd just seen seconds ago, which barely tests retention.
+
+So a lesson is no longer "content, then quiz." It's a sequence of graded
+question pages — `payload.stepIndex` picks which one to show, each pushed as
+its own stack entry (see `screenLesson`, `buildLessonBeats`, `beat-continue`
+action). Every page is scenario-framed and asks exactly one question; there
+is no separate content page to read first. The back button still lets someone
+return to a prior question, and going back re-presents it fresh (unanswered) —
+same one-attempt-per-question spirit as before, just per-page instead of
+per-quiz.
+
+11a. MIXED QUESTION STYLES, NOT ONE REPEATED DRILL
+--------------------------------------------------------------------------------
+Further revision based on feedback: "How do you say X?" five times in a row
+is still just a flashcard deck wearing a scenario costume. Each lesson now
+mixes three question styles across its 5 questions (`buildLessonBeats` /
+`buildBeat` in the JS), all scenario-framed so it still reads as one
+situation playing out, not five disconnected drills:
+  - "produce"     — "How do you say X?" — English prompt, answer in the
+    local language. Tests recall/production.
+  - "comprehend"  — a local phrase is quoted as something someone just said
+    to you ("The officer says: '...' — what are they telling you?") — local
+    phrase shown, answer in English. Tests listening/comprehension, the
+    reverse direction of "produce."
+  - "symbol"      — a sign or icon is shown ("You notice this on a seat —
+    what does it mean?") with a small inline SVG (`SYMBOLS` in the JS, same
+    font-independent rationale as `FLAGS` — see §12) standing in for a real
+    transit/customs sign. Tests recognition of non-verbal cues, not just
+    vocabulary.
+  - "situational" — week 3 (Public Transport) only, "what would you do?"
+    judgement calls. Reuses each country's existing `transport.scenario`
+    content unchanged, just delivered as one beat among the five instead of
+    a bonus 3rd quiz question tacked onto the end.
+
+Weeks 1 and 2 pull from generic, shared beat plans (`ARRIVAL_BEAT_PLAN`,
+`EXPLORE_BEAT_PLAN`) applied to each country's 8-phrase bank — see PRD §7,
+still no 36 hand-authored phrase sets — since arriving and greeting someone
+plays out the same way regardless of destination; only the scene-setting
+context flexes per country (week 1) or trip type (week 2, via `exploreIntro`).
+Week 3 (Public Transport) is bespoke per country (`transport.beatPlan` on
+each Country, see DATA below), because its phrases/etiquette were already
+bespoke per country and the symbol/situational beats are tied to a specific
+country's real transit rules (e.g. Japan's quiet carriages, Italy's ticket
+validation, Morocco's taxi meters) — a generic prompt wouldn't fit all six.
+
+12. ICONOGRAPHY / EMOJI POLICY
+--------------------------------------------------------------------------------
+No decorative emoji anywhere in the UI (trip-type chips, tab bar, buttons).
+Country flags are the one visual identifier that matters enough to keep, but
+they are NOT Unicode flag emoji — those are font-dependent, and several
+common platforms (older Windows, many Linux desktops without a colour-emoji
+font) silently fall back to rendering a flag sequence as plain two-letter
+text (e.g. "JP"), which quietly defeats "flag = instant visual identity."
+Flags are instead small inline SVGs (the `FLAGS` constant in the JS, one
+per country, built from the same colours already stored per Country), so
+every viewer sees an actual coloured flag chip regardless of OS or installed
+fonts.
+
+13. OFFLINE PHRASEBOOK
+--------------------------------------------------------------------------------
+Deliberately gated to COMPLETED courses only (see the `ticket__cta` button
+that appears in `screenDashboard` when `course.status === "completed"`),
+not available mid-course. Rationale: the phrasebook is framed as the
+take-away artefact from a finished course — "you did the prep, here's the
+condensed reference for the trip itself" — rather than a shortcut that
+lets someone skip the lessons and just grab the phrase list on day one.
+A real v1 might reconsider this (e.g. unlock per-lesson as content is
+completed, so a partially-finished course still has a partial phrasebook),
+but "completed only" is the simplest version that proves the feature.
+
+Content is compiled, not separately authored: it's the same country
+phrasebank + transport phrasebank + cultureTip + transport etiquette
+already used across the lessons (`screenPhrasebook`), reassembled into one
+reference page — there is no new content model here, just a new view over
+existing data.
+
+The "Download for offline use" button is an intentional stub (see
+`download-phrasebook` in the event delegation) — it shows a toast instead
+of producing a file, exactly like the disabled Explore/Profile tabs. In a
+real build this would generate a PDF or add-to-device-storage flow; this
+prototype only needs to prove that the entry point and framing exist.
+
+14. POST-TRIP FEEDBACK
+--------------------------------------------------------------------------------
+Trip details (Step 2) now asks for departure and return dates alongside trip
+type and notes, stored on the course as `travelStart` / `travelEnd`. This
+exists to answer the PRD §9 metric that couldn't be collected before: NPS
+and a culture-content-specific question, gathered once the trip has actually
+happened rather than at course completion (a course can be "trip-ready"
+before departure and still not have a real post-trip result yet).
+
+`needsFeedback(course)` is true once `travelEnd` is in the past and
+`feedbackSubmitted` is still false, regardless of whether the course's
+lessons were ever finished — a badly-prepared trip is exactly the case we
+most want feedback on, not just the well-completed ones. This is
+check-on-render rather than a scheduled push (see PRD §10 note on
+`finalizeCourse`): the dashboard ticket shows a "Share trip feedback" CTA,
+and the home board row appends "Feedback requested" to the row subtitle, so
+the prompt is visible wherever the course already surfaces rather than
+interrupting with a separate notification.
+
+The seed course (`seed-1`) is given a `travelEnd` in the past specifically
+so this prototype demonstrates the feedback CTA without requiring a tester
+to build a whole new course with backdated travel — the date inputs don't
+restrict picking a past date for exactly this reason (a real build would
+likely disallow a return date before departure, which this prototype does
+validate, but wouldn't otherwise constrain the range).
+
+--------------------------------------------------------------------------------
+ The rest of the comments in this file are scoped to the section they sit
+ above/inside, covering UX rationale and implementation notes at that level.
+================================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Holaday — Trip-Ready Language & Culture Courses</title>
+<style>
+  /* ============================================================
+     DESIGN TOKENS
+     Palette is deliberately airport/signage-inspired (ink, paper,
+     split-flap amber) and stays CONSTANT across the whole app. The
+     only thing that changes per-course is a small set of
+     --flag-* variables injected on the dashboard/lesson screens,
+     pulled from that destination's national flag. This keeps every
+     course feeling bespoke without turning the whole UI into a
+     rainbow — the neutral chrome is the constant, the flag accent
+     is the variable.
+     ============================================================ */
+  :root{
+    --ink: #14181f;
+    --ink-soft: #232a37;
+    --ink-line: #333c4d;
+    --paper: #f5f3ee;
+    --paper-dim: #e8e4d9;
+    --paper-line: #d8d2c2;
+    --amber: #ffb300;
+    --amber-deep: #8a5c00;
+    --slate: #6b7280;
+    --green-ok: #1e8f5f;
+    --red-alert: #d8402b;
+    --radius-s: 6px;
+    --radius-m: 12px;
+    --font-display: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--ink);
+    font-family: var(--font-display);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3,p,ul{ margin:0; }
+  button{ font-family:inherit; }
+  ::selection{ background: var(--amber); color: var(--ink); }
+
+  /* Visible keyboard focus everywhere — quality floor, not decoration */
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible{
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  }
+
+  /* ============================================================
+     MOBILE-FIRST APP SHELL
+     Base rules below target a phone viewport with no media query.
+     A min-width query further down adds a "device frame" so the
+     same mobile layout can be reviewed comfortably on a desktop
+     browser — it does not change the layout, only frames it.
+     ============================================================ */
+  .app-shell{
+    position: relative;
+    width: 100%;
+    min-height: 100dvh;
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .statusbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 10px 20px 2px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  .statusbar__icons{ display:flex; gap:6px; align-items:center; }
+  .statusbar__bars{ display:flex; gap:2px; align-items:flex-end; height:9px; }
+  .statusbar__bars span{ width:3px; background: var(--ink); display:block; }
+  .statusbar__bars span:nth-child(1){ height:40%; }
+  .statusbar__bars span:nth-child(2){ height:60%; }
+  .statusbar__bars span:nth-child(3){ height:80%; }
+  .statusbar__bars span:nth-child(4){ height:100%; }
+  .statusbar__batt{ width:20px; height:10px; border:1.4px solid var(--ink); border-radius:2px; position:relative; }
+  .statusbar__batt::after{ content:""; position:absolute; right:-3px; top:3px; width:2px; height:4px; background:var(--ink); border-radius:0 1px 1px 0; }
+  .statusbar__batt::before{ content:""; position:absolute; inset:1.5px; width:70%; background:var(--ink); border-radius:1px; }
+
+  .appbar{
+    flex-shrink: 0;
+    display:flex; align-items:center; gap:10px;
+    padding: 6px 16px 14px;
+    min-height: 44px;
+  }
+  .appbar__back{
+    appearance:none; border:none; background:none; cursor:pointer;
+    width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    color: var(--ink); flex-shrink:0;
+  }
+  .appbar__back:active{ background: var(--paper-dim); }
+  .appbar__title{
+    font-weight:800; font-size: 17px; letter-spacing:-0.01em;
+    flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .appbar__badge{
+    font-family: var(--font-mono); font-size:11px; font-weight:700;
+    color: var(--ink); background: var(--paper-dim);
+    padding: 4px 8px; border-radius: 20px; flex-shrink:0;
+  }
+  .appbar--home{ padding-top: 14px; padding-bottom: 4px; }
+  .wordmark{
+    font-weight:900; font-size:22px; letter-spacing:-0.02em;
+  }
+  .wordmark span{ color: var(--amber-deep); }
+  .tagline{
+    font-family: var(--font-mono);
+    font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--slate); margin-top:2px; display:block;
+  }
+
+  main#app{
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 16px 96px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabbar{
+    position:absolute; left:0; right:0; bottom:0;
+    display:flex; background: var(--ink);
+    padding: 10px 6px calc(10px + env(safe-area-inset-bottom));
+    flex-shrink:0;
+  }
+  .tabbar__item{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:none; border:none; color: #7a8397; cursor:pointer;
+    padding:4px 2px; font-family: var(--font-mono); font-size:10px; letter-spacing:0.04em;
+  }
+  .tabbar__item[data-active="true"]{ color: var(--amber); }
+  .tabbar__item[disabled]{ opacity:0.45; cursor:default; }
+
+  .toast{
+    position:absolute; left:50%; bottom:78px; transform:translateX(-50%) translateY(8px);
+    background: var(--ink-soft); color:#fff; font-size:12.5px;
+    padding:9px 16px; border-radius:20px; opacity:0; pointer-events:none;
+    transition: opacity .18s ease, transform .18s ease; z-index:20;
+    font-family: var(--font-mono);
+  }
+  .toast.is-visible{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* Desktop review frame — cosmetic only, layout untouched */
+  @media (min-width: 640px){
+    body{ display:flex; align-items:center; justify-content:center; min-height:100vh; padding: 32px 16px; }
+    .app-shell{
+      width: 400px; height: 852px; min-height:0;
+      border-radius: 46px;
+      box-shadow: 0 0 0 10px #05070a, 0 30px 60px -20px rgba(0,0,0,.6), 0 0 0 11px #2a2f38;
+    }
+  }
+
+  /* ============================================================
+     HOME — "MY TRIPS" DEPARTURE BOARD
+     ============================================================ */
+  .section-label{
+    font-family: var(--font-mono); font-size:11px; letter-spacing:0.14em;
+    text-transform:uppercase; color: var(--slate); margin: 22px 2px 10px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-label:first-child{ margin-top:10px; }
+
+  .board-row{
+    display:flex; align-items:center; gap:12px;
+    background: var(--ink); color: var(--paper);
+    border-radius: var(--radius-m);
+    padding: 14px 14px;
+    margin-bottom:10px;
+    cursor:pointer; border:none; width:100%; text-align:left;
+    animation: rowIn .35s ease both;
+  }
+  .board-row:active{ transform: scale(0.98); }
+  @keyframes rowIn{ from{ opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .flag-icon{ display:inline-block; border-radius:3px; overflow:hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); flex-shrink:0; }
+  .flag-icon svg{ display:block; width:100%; height:100%; }
+  .board-row__flag{ width:32px; height:21px; }
+  .board-row__mid{ flex:1; min-width:0; }
+  .board-row__dest{ font-family: var(--font-mono); font-weight:700; font-size:15px; letter-spacing:0.02em; }
+  .board-row__sub{ font-size:12px; color:#9aa3b5; margin-top:2px; }
+  .board-row__status{
+    font-family: var(--font-mono); font-size:10.5px; font-weight:700;
+    letter-spacing:0.08em; padding:4px 8px; border-radius:4px; flex-shrink:0;
+    text-transform:uppercase;
+  }
+  .status--boarding{ background: rgba(255,179,0,.18); color: var(--amber); }
+  .status--progress{ background: rgba(30,143,95,.22); color: #4fd8a2; }
+  .status--landed{ background: rgba(255,255,255,.1); color:#9aa3b5; }
+
+  .board-empty{
+    border: 1.5px dashed var(--paper-line);
+    border-radius: var(--radius-m);
+    padding: 20px 16px;
+    text-align:center;
+    margin-bottom: 10px;
+  }
+  .board-empty__flap{
+    font-family: var(--font-mono); font-size:12.5px; letter-spacing:0.12em;
+    color: var(--slate); margin-bottom:12px;
+  }
+  .board-empty__flap::before, .board-empty__flap::after{ content:"— "; }
+  .board-empty__flap::after{ content:" —"; }
+
+  .btn-primary{
+    appearance:none; border:none; cursor:pointer;
+    background: var(--amber); color: var(--ink);
+    font-weight:800; font-size:14.5px;
+    padding: 13px 20px; border-radius: 10px;
+    width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-primary:active{ transform: scale(0.98); }
+  .btn-secondary{
+    appearance:none; cursor:pointer;
+    background: transparent; color: var(--ink);
+    border: 1.5px solid var(--ink-line);
+    font-weight:700; font-size:14px;
+    padding: 11px 18px; border-radius: 10px;
+    width:100%;
+  }
+
+  /* ============================================================
+     COUNTRY PICKER
+     Each card doubles as a small explainer of the theming concept:
+     the three dots are literally the colours that will be pulled
+     from that flag into the generated course UI.
+     ============================================================ */
+  .country-grid{ display:flex; flex-direction:column; gap:10px; margin-top:6px; }
+  .country-card{
+    display:flex; align-items:center; gap:14px;
+    background:#fff; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+    padding: 14px; cursor:pointer; width:100%; text-align:left;
+  }
+  .country-card:active{ transform: scale(0.98); }
+  .country-card__flag{ width:36px; height:24px; }
+  .country-card__body{ flex:1; min-width:0; }
+  .country-card__name{ font-weight:800; font-size:15.5px; }
+  .country-card__capital{ font-size:12.5px; color: var(--slate); margin-top:1px; }
+
+  /* ============================================================
+     TRIP DETAILS
+     ============================================================ */
+  .chip-grid{ display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+  .chip{
+    display:flex; align-items:center; gap:12px;
+    background:#fff; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+    padding: 12px 14px; cursor:pointer; width:100%; text-align:left;
+  }
+  .chip__label{ font-weight:700; font-size:14px; flex:1; }
+  .chip__weeks{ font-family: var(--font-mono); font-size:10.5px; color: var(--slate); }
+  .chip[data-selected="true"]{ border-color: var(--ink); background: var(--paper-dim); }
+  .chip[data-selected="true"] .chip__weeks{ color: var(--ink); font-weight:700; }
+
+  .field-label{ font-size:12.5px; font-weight:700; color: var(--ink); margin: 20px 2px 8px; display:block; }
+  textarea.notes{
+    width:100%; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+    padding:12px; font-family:inherit; font-size:13.5px; resize:vertical; min-height:70px;
+    background:#fff;
+  }
+  textarea.notes:focus{ outline:none; border-color:var(--ink); }
+
+  .date-row{ display:flex; gap:10px; }
+  .date-field{ flex:1; display:flex; flex-direction:column; gap:5px; }
+  .date-field label{ font-size:11.5px; font-weight:700; color: var(--slate); }
+  .date-field input[type="date"]{
+    border:1.5px solid var(--paper-line); border-radius: var(--radius-s);
+    padding:10px; font-family:inherit; font-size:13px; background:#fff; color: var(--ink);
+  }
+  .date-field input[type="date"]:focus{ outline:none; border-color:var(--ink); }
+  .date-hint{ font-size:11.5px; color: var(--slate); margin:8px 2px 0; min-height:14px; }
+  .date-hint[data-tone="bad"]{ color: var(--red-alert); }
+
+  .feedback-scale{ display:flex; gap:8px; margin-top:6px; }
+  .feedback-scale button{
+    flex:1; appearance:none; cursor:pointer; background:#fff;
+    border:1.5px solid var(--paper-line); border-radius: var(--radius-s);
+    padding:12px 4px; font-family: var(--font-mono); font-weight:700; font-size:14px;
+  }
+  .feedback-scale button[data-selected="true"]{ border-color: var(--ink); background: var(--paper-dim); }
+  .feedback-scale-labels{ display:flex; justify-content:space-between; font-size:10.5px; color: var(--slate); margin-top:5px; }
+  .feedback-yn{ display:flex; gap:10px; margin-top:6px; }
+  .feedback-yn button{
+    flex:1; appearance:none; cursor:pointer; background:#fff;
+    border:1.5px solid var(--paper-line); border-radius: var(--radius-s);
+    padding:11px 12px; font-weight:700; font-size:13.5px;
+  }
+  .feedback-yn button[data-selected="true"]{ border-color: var(--ink); background: var(--paper-dim); }
+
+  .sticky-cta{ position:sticky; bottom:0; padding-top:16px; background: linear-gradient(180deg, transparent, var(--paper) 30%); }
+
+  /* ============================================================
+     GENERATING SCREEN — signature split-flap moment
+     ============================================================ */
+  .generating{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; text-align:center; gap:22px; }
+  .flap{
+    font-family: var(--font-mono); font-weight:700; font-size:15px;
+    background: var(--ink); color: var(--amber);
+    padding: 14px 18px; border-radius: var(--radius-s);
+    letter-spacing: 0.04em; min-width:230px;
+  }
+  .flap-char{ display:inline-block; }
+  .generating__sub{ font-size:12.5px; color: var(--slate); }
+  .spinner-dots{ display:flex; gap:6px; }
+  .spinner-dots span{ width:7px; height:7px; border-radius:50%; background: var(--ink); animation: dotPulse 1s ease-in-out infinite; }
+  .spinner-dots span:nth-child(2){ animation-delay:.15s; }
+  .spinner-dots span:nth-child(3){ animation-delay:.3s; }
+  @keyframes dotPulse{ 0%,80%,100%{ opacity:.25; transform:scale(.8);} 40%{ opacity:1; transform:scale(1);} }
+
+  /* ============================================================
+     DASHBOARD — flag-themed course home
+     --flag-primary / --flag-secondary / --flag-tertiary / --flag-ink
+     are injected inline per course. Everything below reads only
+     from those variables, so no per-country CSS is hand-written.
+     ============================================================ */
+  .ticket{
+    border-radius: var(--radius-m);
+    background: linear-gradient(135deg, var(--flag-primary), color-mix(in srgb, var(--flag-primary) 55%, black));
+    color: #fff;
+    padding: 18px 16px 16px;
+    margin-top:6px;
+    position:relative;
+    overflow:hidden;
+  }
+  .ticket__stripe{ display:flex; height:6px; border-radius:4px; overflow:hidden; margin-bottom:14px; }
+  .ticket__stripe span{ flex:1; }
+  .ticket__eyebrow{ font-family: var(--font-mono); font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; opacity:.8; }
+  .ticket__title{ font-size:21px; font-weight:800; margin-top:4px; letter-spacing:-0.01em; display:flex; align-items:center; gap:9px; }
+  .ticket__flag{ width:30px; height:20px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+  .ticket__meta{ display:flex; gap:16px; margin-top:14px; }
+  .ticket__meta div{ font-family: var(--font-mono); }
+  .ticket__meta b{ display:block; font-size:15px; }
+  .ticket__meta small{ font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; opacity:.75; }
+  .ticket__progress{ margin-top:14px; }
+  .ticket__progress-track{ height:6px; border-radius:6px; background: rgba(255,255,255,.25); overflow:hidden; }
+  .ticket__progress-fill{ height:100%; background: var(--flag-secondary); border-radius:6px; }
+  .ticket__progress-label{ font-family: var(--font-mono); font-size:10.5px; margin-top:6px; opacity:.85; }
+  .ticket__cta{
+    appearance:none; cursor:pointer; width:100%; margin-top:16px;
+    background: rgba(255,255,255,.14); border:1.5px solid rgba(255,255,255,.5);
+    color:#fff; font-weight:700; font-size:13.5px; padding:11px 14px; border-radius:10px;
+  }
+  .ticket__cta:active{ background: rgba(255,255,255,.22); }
+  .ticket__notch{
+    position:absolute; right:-10px; top:50%; width:20px; height:20px; background: var(--paper);
+    border-radius:50%; transform:translateY(-50%);
+  }
+
+  .week-list{ margin-top:18px; display:flex; flex-direction:column; gap:8px; }
+  .week-row{
+    display:flex; align-items:center; gap:12px;
+    background:#fff; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+    padding:13px 14px; width:100%; text-align:left; cursor:pointer;
+  }
+  .week-row[data-locked="true"]{ opacity:.5; cursor:default; }
+  .week-row:not([data-locked="true"]):active{ transform:scale(0.98); }
+  .week-row__num{
+    font-family: var(--font-mono); font-weight:800; font-size:12px;
+    width:30px; height:30px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background: color-mix(in srgb, var(--flag-primary) 14%, white);
+    color: var(--flag-primary);
+  }
+  .week-row__num[data-done="true"]{ background: var(--green-ok); color:#fff; }
+  .week-row__title{ font-weight:700; font-size:13.5px; flex:1; }
+  .week-row__tag{ font-family: var(--font-mono); font-size:10px; color: var(--slate); text-transform:uppercase; letter-spacing:.06em; }
+
+  .culture-card{
+    margin-top:18px; background: color-mix(in srgb, var(--flag-primary) 8%, white);
+    border: 1.5px solid color-mix(in srgb, var(--flag-primary) 25%, white);
+    border-radius: var(--radius-m); padding:14px;
+  }
+  .culture-card__label{ font-family: var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color: var(--flag-primary); font-weight:700; }
+  .culture-card__body{ font-size:13.5px; margin-top:6px; line-height:1.45; }
+  .etiquette-list{ margin:6px 0 0; padding-left:18px; font-size:13.5px; line-height:1.5; }
+  .etiquette-list li{ margin-bottom:6px; }
+  .etiquette-list li:last-child{ margin-bottom:0; }
+
+  /* ============================================================
+     LESSON SCREEN
+     ============================================================ */
+  .lesson-hero{
+    background: var(--flag-primary); color:#fff; border-radius: var(--radius-m);
+    padding:16px; margin-top:6px;
+  }
+  .lesson-hero__eyebrow{ font-family: var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; opacity:.85; }
+  .lesson-hero__title{ font-size:19px; font-weight:800; margin-top:4px; }
+
+  .lesson-intro{ font-size:13.5px; line-height:1.5; color: var(--ink); margin-top:14px; }
+
+  .vocab-grid{ margin-top:16px; display:flex; flex-direction:column; gap:8px; }
+  .vocab-card{
+    background:#fff; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+    padding:12px 14px;
+  }
+  .vocab-card__en{ font-size:13.5px; color: var(--slate); }
+  .vocab-card__local{ font-weight:800; font-size:16px; margin-top:2px; color: var(--flag-primary); }
+  .vocab-card__translit{ font-family: var(--font-mono); font-size:11.5px; color: var(--slate); margin-top:2px; }
+
+  /* ============================================================
+     BEAT — a lesson is now a sequence of one-question-per-page
+     screens ("beats"), not a walkthrough followed by a quiz. Each
+     beat is scenario-framed and is one of three styles, mixed within
+     a lesson: "produce" (how do you say X), "comprehend" (someone
+     says X — what did they say), "symbol" (a sign/icon — what does
+     it mean). See PRD §11a.
+     ============================================================ */
+  .beat-progress{ margin-top:14px; }
+  .beat-progress__track{ height:6px; border-radius:6px; background: var(--paper-dim); overflow:hidden; }
+  .beat-progress__fill{ height:100%; background: var(--flag-primary); border-radius:6px; }
+  .beat-progress__label{
+    font-family: var(--font-mono); font-size:10.5px; color: var(--slate);
+    text-transform:uppercase; letter-spacing:.08em; margin-top:6px;
+  }
+
+  .beat-card{
+    margin-top:16px; background:#fff; border:1.5px solid var(--paper-line);
+    border-radius: var(--radius-m); padding:16px;
+  }
+  .beat-card__context{ font-size:13.5px; font-style:italic; color: var(--slate); line-height:1.45; margin-bottom:14px; }
+  .beat-heard{
+    font-weight:800; font-size:19px; text-align:center; color: var(--flag-primary);
+    background: color-mix(in srgb, var(--flag-primary) 8%, white);
+    border-radius: var(--radius-s); padding:14px; margin-bottom:14px;
+  }
+  .beat-symbol{ display:flex; justify-content:center; margin-bottom:14px; }
+  .beat-symbol__icon{
+    width:68px; height:68px; padding:14px; color: var(--flag-primary);
+    background: color-mix(in srgb, var(--flag-primary) 8%, white);
+    border: 1.5px solid color-mix(in srgb, var(--flag-primary) 25%, white);
+    border-radius:50%;
+  }
+  .beat-symbol__icon svg{ display:block; width:100%; height:100%; }
+  .beat-card__question{ font-weight:700; font-size:15px; margin-bottom:12px; }
+
+  .quiz__opt{
+    display:block; width:100%; text-align:left; background: var(--paper);
+    border:1.5px solid var(--paper-line); border-radius: var(--radius-s);
+    padding:10px 12px; font-size:13.5px; margin-bottom:7px; cursor:pointer;
+  }
+  .quiz__opt[data-state="correct"]{ background: rgba(30,143,95,.15); border-color: var(--green-ok); }
+  .quiz__opt[data-state="wrong"]{ background: rgba(216,64,43,.12); border-color: var(--red-alert); }
+  .quiz__feedback{ font-size:12.5px; font-weight:700; margin-top:4px; min-height:16px; }
+  .quiz__feedback[data-tone="good"]{ color: var(--green-ok); }
+  .quiz__feedback[data-tone="bad"]{ color: var(--red-alert); }
+
+  .lesson-cta{ margin-top:20px; }
+  .lesson-complete-badge{
+    display:inline-flex; align-items:center; gap:6px; font-family: var(--font-mono);
+    font-size:11px; color: var(--green-ok); font-weight:700; margin-top:10px;
+  }
+</style>
+</head>
+<body>
+
+<!--
+  App shell: a fixed status bar (cosmetic — establishes "this is a phone
+  screen" framing for reviewers), an app bar that is re-rendered per
+  screen (title/back-button/badge change with context), the single
+  #app mount point that all screens render into, and a bottom tab bar
+  where only "Trips" is implemented — Explore/Profile are visible but
+  disabled to signal planned-but-out-of-scope surface area.
+-->
+<div class="app-shell">
+  <div class="statusbar">
+    <span>9:41</span>
+    <span class="statusbar__icons">
+      <span class="statusbar__bars"><span></span><span></span><span></span><span></span></span>
+      <span class="statusbar__batt"></span>
+    </span>
+  </div>
+
+  <header class="appbar" id="appbar"></header>
+
+  <main id="app"></main>
+
+  <div class="tabbar">
+    <button class="tabbar__item" data-active="true" data-action="go-home"><span>Trips</span></button>
+    <button class="tabbar__item" disabled data-action="stub-tab"><span>Explore</span></button>
+    <button class="tabbar__item" disabled data-action="stub-tab"><span>Profile</span></button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ================================================================
+   FLAG ICONS
+   Deliberately NOT Unicode flag emoji: those are font-dependent —
+   several common platforms (older Windows, many Linux desktops
+   without a colour-emoji font) fall back to rendering a flag
+   sequence as plain two-letter text, which defeats the entire point
+   of "flag = instant visual identity" from PRD §6/§11. These are
+   small inline SVGs instead, so every user sees the same coloured
+   flag regardless of OS/font support.
+   ================================================================ */
+const FLAGS = {
+  japan: `<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#BC002D"/></svg>`,
+  italy: `<svg viewBox="0 0 30 20"><rect width="10" height="20" fill="#008C45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#CD212A"/></svg>`,
+  greece: `<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#0D5EAF"/><rect y="2.2" width="30" height="2.2" fill="#fff"/><rect y="6.6" width="30" height="2.2" fill="#fff"/><rect y="11" width="30" height="2.2" fill="#fff"/><rect y="15.4" width="30" height="2.2" fill="#fff"/><rect width="12" height="11" fill="#0D5EAF"/><rect x="4.8" width="2.4" height="11" fill="#fff"/><rect y="4.3" width="12" height="2.4" fill="#fff"/></svg>`,
+  mexico: `<svg viewBox="0 0 30 20"><rect width="10" height="20" fill="#006341"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#CE1126"/><circle cx="15" cy="10" r="3" fill="none" stroke="#8a6d3b" stroke-width="1.2"/></svg>`,
+  morocco: `<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#C1272D"/><path d="M15,4 L16.35,8.14 L20.71,8.15 L17.19,10.71 L18.53,14.85 L15,12.3 L11.47,14.85 L12.81,10.71 L9.29,8.15 L13.65,8.14 Z" fill="none" stroke="#006233" stroke-width="1.1"/></svg>`,
+  france: `<svg viewBox="0 0 30 20"><rect width="10" height="20" fill="#0055A4"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#EF4135"/></svg>`
+};
+
+/* ================================================================
+   DATA
+   Real translations/phrases below (not lorem ipsum) so the lesson
+   screens are credible on their own, not just structurally present.
+   In production this bank would come from a curated content DB,
+   not a JS literal — see PRD §7.
+   ================================================================ */
+const COUNTRIES = {
+  japan: {
+    name: "Japan", capital: "Tokyo",
+    colours: { primary:"#BC002D", secondary:"#FFFFFF", tertiary:"#14181F" },
+    cultureTip: "Bowing is the standard greeting — a small nod covers casual moments, a deeper bow shows more respect. Let your host initiate a handshake rather than offering one yourself.",
+    phrases: [
+      { en:"Hello", local:"Konnichiwa", translit:"こんにちは" },
+      { en:"Thank you", local:"Arigatou gozaimasu", translit:"ありがとうございます" },
+      { en:"Please", local:"Onegaishimasu", translit:"お願いします" },
+      { en:"Excuse me / Sorry", local:"Sumimasen", translit:"すみません" },
+      { en:"Where is the bathroom?", local:"Toire wa doko desu ka?", translit:"トイレはどこですか?" },
+      { en:"How much is this?", local:"Ikura desu ka?", translit:"いくらですか?" },
+      { en:"I don't understand", local:"Wakarimasen", translit:"わかりません" },
+      { en:"Cheers!", local:"Kanpai!", translit:"乾杯!" }
+    ],
+    transport: {
+      intro: "Trains and subways are the backbone of getting around, and they run on a precision schedule. Tap in and out with an IC card (Suica/Pasmo) rather than buying a paper ticket each ride.",
+      phrases: [
+        { en:"Does this train go to Shibuya?", local:"Kono densha wa Shibuya ni ikimasu ka?", translit:"この電車は渋谷に行きますか?" },
+        { en:"Which platform?", local:"Nan-ban-sen desu ka?", translit:"何番線ですか?" },
+        { en:"One ticket to Tokyo, please", local:"Tokyo made ichimai onegaishimasu", translit:"東京まで一枚お願いします" }
+      ],
+      etiquette: [
+        "Stand in the marked line on the platform and let passengers off before you board.",
+        "Keep phone calls off and voices low in the \"quiet\" carriages.",
+        "Stand on the left side of escalators in Tokyo (right in Osaka) — locals notice if you block the walking side."
+      ],
+      scenario: {
+        q: "You're on a busy Tokyo train and your phone rings. What's the expected move?",
+        options: ["Answer it quietly, facing the window", "Silence it and call back later", "Step off at the next stop to answer"],
+        correctIndex: 1
+      },
+      beatPlan: [
+        { kind:"produce", phraseIndex:1, context:"First, work out which platform you need." },
+        { kind:"produce", phraseIndex:0, context:"Before boarding, confirm the train's actually headed your way." },
+        { kind:"comprehend", phraseIndex:2, context:"At the ticket machine, the attendant nods and repeats back what you asked for:", question:"What did they just confirm?" },
+        { kind:"symbol", symbol:"quiet", context:"You settle into your seat and notice this sign overhead.", question:"What does it mean?", correct:"Keep phone calls off, and keep your voice down", distractors:["No eating or drinking", "This carriage is reserved seating only"] },
+        { kind:"situational", context:"Mid-journey, a new situation comes up." }
+      ]
+    }
+  },
+  italy: {
+    name: "Italy", capital: "Rome",
+    colours: { primary:"#008C45", secondary:"#CD212A", tertiary:"#FFFFFF" },
+    cultureTip: "Meals are unhurried social events. The bill won't be brought unasked — request \"il conto\" when you're ready, rushing it is considered rude.",
+    phrases: [
+      { en:"Hello", local:"Buongiorno", translit:"bwon-JOR-no" },
+      { en:"Thank you", local:"Grazie", translit:"GRAT-tsee-eh" },
+      { en:"Please", local:"Per favore", translit:"per fa-VO-reh" },
+      { en:"Excuse me / Sorry", local:"Scusi", translit:"SKOO-zee" },
+      { en:"Where is the bathroom?", local:"Dov'è il bagno?", translit:"do-VEH eel BAHN-yo" },
+      { en:"How much is this?", local:"Quanto costa?", translit:"KWAN-to KOS-ta" },
+      { en:"I don't understand", local:"Non capisco", translit:"non ka-PEES-ko" },
+      { en:"Cheers!", local:"Salute!", translit:"sa-LOO-teh" }
+    ],
+    transport: {
+      intro: "City buses and trains run reliably, but \"validate before you ride\" is the rule that trips up almost every visitor: paper tickets must be stamped in a small machine on board or at the platform before travel.",
+      phrases: [
+        { en:"Where do I validate the ticket?", local:"Dove si convalida il biglietto?", translit:"DOH-veh see kon-va-LEE-da eel bee-LYET-to" },
+        { en:"Does this bus go to the station?", local:"Questo autobus va alla stazione?", translit:"KWES-to OW-to-boos va AL-la sta-tsee-OH-neh" },
+        { en:"A ticket to Rome, please", local:"Un biglietto per Roma, per favore", translit:"oon bee-LYET-to per RO-ma" }
+      ],
+      etiquette: [
+        "Stamp paper tickets in the yellow or green machine every ride — inspectors fine unstamped tickets even if you bought one.",
+        "Board buses from the rear or middle doors, and exit from the front.",
+        "Offer your seat to elderly passengers — it's a strong social norm, not just politeness."
+      ],
+      scenario: {
+        q: "You bought a paper bus ticket in Rome before boarding. What must you do with it?",
+        options: ["Nothing, it's valid on purchase", "Stamp it in the onboard machine", "Show it to the driver only"],
+        correctIndex: 1
+      },
+      beatPlan: [
+        { kind:"produce", phraseIndex:2, context:"Buses run on the honesty system, but you still need a ticket." },
+        { kind:"produce", phraseIndex:0, context:"Once you're holding it, here's the step almost everyone forgets." },
+        { kind:"comprehend", phraseIndex:1, context:"You ask if this is the right bus. The driver repeats back to confirm:", question:"What are they confirming?" },
+        { kind:"symbol", symbol:"stamp", context:"You spot this machine bolted near the door as you board.", question:"What's it for?", correct:"Stamping (validating) your paper ticket before you ride", distractors:["Buying a new ticket", "Charging your phone"] },
+        { kind:"situational", context:"You're holding a ticket you bought before boarding." }
+      ]
+    }
+  },
+  greece: {
+    name: "Greece", capital: "Athens",
+    colours: { primary:"#0D5EAF", secondary:"#FFFFFF", tertiary:"#14181F" },
+    cultureTip: "Meal times run later than much of Europe — dinner rarely starts before 9pm, and cafes double as all-afternoon social hubs.",
+    phrases: [
+      { en:"Hello", local:"Yassas", translit:"Γεια σας" },
+      { en:"Thank you", local:"Efharisto", translit:"Ευχαριστώ" },
+      { en:"Please", local:"Parakalo", translit:"Παρακαλώ" },
+      { en:"Excuse me / Sorry", local:"Signomi", translit:"Συγγνώμη" },
+      { en:"Where is the bathroom?", local:"Pou einai i toualeta?", translit:"Πού είναι η τουαλέτα;" },
+      { en:"How much is this?", local:"Poso kani?", translit:"Πόσο κάνει;" },
+      { en:"I don't understand", local:"Den katalaveno", translit:"Δεν καταλαβαίνω" },
+      { en:"Cheers!", local:"Yamas!", translit:"Γειά μας!" }
+    ],
+    transport: {
+      intro: "Athens has a clean, simple metro alongside buses and trams, with a single ticket usually covering transfers within a set window. Islands and rural areas run on ferry and bus timetables that are looser than they look.",
+      phrases: [
+        { en:"Does this bus go to the port?", local:"Pigainei sto limani afto to leoforio?", translit:"Πηγαίνει στο λιμάνι αυτό το λεωφορείο;" },
+        { en:"One ticket please", local:"Ena isitirio parakalo", translit:"Ένα εισιτήριο παρακαλώ" },
+        { en:"What time does the ferry leave?", local:"Ti ora fevgei to feribot?", translit:"Τι ώρα φεύγει το φέρι μποτ;" }
+      ],
+      etiquette: [
+        "Validate your ticket at the machine when boarding the metro or bus, even if you bought it in advance.",
+        "Ferry departure times can slip — arrive earlier than the printed time, especially in high season.",
+        "Priority seating near the front is for elderly and pregnant passengers — give it up without being asked."
+      ],
+      scenario: {
+        q: "Your ferry is scheduled to leave at 10:00. When should you plan to arrive at the port?",
+        options: ["At 9:55 — tickets are checked fast", "At least 30-45 minutes early", "Any time before 11:00 is fine"],
+        correctIndex: 1
+      },
+      beatPlan: [
+        { kind:"produce", phraseIndex:1, context:"Grab your ticket first." },
+        { kind:"produce", phraseIndex:0, context:"Heading somewhere by bus? Confirm the route before you get on." },
+        { kind:"comprehend", phraseIndex:2, context:"At the port kiosk, the clerk repeats your question back to you:", question:"What are they telling you?" },
+        { kind:"symbol", symbol:"priority", context:"You notice this symbol on a seat near the front of the metro carriage.", question:"Who is that seat reserved for?", correct:"Elderly and pregnant passengers", distractors:["Ticket inspectors only", "Anyone travelling with luggage"] },
+        { kind:"situational", context:"Your ferry has a scheduled departure time." }
+      ]
+    }
+  },
+  mexico: {
+    name: "Mexico", capital: "Mexico City",
+    colours: { primary:"#006341", secondary:"#CE1126", tertiary:"#FFFFFF" },
+    cultureTip: "Social plans run on relaxed timing (\"la hora mexicana\") — arriving a little late is normal. Keep firm punctuality for tours and business meetings though.",
+    phrases: [
+      { en:"Hello", local:"Hola", translit:"OH-la" },
+      { en:"Thank you", local:"Gracias", translit:"GRA-syas" },
+      { en:"Please", local:"Por favor", translit:"por fa-VOR" },
+      { en:"Excuse me / Sorry", local:"Disculpe", translit:"dees-KOOL-peh" },
+      { en:"Where is the bathroom?", local:"¿Dónde está el baño?", translit:"DON-deh es-TA el BAN-yo" },
+      { en:"How much is this?", local:"¿Cuánto cuesta?", translit:"KWAN-to KWES-ta" },
+      { en:"I don't understand", local:"No entiendo", translit:"no en-tee-EN-do" },
+      { en:"Cheers!", local:"¡Salud!", translit:"sa-LOOD" }
+    ],
+    transport: {
+      intro: "Mexico City's Metro is fast and inexpensive, with separate train cars reserved for women and children during peak hours. Outside big cities, colectivos (shared minivans) are the everyday way to cover short distances.",
+      phrases: [
+        { en:"Does this colectivo go to the centre?", local:"¿Este colectivo va al centro?", translit:"ES-teh ko-lek-TEE-vo va al SEN-tro" },
+        { en:"How much is the fare?", local:"¿Cuánto es el pasaje?", translit:"KWAN-to es el pa-SA-heh" },
+        { en:"Please stop here", local:"Aquí, por favor", translit:"a-KEE por fa-VOR" }
+      ],
+      etiquette: [
+        "Look for the pink-marked cars reserved for women and children during rush hour on the Metro.",
+        "Have small bills or coins ready for colectivos — drivers rarely break large notes.",
+        "Call out your stop in advance on a colectivo; it doesn't stop unless asked."
+      ],
+      scenario: {
+        q: "You want a colectivo to stop at your destination. What should you do?",
+        options: ["Wait — it stops at every corner automatically", "Call out \"aquí, por favor\" before your stop", "Pull a cord like a city bus"],
+        correctIndex: 1
+      },
+      beatPlan: [
+        { kind:"produce", phraseIndex:0, context:"Flag down a colectivo and confirm it's headed your way." },
+        { kind:"produce", phraseIndex:1, context:"Ask what it'll cost before you commit to the ride." },
+        { kind:"comprehend", phraseIndex:2, context:"As your stop comes up, you call out, and the driver repeats it back:", question:"What did they just confirm?" },
+        { kind:"symbol", symbol:"reserved", context:"You notice this marking on a Metro car door.", question:"What does it mean?", correct:"Reserved for women and children during rush hour", distractors:["First class only", "Exit only — do not board here"] },
+        { kind:"situational", context:"You're riding a colectivo toward your stop." }
+      ]
+    }
+  },
+  morocco: {
+    name: "Morocco", capital: "Rabat",
+    colours: { primary:"#C1272D", secondary:"#006233", tertiary:"#FFFFFF" },
+    cultureTip: "Bargaining in souks is expected and part of the social exchange, not a confrontation — starting around half the asking price is a normal opening.",
+    phrases: [
+      { en:"Hello", local:"As-salamu alaykum", translit:"السلام عليكم" },
+      { en:"Thank you", local:"Shukran", translit:"شكرا" },
+      { en:"Please", local:"Min fadlik", translit:"من فضلك" },
+      { en:"Excuse me / Sorry", local:"Smehli", translit:"سمحلي" },
+      { en:"Where is the bathroom?", local:"Fin kayn twalet?", translit:"فين كاين تواليت؟" },
+      { en:"How much is this?", local:"Bshhal hada?", translit:"بشحال هادا؟" },
+      { en:"I don't understand", local:"Ma fhemtch", translit:"ما فهمتش" },
+      { en:"Cheers!", local:"Saha!", translit:"صحة" }
+    ],
+    transport: {
+      intro: "Petit taxis handle most in-city trips and are metered — ask the driver to use it. Grand taxis and buses cover longer routes between cities and typically leave once full rather than on a fixed schedule.",
+      phrases: [
+        { en:"Please use the meter", local:"Al-'addad min fadlik", translit:"العداد من فضلك" },
+        { en:"Take me to the medina", local:"Wddini l-lmdina", translit:"ودّيني للمدينة" },
+        { en:"How much to the airport?", local:"Bshhal l-lmatar?", translit:"بشحال للمطار؟" }
+      ],
+      etiquette: [
+        "Agree the fare or insist on the meter before the petit taxi pulls away, not after you arrive.",
+        "Grand taxis and intercity buses often depart when full, not at a set time — build in slack.",
+        "It's normal to share a petit taxi with strangers heading the same direction — don't be surprised if the driver picks up another rider."
+      ],
+      scenario: {
+        q: "You get into a petit taxi in Marrakech and the driver hasn't mentioned a price. What should you do?",
+        options: ["Wait until arrival to negotiate", "Ask for the meter or agree a fare before setting off", "Assume it's a flat fee everywhere"],
+        correctIndex: 1
+      },
+      beatPlan: [
+        { kind:"produce", phraseIndex:0, context:"Hop in a petit taxi and settle this before you go anywhere." },
+        { kind:"produce", phraseIndex:1, context:"Tell the driver where you're actually headed." },
+        { kind:"comprehend", phraseIndex:2, context:"You ask about a longer trip, and the driver repeats the question back while thinking it over:", question:"What are they considering?" },
+        { kind:"symbol", symbol:"meter", context:"You get in and glance at the dashboard.", question:"What should you check for?", correct:"That the driver has switched the meter on", distractors:["The taxi's license number", "The fuel gauge"] },
+        { kind:"situational", context:"The driver hasn't mentioned a price yet." }
+      ]
+    }
+  },
+  france: {
+    name: "France", capital: "Paris",
+    colours: { primary:"#0055A4", secondary:"#EF4135", tertiary:"#FFFFFF" },
+    cultureTip: "Always open with \"Bonjour\" before asking a shopkeeper anything, even a quick question — skipping the greeting reads as rude, not efficient.",
+    phrases: [
+      { en:"Hello", local:"Bonjour", translit:"bon-ZHOOR" },
+      { en:"Thank you", local:"Merci", translit:"mer-SEE" },
+      { en:"Please", local:"S'il vous plaît", translit:"seel voo PLEH" },
+      { en:"Excuse me / Sorry", local:"Excusez-moi", translit:"ex-koo-zay MWA" },
+      { en:"Where is the bathroom?", local:"Où sont les toilettes?", translit:"oo son lay twa-LET" },
+      { en:"How much is this?", local:"Combien ça coûte?", translit:"kom-bee-AN sa KOOT" },
+      { en:"I don't understand", local:"Je ne comprends pas", translit:"zhuh nuh kom-PRAHN pa" },
+      { en:"Cheers!", local:"Santé!", translit:"san-TAY" }
+    ],
+    transport: {
+      intro: "The Paris Métro and regional RER are extensive and easy once you know the rule: validate your ticket every time, even on connecting regional trains, and keep it until you exit.",
+      phrases: [
+        { en:"A ticket to..., please", local:"Un billet pour..., s'il vous plaît", translit:"oon bee-YEH poor... seel voo pleh" },
+        { en:"Which line goes to...?", local:"Quelle ligne va à...?", translit:"kel LEEN-yuh va ah" },
+        { en:"Is this seat free?", local:"Cette place est libre?", translit:"set plas eh LEE-bruh" }
+      ],
+      etiquette: [
+        "Validate (\"composter\") train tickets before boarding regional and intercity trains — the Métro turnstile does this automatically.",
+        "Keep your ticket until you've exited the station; random checks happen and fines are steep.",
+        "Move down inside the carriage rather than clustering by the doors at rush hour."
+      ],
+      scenario: {
+        q: "You've just tapped through the Métro turnstile with your ticket. What should you do with it?",
+        options: ["Throw it away, it's no longer needed", "Keep it until you exit the system", "Give it to the next passenger"],
+        correctIndex: 1
+      },
+      beatPlan: [
+        { kind:"produce", phraseIndex:0, context:"Buy your ticket before you head down to the platform." },
+        { kind:"produce", phraseIndex:1, context:"Work out which line you actually need." },
+        { kind:"comprehend", phraseIndex:2, context:"You ask if the seat is free. The passenger repeats it back, faintly amused:", question:"What did they just repeat?" },
+        { kind:"symbol", symbol:"stamp", context:"Before boarding a regional train, you see this machine on the platform.", question:"What's it for?", correct:"Validating (\"composting\") your ticket before you board", distractors:["Buying a ticket", "Checking train times"] },
+        { kind:"situational", context:"You've just tapped through the Métro turnstile." }
+      ]
+    }
+  }
+};
+
+// Trip type drives lesson-2's framing and the course's total duration —
+// more situationally complex trip types get an extra week or two.
+// `exploreIntro` sets the scene for week 2's opening question (see
+// EXPLORE_BEAT_PLAN below) — it's the one place trip-type flavour shows
+// up, since the underlying phrases (bathroom/price/don't-understand/
+// cheers) are shared across every trip type.
+const TRIP_TYPES = {
+  city:      { label:"City Break",          weeks:6, lesson2:"Getting Around Like a Local",
+               exploreIntro:(name)=>`You've ditched the guidebook for a wander through ${name} — the afternoon usually goes something like this.` },
+  beach:     { label:"Beach Escape",         weeks:6, lesson2:"Beach, Bargaining & Small Talk",
+               exploreIntro:(name)=>`Between the beach and the boardwalk in ${name}, a few small moments come up again and again.` },
+  food:      { label:"Food & Wine",          weeks:7, lesson2:"At the Table: Ordering & Toasting",
+               exploreIntro:(name)=>`Between courses and tasting stops in ${name}, these are the moments where a few words go a long way.` },
+  family:    { label:"Family Trip",          weeks:7, lesson2:"Everyday Essentials for Everyone",
+               exploreIntro:(name)=>`With the whole family in tow around ${name}, it's these small everyday moments that come up most.` },
+  adventure: { label:"Adventure & Outdoors", weeks:8, lesson2:"On the Trail: Asking for Help",
+               exploreIntro:(name)=>`Off the beaten path around ${name}, these are the moments where a few words matter most.` },
+  business:  { label:"Business Trip",        weeks:6, lesson2:"Politeness & Small Talk for Meetings",
+               exploreIntro:(name)=>`Between meetings in ${name}, these are the small everyday moments that still come up.` }
+};
+
+// ================================================================
+// LESSON BEATS
+// A lesson is a sequence of one-question-per-page "beats" (see PRD
+// §11a) — there's no separate walkthrough-then-quiz split any more.
+// Every beat is scenario-framed, and three question styles are mixed
+// within a lesson:
+//   "produce"     -> "How do you say X?" (English prompt -> local phrase)
+//   "comprehend"  -> someone says a local phrase -> "what did they say?"
+//                    (local phrase quoted -> English meaning)
+//   "symbol"      -> a sign/icon is shown -> "what does it mean?"
+//   "situational" -> week 3 only, "what would you do?" (reuses each
+//                    country's existing transport.scenario, unchanged)
+// Weeks 1 and 2 reuse the shared 8-phrase country bank (see PRD §7),
+// via the generic beat plans below — arriving and greeting someone
+// plays out the same way regardless of destination, so only the intro
+// context flexes per country (week 1) or trip type (week 2). Week 3 is
+// bespoke per country: see `beatPlan` on each country's `transport`
+// object above, built into beats by `buildLessonBeats` below.
+// ================================================================
+const ARRIVAL_BEAT_PLAN = [
+  { kind:"produce", phraseIndex:0, context:"You step up to passport control." },
+  { kind:"comprehend", phraseIndex:1, context:"The officer hands your documents back and says:", question:"What are they telling you?" },
+  { kind:"produce", phraseIndex:2, context:"You need a hand finding baggage claim — ask politely." },
+  { kind:"comprehend", phraseIndex:3, context:"You bump someone's suitcase in the crowd, and they say:", question:"What are they saying?" },
+  { kind:"symbol", symbol:"baggage", context:"Following the signs out of arrivals,", question:"What does this sign point to?", correct:"Baggage claim", distractors:["Currency exchange", "Passport control"] }
+];
+const EXPLORE_BEAT_PLAN = [
+  { kind:"produce", phraseIndex:4, context:"You've been walking for a while and need to find a bathroom." },
+  { kind:"comprehend", phraseIndex:5, context:"A shopkeeper points at the item you picked up and says:", question:"What are they asking?" },
+  { kind:"produce", phraseIndex:6, context:"The reply comes back fast and you lose the thread." },
+  { kind:"comprehend", phraseIndex:7, context:"Someone raises a glass in your direction and says:", question:"What are they saying?" },
+  { kind:"symbol", symbol:"noPhoto", context:"Stepping into a small shop, you notice this sign by the door.", question:"What does it mean?", correct:"No photos allowed inside", distractors:["No entry without a purchase", "Cash only"] }
+];
+
+// Small inline SVG line-icons for "symbol" beats — same rationale as
+// FLAGS above (font-independent, renders identically across platforms
+// rather than falling back to an emoji glyph). These aren't meant as
+// pixel-accurate pictograms, just legible enough to read as "a sign
+// you'd actually see."
+const SYMBOLS = {
+  baggage: `<svg viewBox="0 0 48 48" fill="none"><rect x="10" y="18" width="28" height="20" rx="3" stroke="currentColor" stroke-width="2.5"/><path d="M18 18v-5a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v5" stroke="currentColor" stroke-width="2.5"/><line x1="24" y1="24" x2="24" y2="32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+  noPhoto: `<svg viewBox="0 0 48 48" fill="none"><rect x="7" y="14" width="34" height="22" rx="3" stroke="currentColor" stroke-width="2.5"/><circle cx="24" cy="25" r="6" stroke="currentColor" stroke-width="2.5"/><line x1="6" y1="8" x2="42" y2="40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+  quiet: `<svg viewBox="0 0 48 48" fill="none"><path d="M9 19h6l10-8v26l-10-8H9z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><line x1="7" y1="7" x2="41" y2="41" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+  stamp: `<svg viewBox="0 0 48 48" fill="none"><rect x="9" y="9" width="30" height="20" rx="2" stroke="currentColor" stroke-width="2.5"/><path d="M15 30l4 9 5-7 5 7 4-9" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>`,
+  meter: `<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="16" stroke="currentColor" stroke-width="2.5"/><line x1="24" y1="24" x2="24" y2="13" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="24" y1="24" x2="32" y2="29" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="24" cy="24" r="2" fill="currentColor"/></svg>`,
+  reserved: `<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="15" r="6" stroke="currentColor" stroke-width="2.5"/><path d="M11 39c0-9 6-15 13-15s13 6 13 15" stroke="currentColor" stroke-width="2.5"/><path d="M33 11l4 4-4 4" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg>`,
+  priority: `<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="16" stroke="currentColor" stroke-width="2.5"/><path d="M16 26l6 6 11-14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+};
+
+// Generic 8-week syllabus shell. Weeks 1-3 ship as built, interactive
+// lessons in this prototype (see PRD §8) — weeks beyond that render as
+// locked/upcoming to demonstrate progressive unlock rather than dumping
+// the whole course on day one. Week 3 is always the "culture" lesson
+// (Public Transport) rather than another phrase drill, so every course
+// proves out the etiquette/customs side of the product, not just vocab.
+function syllabus(tripKey){
+  const t = TRIP_TYPES[tripKey];
+  const all = [
+    { title:"Airport & Arrival Essentials", type:"Phrase" },
+    { title:t.lesson2, type:"Phrase" },
+    { title:"Public Transport & Getting Around", type:"Culture" },
+    { title:"Local Etiquette Deep-Dive", type:"Culture" },
+    { title:"Numbers, Time & Directions", type:"Phrase" },
+    { title:"Food, Drink & Dining Out", type:"Phrase" },
+    { title:"Handling the Unexpected", type:"Phrase" },
+    { title:"Review & Trip-Ready Checkpoint", type:"Culture" }
+  ];
+  return all.slice(0, t.weeks);
+}
+
+/* ================================================================
+   STATE
+   `courses` seeds with one already-completed course so the home
+   screen demonstrates BOTH states (current + previous) without
+   requiring the user to run the flow twice. `stack` is a simple
+   screen history so the app-bar back button works generically
+   across every screen instead of being special-cased per screen.
+   ================================================================ */
+let courses = [
+  { id:"seed-1", countryKey:"italy", tripKey:"food", weeks:7, currentWeek:7, status:"completed", notes:"Anniversary trip — Rome then the Amalfi coast.", travelStart:"2026-05-01", travelEnd:"2026-05-10", feedbackSubmitted:false, feedback:null }
+];
+let draft = { countryKey:null, tripKey:null };
+let stack = [{ name:"home" }];
+// Post-trip feedback form state — rebuilt every time the feedback screen
+// renders, same pattern as `beatResult` for the current lesson beat.
+let feedbackDraft = { score:null, cultureHelped:null };
+// Current lesson beat state — rebuilt every time a lesson screen renders.
+// `currentBeat` holds the single question object for whichever step of
+// the lesson is open; `beatResult` is null until answered, then holds
+// { choiceIndex, isCorrect } so "Continue"/"Mark lesson complete" stays
+// disabled until this step has actually been answered.
+let currentBeat = null;
+let beatResult = null;
+
+function push(name, payload){ stack.push({ name, payload }); render(); }
+function pop(){ if (stack.length > 1){ stack.pop(); render(); } }
+function resetToHome(){ stack = [{ name:"home" }]; render(); }
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("is-visible");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=> t.classList.remove("is-visible"), 1600);
+}
+
+/* ================================================================
+   APP BAR
+   ================================================================ */
+function renderAppBar(top){
+  const bar = document.getElementById("appbar");
+  if (top.name === "home"){
+    bar.className = "appbar appbar--home";
+    bar.innerHTML = `
+      <div>
+        <div class="wordmark">Hola<span>day</span></div>
+        <span class="tagline">Trip-ready in 6&ndash;8 weeks</span>
+      </div>`;
+    return;
+  }
+  const titles = {
+    country: "Choose a country",
+    trip: "Describe the trip",
+    generating: "",
+    dashboard: (p)=> COUNTRIES[p.course.countryKey].name + " — " + TRIP_TYPES[p.course.tripKey].label,
+    lesson: (p)=> "Week " + p.week,
+    phrasebook: (p)=> "Phrasebook",
+    feedback: "Trip feedback"
+  };
+  const raw = titles[top.name];
+  const title = typeof raw === "function" ? raw(top.payload) : raw;
+  bar.className = "appbar";
+  bar.innerHTML = `
+    <button class="appbar__back" data-action="back" aria-label="Back">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#14181F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="appbar__title">${title}</div>
+    ${top.name === "dashboard" ? `<div class="appbar__badge">${top.payload.course.status === "completed" ? "LANDED" : "WEEK " + top.payload.course.currentWeek + "/" + top.payload.course.weeks}</div>` : ""}
+  `;
+}
+
+/* ================================================================
+   SCREEN: HOME
+
+   ASSUMPTION: The departure-board status language (BOARDING / IN
+   PROGRESS / LANDED) is more legible and motivating at a glance than a
+   conventional progress bar or percentage, and reinforces "this is
+   finite, not a subscription" without needing explanatory copy.
+
+   HYPOTHESIS: We believe users correctly infer course state from the
+   status labels alone — without confusing "Boarding" for "not started
+   yet, nothing to do," or "Landed" for "archived/inaccessible." We'll
+   know this is wrong if usability sessions show users misreading a
+   status label, or hesitating over what action to take from a given
+   status.
+
+   VALIDATION METRIC: Quick comprehension check in early usability
+   sessions — show the home screen and ask users to say, in their own
+   words, what each status means and what happens if they tap it; track
+   % correct per label. In-app, tap-through rate on "Landed" rows (do
+   people still open completed courses, e.g. to revisit the phrasebook)
+   as a secondary signal.
+   ================================================================ */
+function screenHome(){
+  const current = courses.filter(c => c.status === "active");
+  const previous = courses.filter(c => c.status === "completed");
+
+  const currentHtml = current.length
+    ? current.map(rowHtml).join("")
+    : `
+      <div class="board-empty">
+        <div class="board-empty__flap">NO ACTIVE TRIP</div>
+        <button class="btn-primary" data-action="start-course">Book a course</button>
+      </div>`;
+
+  const previousHtml = previous.length
+    ? previous.map(rowHtml).join("")
+    : `<p style="font-size:12.5px;color:var(--slate);padding:4px 2px;">Completed courses will land here.</p>`;
+
+  return `
+    <div class="section-label">Current</div>
+    ${currentHtml}
+    <div class="section-label">Previous</div>
+    ${previousHtml}
+  `;
+
+  function rowHtml(c){
+    const country = COUNTRIES[c.countryKey];
+    const statusClass = c.status === "completed" ? "status--landed" : (c.currentWeek <= 1 ? "status--boarding" : "status--progress");
+    const statusText = c.status === "completed" ? "Landed" : (c.currentWeek <= 1 ? "Boarding" : "In progress");
+    return `
+      <button class="board-row" data-action="open-course" data-course="${c.id}">
+        <span class="board-row__flag flag-icon">${FLAGS[c.countryKey]}</span>
+        <span class="board-row__mid">
+          <div class="board-row__dest">${country.name.toUpperCase()} · ${TRIP_TYPES[c.tripKey].label}</div>
+          <div class="board-row__sub">${c.status === "completed" ? "Completed · " + c.weeks + " wks" : "Week " + c.currentWeek + " of " + c.weeks}${needsFeedback(c) ? " · Feedback requested" : ""}</div>
+        </span>
+        <span class="board-row__status ${statusClass}">${statusText}</span>
+      </button>`;
+  }
+}
+
+/* ================================================================
+   SCREEN: COUNTRY PICKER
+
+   ASSUMPTION: The 6 hard-coded countries (Japan, Italy, Greece, Mexico,
+   Morocco, France) are a representative-enough sample of where early
+   testers are actually traveling to validate the "trip-scoped course"
+   concept — not an arbitrary set chosen because it looks good in a demo.
+
+   HYPOTHESIS: We believe these 6 destinations cover enough of our early
+   tester pool's actual trips that we can validate the core concept
+   without broader country coverage yet. We'll know this assumption is
+   wrong if a meaningful share of prospective testers' destinations
+   aren't on the list.
+
+   VALIDATION METRIC: During recruiting/onboarding, capture each early
+   tester's actual destination (even before they use the app) and
+   compare against this 6-country list — track % mismatch. In-app, an
+   "add a country" request tap (logged with free-text) as a lighter-
+   weight ongoing signal once testing is live.
+   ================================================================ */
+function screenCountry(){
+  return `
+    <p style="font-size:13px;color:var(--slate);margin:6px 2px 14px;">Step 1 of 2 — where are you headed? Your course will be themed around that destination.</p>
+    <div class="country-grid">
+      ${Object.entries(COUNTRIES).map(([key, c]) => `
+        <button class="country-card" data-action="select-country" data-country="${key}">
+          <span class="country-card__flag flag-icon">${FLAGS[key]}</span>
+          <span class="country-card__body">
+            <div class="country-card__name">${c.name}</div>
+            <div class="country-card__capital">${c.capital}</div>
+          </span>
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
+/* ================================================================
+   SCREEN: TRIP DETAILS
+   Chip selection updates the CTA's shown duration in place (no
+   full re-render) so the free-text notes field never loses focus
+   or content while the user is comparing trip types.
+
+   ASSUMPTION: The 6 trip-type chips capture enough of how a real trip
+   actually breaks down that trip-type alone is a sufficient signal to
+   prioritize content — without needing the free-text notes to actually
+   feed the generated course.
+
+   HYPOTHESIS: We believe users can accurately self-categorize their trip
+   into one of these 6 archetypes, rather than feeling like their trip is
+   a poor fit for all of them. We'll know this is wrong if testers
+   frequently say "none of these really describe my trip," or write notes
+   that contradict/override their chip choice.
+
+   VALIDATION METRIC: Track chip-selection hesitation — time spent on
+   this screen before selecting, and whether users change their chip
+   selection after starting to type notes (a proxy for "the chip didn't
+   feel right, so they're compensating in free text").
+   ================================================================ */
+function screenTrip(){
+  const country = COUNTRIES[draft.countryKey];
+  return `
+    <p style="font-size:13px;color:var(--slate);margin:6px 2px 14px;">Step 2 of 2 — what's the ${country.name} trip actually like? This shapes which lessons come first.</p>
+    <div class="chip-grid" id="chip-grid">
+      ${Object.entries(TRIP_TYPES).map(([key, t]) => `
+        <button class="chip" data-action="select-trip" data-trip="${key}" data-selected="false">
+          <span class="chip__label">${t.label}</span>
+          <span class="chip__weeks">${t.weeks} wks</span>
+        </button>
+      `).join("")}
+    </div>
+    <label class="field-label">When are you traveling?</label>
+    <div class="date-row">
+      <div class="date-field">
+        <label for="trip-start">Departure</label>
+        <input type="date" id="trip-start">
+      </div>
+      <div class="date-field">
+        <label for="trip-end">Return</label>
+        <input type="date" id="trip-end">
+      </div>
+    </div>
+    <div class="date-hint" id="date-hint"></div>
+    <label class="field-label" for="trip-notes">Anything else worth knowing? (optional)</label>
+    <textarea class="notes" id="trip-notes" placeholder="e.g. staying with family, mostly rural, doing a food tour on day 2..."></textarea>
+    <div class="sticky-cta">
+      <button class="btn-primary" id="trip-cta" data-action="confirm-trip" disabled>Choose a trip type above</button>
+    </div>
+  `;
+}
+
+// Trip-type chip selection and the two date inputs both gate the same CTA,
+// so this is the single place that decides its enabled/disabled state and
+// label — called from the "select-trip" click handler and from the date
+// inputs' native "change" listener (dates aren't [data-action] elements,
+// so they can't go through the click delegation below).
+function updateTripCta(){
+  const cta = document.getElementById("trip-cta");
+  if (!cta) return;
+  const hint = document.getElementById("date-hint");
+  const start = document.getElementById("trip-start").value;
+  const end = document.getElementById("trip-end").value;
+  const datesEntered = !!(start && end);
+  const datesValid = datesEntered && new Date(end) >= new Date(start);
+  if (hint){
+    hint.textContent = (datesEntered && !datesValid) ? "Return date can't be before the departure date." : "";
+    hint.dataset.tone = (datesEntered && !datesValid) ? "bad" : "";
+  }
+  if (!draft.tripKey){
+    cta.disabled = true;
+    cta.textContent = "Choose a trip type above";
+  } else if (!datesValid){
+    cta.disabled = true;
+    cta.textContent = "Add your travel dates above";
+  } else {
+    cta.disabled = false;
+    cta.textContent = `Start my ${TRIP_TYPES[draft.tripKey].weeks}-week course`;
+  }
+}
+
+/* ================================================================
+   SCREEN: GENERATING
+   The one place this prototype spends its "signature motion"
+   budget: a split-flap-style status line cycling through synthesis
+   steps, echoing the departure-board identity from the home screen,
+   before auto-advancing into the freshly generated course.
+
+   ASSUMPTION: Showing named synthesis steps ("SCANNING PHRASEBOOK,"
+   "WEIGHTING BY TRIP TYPE," etc.) builds trust that the course is
+   genuinely personalized to the user's trip — rather than reading as
+   generic loading-screen theater that users see through and discount.
+
+   HYPOTHESIS: We believe naming specific weighting/sequencing steps
+   (vs. a generic spinner) increases users' perceived personalization of
+   the resulting course. We'll know this is wrong if users can't recall
+   or don't believe the steps reflected real personalization when asked
+   afterward.
+
+   VALIDATION METRIC: Post-generation micro-survey (single question,
+   e.g. "How tailored does this course feel to your trip?" 1-5)
+   compared between a group that sees the current step-by-step flap
+   animation vs. a plain spinner control.
+   ================================================================ */
+function screenGenerating(){
+  return `
+    <div class="generating">
+      <div class="flap" id="flap-text">SCANNING PHRASEBOOK</div>
+      <div class="spinner-dots"><span></span><span></span><span></span></div>
+      <div class="generating__sub">Building your course from real, weighted phrase priority — arrival first, small talk later.</div>
+    </div>
+  `;
+}
+function runGenerating(payload){
+  const steps = ["SCANNING PHRASEBOOK", "WEIGHTING BY TRIP TYPE", "SEQUENCING 6–8 WEEKS", "PRINTING BOARDING PASS"];
+  let i = 0;
+  const el = document.getElementById("flap-text");
+  const iv = setInterval(()=>{
+    i++;
+    if (!el) { clearInterval(iv); return; }
+    if (i < steps.length){ el.textContent = steps[i]; }
+  }, 420);
+  setTimeout(()=>{
+    clearInterval(iv);
+    finalizeCourse(payload);
+  }, 420 * steps.length + 250);
+}
+
+// Departure/return dates are captured on the trip details step
+// (screenTrip) and stored here so `needsFeedback` (below `screenDashboard`)
+// can check-on-render whether the trip has actually happened yet — see
+// PRD §14. `weeks`/pacing still comes from the trip-type default, not from
+// the date range (see PRD §10 open question — that's still unresolved).
+function finalizeCourse(payload){
+  const course = {
+    id: "c" + Date.now(),
+    countryKey: payload.countryKey,
+    tripKey: payload.tripKey,
+    weeks: TRIP_TYPES[payload.tripKey].weeks,
+    currentWeek: 1,
+    status: "active",
+    notes: payload.notes || "",
+    travelStart: payload.startDate,
+    travelEnd: payload.endDate,
+    feedbackSubmitted: false,
+    feedback: null
+  };
+  courses.unshift(course);
+  // Replace the generating screen in-place (don't leave it in back-stack)
+  stack.pop();
+  push("dashboard", { course });
+}
+
+// Check-on-render rather than a scheduled push notification (this
+// prototype has no background/server component to run a scheduled job
+// from) — called wherever a course is displayed, so the moment a user
+// opens the app after their return date, the prompt is already there.
+function tripEnded(course){
+  return !!course.travelEnd && new Date(course.travelEnd) < new Date();
+}
+function needsFeedback(course){
+  return tripEnded(course) && !course.feedbackSubmitted;
+}
+
+/* ================================================================
+   SCREEN: DASHBOARD
+
+   ASSUMPTION: Progressive unlock (future weeks locked until the prior
+   week is marked complete) is read by users as helpful pacing/focus,
+   not as an artificial gate that frustrates people who want to skim
+   ahead or binge content before their trip.
+
+   HYPOTHESIS: We believe locking future weeks increases actual lesson
+   completion (vs. exposing the whole syllabus at once and letting
+   people jump around), because it keeps users focused on one thing at
+   a time rather than skimming and losing momentum. We'll know this is
+   wrong if a meaningful share of testers tap locked weeks repeatedly
+   (frustration signal), or say in feedback that they wanted to preview
+   later content.
+
+   VALIDATION METRIC: Tap-on-locked-week event rate (how often users
+   try to open something that's locked) as a frustration proxy, plus a
+   completion-rate comparison if/when we A/B against an
+   unlocked-all-weeks variant.
+   ================================================================ */
+function applyFlagVars(container, colours){
+  container.style.setProperty("--flag-primary", colours.primary);
+  container.style.setProperty("--flag-secondary", colours.secondary);
+  container.style.setProperty("--flag-tertiary", colours.tertiary);
+}
+
+function screenDashboard(payload){
+  const c = payload.course;
+  const country = COUNTRIES[c.countryKey];
+  const trip = TRIP_TYPES[c.tripKey];
+  const weeks = syllabus(c.tripKey);
+  const doneCount = c.status === "completed" ? c.weeks : Math.max(0, c.currentWeek - 1);
+  const pct = Math.round((doneCount / c.weeks) * 100);
+
+  const weekRows = weeks.map((week, idx) => {
+    const num = idx + 1;
+    const built = num <= 3; // weeks 1-3 have real lesson content in this prototype
+    const done = c.status === "completed" || num < c.currentWeek;
+    const locked = !built || (c.status !== "completed" && num > c.currentWeek);
+    const statusTag = locked ? (built ? "Upcoming" : "Preview only") : (done ? "Review" : "Start");
+    return `
+      <button class="week-row" data-action="${locked ? "" : "open-lesson"}" data-week="${num}" data-locked="${locked}">
+        <span class="week-row__num" data-done="${done}">${done ? "✓" : num}</span>
+        <span class="week-row__title">${week.title}</span>
+        <span class="week-row__tag">${week.type} · ${statusTag}</span>
+      </button>`;
+  }).join("");
+
+  return `
+    <div class="ticket" id="ticket">
+      <div class="ticket__stripe">
+        <span style="background:${country.colours.primary}"></span>
+        <span style="background:${country.colours.secondary}"></span>
+        <span style="background:${country.colours.tertiary}"></span>
+      </div>
+      <div class="ticket__eyebrow">${trip.label} · ${country.capital}</div>
+      <div class="ticket__title"><span class="flag-icon ticket__flag">${FLAGS[c.countryKey]}</span>${country.name}</div>
+      <div class="ticket__meta">
+        <div><b>${c.weeks}</b><small>Weeks total</small></div>
+        <div><b>${c.status === "completed" ? c.weeks : c.currentWeek}</b><small>${c.status === "completed" ? "Completed" : "Current week"}</small></div>
+      </div>
+      <div class="ticket__progress">
+        <div class="ticket__progress-track"><div class="ticket__progress-fill" style="width:${pct}%"></div></div>
+        <div class="ticket__progress-label">${pct}% trip-ready</div>
+      </div>
+      ${c.status === "completed" ? `<button class="ticket__cta" data-action="open-phrasebook">View offline phrasebook</button>` : ""}
+      ${needsFeedback(c) ? `<button class="ticket__cta" data-action="open-feedback">Share trip feedback</button>` : ""}
+    </div>
+
+    <div class="culture-card">
+      <div class="culture-card__label">Know before you go</div>
+      <div class="culture-card__body">${country.cultureTip}</div>
+    </div>
+
+    <div class="section-label" style="margin-top:20px;">Your syllabus</div>
+    <div class="week-list">${weekRows}</div>
+  `;
+}
+
+/* ================================================================
+   SCREEN: PHRASEBOOK
+   Only reachable from a COMPLETED course's dashboard (see the
+   `ticket__cta` button in screenDashboard) — see PRD §13 for why this
+   is gated to completion rather than available mid-course. Compiles
+   every phrase this course ever taught (main bank + transport bank)
+   plus the etiquette/culture notes into one offline-style reference.
+   The "Download" button is a deliberate stub: it shows a toast rather
+   than producing a file, same pattern as the disabled tab-bar items.
+
+   ASSUMPTION: Framing the phrasebook as a "you finished, here's your
+   reward" artefact (completed-only) drives more course completion than
+   treating it as a progressively-unlocked utility would — i.e.,
+   withholding it is a completion incentive, not just a
+   scope-simplification.
+
+   HYPOTHESIS: We believe gating the phrasebook to completed courses
+   increases the likelihood users finish all weeks, vs. a partial
+   phrasebook available mid-course (which might let people feel "done
+   enough" after grabbing the phrases they want). We'll know this is
+   wrong if testers report they wanted the phrasebook mid-course and it
+   becomes an abandonment trigger rather than a completion driver.
+
+   VALIDATION METRIC: In-course intent signal — track how often (and at
+   what week) users try to reach a phrasebook/reference view before
+   it's unlocked, if we instrument an in-app "view phrasebook" attempt
+   from the locked dashboard state; compare completion rate
+   qualitatively via exit surveys for users who drop off before
+   finishing.
+   ================================================================ */
+function screenPhrasebook(payload){
+  const c = payload.course;
+  const country = COUNTRIES[c.countryKey];
+  const trip = TRIP_TYPES[c.tripKey];
+
+  return `
+    <div class="ticket" id="ticket">
+      <div class="ticket__stripe">
+        <span style="background:${country.colours.primary}"></span>
+        <span style="background:${country.colours.secondary}"></span>
+        <span style="background:${country.colours.tertiary}"></span>
+      </div>
+      <div class="ticket__eyebrow">Offline phrasebook · ${country.capital}</div>
+      <div class="ticket__title"><span class="flag-icon ticket__flag">${FLAGS[c.countryKey]}</span>${country.name}</div>
+      <button class="ticket__cta" data-action="download-phrasebook">Download for offline use</button>
+    </div>
+
+    <p class="lesson-intro">Every phrase and etiquette tip from your ${trip.label.toLowerCase()} course, in one place — no signal needed once it's downloaded.</p>
+
+    <div class="section-label">Essentials</div>
+    <div class="vocab-grid">
+      ${country.phrases.map(vocabCardHtml).join("")}
+    </div>
+
+    <div class="section-label" style="margin-top:20px;">Getting around</div>
+    <div class="vocab-grid">
+      ${country.transport.phrases.map(vocabCardHtml).join("")}
+    </div>
+
+    <div class="culture-card" style="margin-top:20px;">
+      <div class="culture-card__label">Good to know</div>
+      <div class="culture-card__body">${country.cultureTip}</div>
+      <ul class="etiquette-list" style="margin-top:10px;">
+        ${country.transport.etiquette.map(item => `<li>${item}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+/* ================================================================
+   SCREEN: FEEDBACK
+   Only reachable once `needsFeedback` is true (the dashboard ticket CTA
+   and the home board row both surface it — see PRD §14) — i.e. the
+   trip's return date has already passed and no feedback has been
+   submitted yet. Deliberately independent of lesson-completion status:
+   a course that stalled at week 2 still had a real trip happen, and
+   that's arguably the more useful feedback to collect, not less.
+
+   ASSUMPTION: A 1-5 NPS-style scale plus a single yes/no question about
+   culture/etiquette content specifically (see PRD §7 comment on
+   `buildTransportQuiz`) is enough signal to test the PRD §9 hypothesis,
+   without needing a longer post-trip survey that risks a lower response
+   rate.
+
+   VALIDATION METRIC: Feedback-prompt response rate (submitted vs. ever
+   shown), and the culture Y/N split specifically, benchmarked against
+   overall NPS — if culture "yes" doesn't correlate with a higher score,
+   that undercuts the "culture is a real differentiator" bet from PRD §4.
+   ================================================================ */
+function screenFeedback(payload){
+  feedbackDraft = { score:null, cultureHelped:null };
+  const c = payload.course;
+  const country = COUNTRIES[c.countryKey];
+
+  return `
+    <p style="font-size:13px;color:var(--slate);margin:6px 2px 14px;">Your ${country.name} trip has wrapped up — a couple of quick questions while it's fresh.</p>
+
+    <label class="field-label" style="margin-top:6px;">How likely are you to recommend Holaday to a friend planning a similar trip?</label>
+    <div class="feedback-scale" id="feedback-scale">
+      ${[1,2,3,4,5].map(n => `<button data-action="feedback-score" data-score="${n}" data-selected="false">${n}</button>`).join("")}
+    </div>
+    <div class="feedback-scale-labels"><span>Not likely</span><span>Very likely</span></div>
+
+    <label class="field-label">Did anything you learned about local customs or etiquette come in useful on the trip?</label>
+    <div class="feedback-yn" id="feedback-culture">
+      <button data-action="feedback-culture" data-value="yes" data-selected="false">Yes</button>
+      <button data-action="feedback-culture" data-value="no" data-selected="false">No</button>
+    </div>
+
+    <label class="field-label" for="feedback-notes">Anything else worth telling us? (optional)</label>
+    <textarea class="notes" id="feedback-notes" placeholder="e.g. wish there'd been more on tipping, the transport lesson saved me on day one..."></textarea>
+
+    <div class="sticky-cta">
+      <button class="btn-primary" id="feedback-cta" data-action="submit-feedback" disabled>Rate your trip above</button>
+    </div>
+  `;
+}
+
+function updateFeedbackCta(){
+  const cta = document.getElementById("feedback-cta");
+  if (!cta) return;
+  if (feedbackDraft.score){
+    cta.disabled = false;
+    cta.textContent = "Submit feedback";
+  }
+}
+
+/* ================================================================
+   SCREEN: LESSON
+   A lesson is now a sequence of one-question-per-page screens (see PRD
+   §11a) — `payload.stepIndex` picks which beat of `buildLessonBeats`
+   to show, each pushed as its own stack entry. There's no separate
+   "read the content, then get quizzed on it" split any more: every
+   page IS a scenario-framed question, mixing three styles so the
+   lesson doesn't feel like the same drill five times in a row:
+     "produce"     -> "How do you say X?" (recall the local phrase)
+     "comprehend"  -> a local phrase is quoted -> "what did they say?"
+     "symbol"      -> a sign/icon is shown -> "what does it mean?"
+     "situational" -> week 3 only, "what would you do?" judgement call
+   Weeks 1-2 are phrase lessons: "Airport & Arrival Essentials" always
+   uses phrases 0-3 of the country's bank, and week 2's title is
+   trip-type-flavoured but reuses phrases 4-7 of the same bank — see
+   PRD §7 for why (36 hand-authored phrase sets isn't worth it for a
+   prototype). Week 3 is always a distinct CULTURE lesson — Public
+   Transport — with its own bespoke per-country beat plan (see each
+   country's `transport.beatPlan` above) rather than more vocab, so the
+   "etiquette is first-class" claim in PRD §4 is actually demonstrated,
+   not just asserted. The last beat of every lesson still gates
+   "Mark lesson complete" the same way regardless of lesson type.
+   ================================================================ */
+function vocabCardHtml(p){
+  return `
+    <div class="vocab-card">
+      <div class="vocab-card__en">${p.en}</div>
+      <div class="vocab-card__local">${p.local}</div>
+      <div class="vocab-card__translit">${p.translit}</div>
+    </div>`;
+}
+
+function lessonMeta(week, country, trip){
+  if (week === 3) return { title:"Public Transport & Getting Around", type:"Culture lesson" };
+  if (week === 1) return { title:"Airport & Arrival Essentials", type:"Phrase lesson" };
+  return { title:trip.lesson2, type:"Phrase lesson" };
+}
+
+/* ----- beat construction -----
+   makeQuestion builds the shuffled options/correctIndex for any MCQ;
+   produceBeat/comprehendBeat turn one phrase-bank entry into a
+   translate-out or translate-in question; symbolBeat/situationalBeat
+   wrap hand-authored content (icons, "what would you do" scenarios)
+   into the same beat shape so screenLesson/renderBeat don't need to
+   care which kind they're looking at. */
+function makeQuestion(promptText, correctText, distractorTexts){
+  const options = shuffle([correctText, ...distractorTexts]);
+  return { q: promptText, options, correctIndex: options.indexOf(correctText) };
+}
+function produceBeat(phraseBank, index, context, distractorCount){
+  const p = phraseBank[index];
+  const pool = phraseBank.filter((_, i) => i !== index);
+  const distractors = shuffle(pool).slice(0, distractorCount).map(x => x.local);
+  const mq = makeQuestion(`How do you say "${p.en}"?`, p.local, distractors);
+  return { kind:"produce", context, ...mq };
+}
+function comprehendBeat(phraseBank, index, context, question, distractorCount){
+  const p = phraseBank[index];
+  const pool = phraseBank.filter((_, i) => i !== index);
+  const distractors = shuffle(pool).slice(0, distractorCount).map(x => x.en);
+  const mq = makeQuestion(question, p.en, distractors);
+  return { kind:"comprehend", context, heard:p.local, ...mq };
+}
+function symbolBeat(context, symbol, question, correct, distractors){
+  const mq = makeQuestion(question, correct, distractors);
+  return { kind:"symbol", context, symbol, ...mq };
+}
+function situationalBeat(scenario, context){
+  const distractors = scenario.options.filter((_, i) => i !== scenario.correctIndex);
+  const mq = makeQuestion(scenario.q, scenario.options[scenario.correctIndex], distractors);
+  return { kind:"situational", context, ...mq };
+}
+
+// Turns a beat-plan descriptor (see ARRIVAL_BEAT_PLAN / EXPLORE_BEAT_PLAN
+// / each country's transport.beatPlan) into an actual beat object with
+// computed MCQ options. `phraseBank` + `distractorCount` differ between
+// the 8-phrase country bank (7 other entries to pull distractors from)
+// and the 3-phrase transport bank (only 2 others), so both are passed
+// in rather than hard-coded.
+function buildBeat(entry, phraseBank, distractorCount, scenario){
+  switch (entry.kind){
+    case "produce": return produceBeat(phraseBank, entry.phraseIndex, entry.context, distractorCount);
+    case "comprehend": return comprehendBeat(phraseBank, entry.phraseIndex, entry.context, entry.question, distractorCount);
+    case "symbol": return symbolBeat(entry.context, entry.symbol, entry.question, entry.correct, entry.distractors);
+    case "situational": return situationalBeat(scenario, entry.context);
+  }
+}
+
+function buildLessonBeats(country, trip, week){
+  if (week === 3){
+    const t = country.transport;
+    return t.beatPlan.map(entry => buildBeat(entry, t.phrases, 2, t.scenario));
+  }
+  const plan = week === 1 ? ARRIVAL_BEAT_PLAN : EXPLORE_BEAT_PLAN;
+  return plan.map(entry => buildBeat(entry, country.phrases, 2));
+}
+
+function renderBeat(beat){
+  const visual = beat.kind === "symbol"
+    ? `<div class="beat-symbol"><span class="beat-symbol__icon">${SYMBOLS[beat.symbol]}</span></div>`
+    : beat.kind === "comprehend"
+    ? `<div class="beat-heard">"${beat.heard}"</div>`
+    : "";
+  return `
+    <div class="beat-card">
+      <div class="beat-card__context">${beat.context}</div>
+      ${visual}
+      <div class="beat-card__question">${beat.q}</div>
+      ${beat.options.map((opt, oi) => `<button class="quiz__opt" data-action="beat-answer" data-choice-index="${oi}">${opt}</button>`).join("")}
+      <div class="quiz__feedback" id="beat-feedback"></div>
+    </div>
+  `;
+}
+
+function screenLesson(payload){
+  const c = payload.course;
+  const country = COUNTRIES[c.countryKey];
+  const trip = TRIP_TYPES[c.tripKey];
+  const week = payload.week;
+  const stepIndex = payload.stepIndex || 0;
+  const meta = lessonMeta(week, country, trip);
+  const beats = buildLessonBeats(country, trip, week);
+  const total = beats.length;
+  const isLast = stepIndex + 1 >= total;
+
+  currentBeat = beats[stepIndex];
+  beatResult = null;
+  const pct = Math.round((stepIndex / total) * 100);
+
+  return `
+    <div class="lesson-hero" id="lesson-hero">
+      <div class="lesson-hero__eyebrow">Week ${week} · ${country.name} · ${meta.type}</div>
+      <div class="lesson-hero__title">${meta.title}</div>
+    </div>
+
+    <div class="beat-progress">
+      <div class="beat-progress__track"><div class="beat-progress__fill" style="width:${pct}%"></div></div>
+      <div class="beat-progress__label">Question ${stepIndex + 1} of ${total}</div>
+    </div>
+
+    ${renderBeat(currentBeat)}
+
+    <div class="lesson-cta">
+      <button class="btn-primary" id="beat-continue-btn" data-action="beat-continue" data-week="${week}" data-final="${isLast}" disabled>Answer to continue</button>
+    </div>
+  `;
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ================================================================
+   RENDER DISPATCH
+   ================================================================ */
+const SCREENS = {
+  home: screenHome,
+  country: screenCountry,
+  trip: screenTrip,
+  generating: screenGenerating,
+  dashboard: screenDashboard,
+  lesson: screenLesson,
+  phrasebook: screenPhrasebook,
+  feedback: screenFeedback
+};
+
+function render(){
+  const top = stack[stack.length - 1];
+  renderAppBar(top);
+  const app = document.getElementById("app");
+  app.innerHTML = SCREENS[top.name](top.payload);
+  app.scrollTop = 0;
+
+  // Flag vars are set on #app (the shared ancestor of every element on the
+  // screen) rather than on a single card, so every descendant that reads
+  // var(--flag-*) — ticket, week rows, culture card, vocab cards, quiz —
+  // picks up the same theme via normal CSS inheritance.
+  if (top.name === "dashboard" || top.name === "lesson" || top.name === "phrasebook") applyFlagVars(app, COUNTRIES[top.payload.course.countryKey].colours);
+  if (top.name === "generating") runGenerating(top.payload);
+
+  // keep tab bar's active state honest — Trips is the only implemented tab
+  document.querySelectorAll(".tabbar__item").forEach(el => el.dataset.active = (el.dataset.action === "go-home") ? "true" : "false");
+}
+
+/* ================================================================
+   EVENT DELEGATION
+   A single click listener on #app (plus one on the static chrome)
+   keyed off data-action, so re-rendering a screen never orphans
+   listeners the way many inline onclick rebuilds can.
+   ================================================================ */
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-action]");
+  if (!el) return;
+  const action = el.dataset.action;
+
+  switch (action){
+    case "back": pop(); break;
+    case "go-home": resetToHome(); break;
+    case "stub-tab": showToast("Not in this prototype — see PRD §8"); break;
+
+    case "start-course":
+      draft = { countryKey:null, tripKey:null };
+      push("country");
+      break;
+
+    case "select-country":
+      draft.countryKey = el.dataset.country;
+      push("trip");
+      break;
+
+    case "select-trip": {
+      draft.tripKey = el.dataset.trip;
+      document.querySelectorAll(".chip").forEach(chip => chip.dataset.selected = (chip.dataset.trip === draft.tripKey) ? "true" : "false");
+      updateTripCta();
+      break;
+    }
+
+    case "confirm-trip": {
+      const notes = document.getElementById("trip-notes").value.trim();
+      const startDate = document.getElementById("trip-start").value;
+      const endDate = document.getElementById("trip-end").value;
+      push("generating", { countryKey: draft.countryKey, tripKey: draft.tripKey, notes, startDate, endDate });
+      break;
+    }
+
+    case "open-course": {
+      const course = courses.find(c => c.id === el.dataset.course);
+      push("dashboard", { course });
+      break;
+    }
+
+    case "open-phrasebook": {
+      const top = stack[stack.length - 1];
+      push("phrasebook", { course: top.payload.course });
+      break;
+    }
+
+    case "download-phrasebook":
+      showToast("Download isn't wired up in this prototype");
+      break;
+
+    case "open-feedback": {
+      const top = stack[stack.length - 1];
+      push("feedback", { course: top.payload.course });
+      break;
+    }
+
+    case "feedback-score": {
+      feedbackDraft.score = Number(el.dataset.score);
+      document.querySelectorAll("#feedback-scale button").forEach(b => b.dataset.selected = (Number(b.dataset.score) === feedbackDraft.score) ? "true" : "false");
+      updateFeedbackCta();
+      break;
+    }
+
+    case "feedback-culture": {
+      feedbackDraft.cultureHelped = el.dataset.value;
+      document.querySelectorAll("#feedback-culture button").forEach(b => b.dataset.selected = (b.dataset.value === feedbackDraft.cultureHelped) ? "true" : "false");
+      break;
+    }
+
+    case "submit-feedback": {
+      const top = stack[stack.length - 1];
+      const course = top.payload.course;
+      course.feedbackSubmitted = true;
+      course.feedback = {
+        score: feedbackDraft.score,
+        cultureHelped: feedbackDraft.cultureHelped,
+        notes: document.getElementById("feedback-notes").value.trim()
+      };
+      showToast("Thanks for sharing your trip feedback");
+      pop();
+      break;
+    }
+
+    case "open-lesson": {
+      const top = stack[stack.length - 1];
+      push("lesson", { course: top.payload.course, week: Number(el.dataset.week), stepIndex:0 });
+      break;
+    }
+
+    case "beat-answer": {
+      if (beatResult) return; // one attempt per question, like a real check
+      const choiceIndex = Number(el.dataset.choiceIndex);
+      const isCorrect = choiceIndex === currentBeat.correctIndex;
+      beatResult = { choiceIndex, isCorrect };
+
+      el.closest(".beat-card").querySelectorAll(".quiz__opt").forEach((opt, oi) => {
+        if (oi === currentBeat.correctIndex) opt.dataset.state = "correct";
+        else if (oi === choiceIndex) opt.dataset.state = "wrong";
+      });
+      const feedback = document.getElementById("beat-feedback");
+      if (isCorrect){
+        feedback.textContent = "Correct — nicely done.";
+        feedback.dataset.tone = "good";
+      } else {
+        feedback.textContent = `Not quite — it's "${currentBeat.options[currentBeat.correctIndex]}".`;
+        feedback.dataset.tone = "bad";
+      }
+      const btn = document.getElementById("beat-continue-btn");
+      btn.disabled = false;
+      btn.textContent = btn.dataset.final === "true" ? "Mark lesson complete" : "Next question";
+      break;
+    }
+
+    case "beat-continue": {
+      if (!beatResult) return; // gated: see beat-answer
+      const top = stack[stack.length - 1];
+      const { course, week, stepIndex } = top.payload;
+      const country = COUNTRIES[course.countryKey];
+      const trip = TRIP_TYPES[course.tripKey];
+      const total = buildLessonBeats(country, trip, week).length;
+
+      if (stepIndex + 1 < total){
+        push("lesson", { course, week, stepIndex: stepIndex + 1 });
+        break;
+      }
+      if (course.currentWeek === week && course.currentWeek < course.weeks){
+        course.currentWeek += 1;
+      } else if (course.currentWeek === week && course.currentWeek === course.weeks){
+        course.status = "completed";
+      }
+      showToast("Lesson complete");
+      // A lesson is now a stack of one-question-per-page beats — drop all
+      // of them to land back on the dashboard, not just the last one.
+      while (stack.length && stack[stack.length - 1].name === "lesson") stack.pop();
+      render();
+      break;
+    }
+  }
+});
+
+// Date inputs aren't [data-action] elements and fire "change", not
+// "click", so they need their own listener outside the delegation above.
+document.addEventListener("change", (e) => {
+  if (e.target.id === "trip-start" || e.target.id === "trip-end") updateTripCta();
+});
+
+render();
+</script>
+</body>
+</html>
