@@ -280,12 +280,30 @@ and the home board row appends "Feedback requested" to the row subtitle, so
 the prompt is visible wherever the course already surfaces rather than
 interrupting with a separate notification.
 
-The seed course (`seed-1`) is given a `travelEnd` in the past specifically
-so this prototype demonstrates the feedback CTA without requiring a tester
-to build a whole new course with backdated travel — the date inputs don't
-restrict picking a past date for exactly this reason (a real build would
-likely disallow a return date before departure, which this prototype does
-validate, but wouldn't otherwise constrain the range).
+This prototype now starts with no seed/demo course (see STATE below) — to
+see the feedback CTA, generate a course and pick a return date in the past;
+the date inputs don't restrict picking a past date for exactly this reason
+(a real build would likely disallow a return date before departure, which
+this prototype does validate, but wouldn't otherwise constrain the range).
+
+15. ADMIN / CONTENT AUTHORING — PLANNED, NOT YET BUILT
+--------------------------------------------------------------------------------
+Everything below this line still describes the TRAVELER-facing prototype
+only. This file has no admin/content-authoring surface yet — every country,
+phrase, beat plan, and trip type is a hardcoded JS literal maintained by
+hand, not authored/reviewed/published content.
+
+See ADMIN-CONTENT-PLAN.md (repo root) for the full design: a content
+hierarchy of Phrase -> Question -> Lesson -> Module -> Trip Type Blueprint,
+each with its own Draft -> In Review -> Approved -> Published lifecycle
+(Author vs. Approver roles); a reusable content library so a Question like
+"how do you say hello" is authored once and attached to many Lessons
+instead of re-embedded per lesson; and a Blueprint concept where a course
+is a series of named "Legs" (e.g. Leg 1: Slightly Scared Tourist, Leg 2:
+Confident Traveller) that repeat the same core themes at increasing
+difficulty/length rather than a flat one-topic-per-week list. Search this
+file for "TODO(admin)" for where each piece of that plan lands in the
+current code.
 
 --------------------------------------------------------------------------------
  The rest of the comments in this file are scoped to the section they sit
@@ -780,6 +798,20 @@ validate, but wouldn't otherwise constrain the range).
 
   <main id="app"></main>
 
+  <!--
+    TODO(admin): As a content author or approver, I need an entry point into
+    the admin surface (Lesson/Module/Blueprint builders + review queue).
+    DEMO-ONLY decision: for now this lives in THIS file as new stack screens
+    (see ADMIN-CONTENT-PLAN.md §10), so we can nail down the feature set in
+    one place. Needs: a way in (e.g. a 4th tab here, or a hidden entry point
+    since this tab bar is otherwise traveler-facing), a simple Author/
+    Approver role toggle standing in for real auth, and admin screens
+    rendered full-width (the 400px phone frame below is a poor fit for
+    review-queue tables/diffs — see the @media (min-width: 640px) rule).
+    NOT the intended end state: the real admin surface should be its own
+    separate app, optimised for desktop/laptop, not a mode bolted onto this
+    mobile traveler app or shipped in the same bundle.
+  -->
   <div class="tabbar">
     <button class="tabbar__item" data-active="true" data-action="go-home"><span>Trips</span></button>
     <button class="tabbar__item" disabled data-action="stub-tab"><span>Explore</span></button>
@@ -815,6 +847,13 @@ const FLAGS = {
    screens are credible on their own, not just structurally present.
    In production this bank would come from a curated content DB,
    not a JS literal — see PRD §7.
+
+   TODO(admin): As a content author, I need `phrases` and
+   `transport.phrases` to be rows in one addressable Phrase table
+   (`{ id, countryKey, en, local, translit, tags[] }`) instead of
+   position-indexed arrays, so a single Phrase can be looked up and
+   reused by ID from multiple Questions/Lessons rather than duplicated
+   per lesson. See ADMIN-CONTENT-PLAN.md §2/§7.
    ================================================================ */
 const COUNTRIES = {
   japan: {
@@ -1065,6 +1104,18 @@ const COUNTRIES = {
 // EXPLORE_BEAT_PLAN below) — it's the one place trip-type flavour shows
 // up, since the underlying phrases (bathroom/price/don't-understand/
 // cheers) are shared across every trip type.
+//
+// TODO(admin): As a content author, I need to define each Trip Type as a
+// Blueprint: an ordered list of named Legs (e.g. Leg 1 "Slightly Scared
+// Tourist", Leg 2 "Confident Traveller"), each with a `blurb` (traveler-
+// facing, written from the holiday-excitement angle, not the lesson
+// angle) and a `moduleGate` (which Modules are included at this Leg and
+// at what Tier — the part the generator actually reads). This replaces
+// the flat `weeks` count below: total duration becomes the sum of each
+// Leg's length, and later Legs repeat the same core Modules at a harder
+// Tier rather than introducing all-new topics. As an approver, I need
+// Leg `blurb` copy quality to be a real review criterion, not skippable
+// polish. See ADMIN-CONTENT-PLAN.md §5/§8.
 const TRIP_TYPES = {
   city:      { label:"City Break",          weeks:6, lesson2:"Getting Around Like a Local",
                exploreIntro:(name)=>`You've ditched the guidebook for a wander through ${name} — the afternoon usually goes something like this.` },
@@ -1098,6 +1149,18 @@ const TRIP_TYPES = {
 // context flexes per country (week 1) or trip type (week 2). Week 3 is
 // bespoke per country: see `beatPlan` on each country's `transport`
 // object above, built into beats by `buildLessonBeats` below.
+//
+// TODO(admin): As a content author, each entry below (and each country's
+// `transport.beatPlan`) should be an authored Question
+// (`{ id, kind, phraseId, context, tags[] }`) referenced by ID from a
+// Lesson, not a plan entry keyed by array position (`phraseIndex`) baked
+// into one hardcoded plan. This is the concrete "reuse" gap: today
+// nothing stops the same produce-question being wanted in two different
+// Lessons, but there's no library to pull it from — an author has to
+// know it already exists and copy the entry. As an author building a new
+// Lesson, I need to search existing Questions (by country/kind/tag) and
+// attach one by reference before falling back to authoring a new one.
+// See ADMIN-CONTENT-PLAN.md §2/§3/§7.
 // ================================================================
 const ARRIVAL_BEAT_PLAN = [
   { kind:"produce", phraseIndex:0, context:"You step up to passport control." },
@@ -1135,6 +1198,17 @@ const SYMBOLS = {
 // the whole course on day one. Week 3 is always the "culture" lesson
 // (Public Transport) rather than another phrase drill, so every course
 // proves out the etiquette/customs side of the product, not just vocab.
+//
+// TODO(admin): This whole hardcoded 8-entry array is what a Blueprint (see
+// TRIP_TYPES TODO above) should generate instead. As a traveler, the
+// syllabus I see should come from resolving my Trip Type's published
+// Blueprint — walking its Legs, and within each Leg pulling the published
+// Lesson at the right Tier for each gated Module — against the country
+// I'm traveling to, not slicing a fixed array by week count. As a content
+// author, I need a "dry-run" preview (reusing screenDashboard's rendering,
+// see that TODO below) that runs this same resolution against my Draft
+// Blueprint for a chosen country, so I can see the real Leg-by-Leg
+// syllabus before submitting for review. See ADMIN-CONTENT-PLAN.md §5.
 function syllabus(tripKey){
   const t = TRIP_TYPES[tripKey];
   const all = [
@@ -1152,15 +1226,19 @@ function syllabus(tripKey){
 
 /* ================================================================
    STATE
-   `courses` seeds with one already-completed course so the home
-   screen demonstrates BOTH states (current + previous) without
-   requiring the user to run the flow twice. `stack` is a simple
-   screen history so the app-bar back button works generically
-   across every screen instead of being special-cased per screen.
+   `courses` starts empty — no seed/demo data — so the home screen
+   always reflects only what the current session's user has actually
+   generated. `stack` is a simple screen history so the app-bar back
+   button works generically across every screen instead of being
+   special-cased per screen.
+
+   TODO(admin): As a traveler, each course object here needs
+   `currentLeg` / `totalLegs` / `legName` alongside the existing
+   `currentWeek`/`weeks` (total weeks still matters for pacing against
+   the travel date — see finalizeCourse TODO below for where these get
+   set). See ADMIN-CONTENT-PLAN.md §9.
    ================================================================ */
-let courses = [
-  { id:"seed-1", countryKey:"italy", tripKey:"food", weeks:7, currentWeek:7, status:"completed", notes:"Anniversary trip — Rome then the Amalfi coast.", travelStart:"2026-05-01", travelEnd:"2026-05-10", feedbackSubmitted:false, feedback:null }
-];
+let courses = [];
 let draft = { countryKey:null, tripKey:null };
 let stack = [{ name:"home" }];
 // Post-trip feedback form state — rebuilt every time the feedback screen
@@ -1266,6 +1344,12 @@ function screenHome(){
     ${previousHtml}
   `;
 
+  // TODO(admin): As a traveler, I want this row's subtitle to read "Leg 2
+  // of 3 · Lesson 2 of 4" instead of "Week 4 of 7", once courses carry
+  // currentLeg/totalLegs/legName (see STATE and finalizeCourse TODOs
+  // above) — the Home board is the other place progression should be
+  // legible at a glance, not just inside the dashboard. See
+  // ADMIN-CONTENT-PLAN.md §9.
   function rowHtml(c){
     const country = COUNTRIES[c.countryKey];
     const statusClass = c.status === "completed" ? "status--landed" : (c.currentWeek <= 1 ? "status--boarding" : "status--progress");
@@ -1454,6 +1538,15 @@ function runGenerating(payload){
 // can check-on-render whether the trip has actually happened yet — see
 // PRD §14. `weeks`/pacing still comes from the trip-type default, not from
 // the date range (see PRD §10 open question — that's still unresolved).
+//
+// TODO(admin): This is where a real build resolves the traveler's Trip
+// Type's *published* Blueprint (not `TRIP_TYPES[key].weeks` directly) into
+// this course: set `currentLeg`/`totalLegs`/`legName` from the Blueprint's
+// first Leg, and derive `weeks` from the sum of every Leg's length rather
+// than a flat per-trip-type constant. Also pin a `templateVersion` (the
+// Blueprint version resolved right now) on the course object, so
+// publishing a newer Blueprint later doesn't retroactively change the
+// syllabus of a trip already in progress. See ADMIN-CONTENT-PLAN.md §6/§9.
 function finalizeCourse(payload){
   const course = {
     id: "c" + Date.now(),
@@ -1505,6 +1598,24 @@ function needsFeedback(course){
    try to open something that's locked) as a frustration proxy, plus a
    completion-rate comparison if/when we A/B against an
    unlocked-all-weeks variant.
+
+   TODO(admin): As a traveler, I want to see this course presented as a
+   series of named Legs, not one flat week list, so progression actually
+   feels like something (see ADMIN-CONTENT-PLAN.md §8/§9). Concretely:
+     - Ticket stats: swap/add "Leg n of N" as the primary stat, keep total
+       weeks as a secondary stat for trip-date pacing.
+     - Week-list becomes Leg-grouped: reuse the existing `.section-label`
+       pattern as Leg headers (e.g. "LEG 1 — SLIGHTLY SCARED TOURIST"),
+       with each Leg's rows locked until the prior Leg is fully complete
+       (not just the prior week).
+     - A dedicated Leg-complete moment (distinct from the generic "Lesson
+       complete" toast in the beat-continue handler below) that pairs the
+       functional unlock with the Leg's `blurb` copy — e.g. "Leg 1
+       complete — you can order food, ask directions, and get through an
+       airport without panicking. Confident Traveller starts now."
+     - Recommended default: Leg 1 complete = "trip-ready" floor, later
+       Legs framed as optional sharpening before departure (open call,
+       see plan §9/§11).
    ================================================================ */
 function applyFlagVars(container, colours){
   container.style.setProperty("--flag-primary", colours.primary);
@@ -1851,6 +1962,15 @@ function shuffle(arr){
 
 /* ================================================================
    RENDER DISPATCH
+
+   TODO(admin): DEMO-ONLY — for this prototype phase, register new admin
+   screens here (e.g. admin-lessons, admin-modules, admin-blueprints,
+   admin-review) rather than building a separate app, so the Lesson/
+   Module/Blueprint-creation and approval flows can be validated in one
+   file (see ADMIN-CONTENT-PLAN.md §10). This is explicitly a shortcut:
+   the real admin surface should be its own separate app, optimised for
+   desktop/laptop, not more entries added to this mobile traveler app's
+   dispatch table long-term.
    ================================================================ */
 const SCREENS = {
   home: screenHome,
