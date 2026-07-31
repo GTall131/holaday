@@ -773,6 +773,123 @@ current code.
     display:inline-flex; align-items:center; gap:6px; font-family: var(--font-mono);
     font-size:11px; color: var(--green-ok); font-weight:700; margin-top:10px;
   }
+
+  /* ============================================================
+     ADMIN SURFACE (demo-phase shortcut — see ADMIN-CONTENT-PLAN.md
+     §10). Same ink/paper/amber tokens as the traveler app, but the
+     400px phone frame is a poor fit for review queues and forms, so
+     the frame widens and the status bar disappears whenever the top
+     of the stack is an admin-* screen (see .app-shell.is-admin,
+     toggled in render()).
+     ============================================================ */
+  @media (min-width: 640px){
+    .app-shell.is-admin{
+      width: 100%; max-width: 1080px; height: auto; min-height: 100vh;
+      border-radius: 0; box-shadow: none;
+    }
+  }
+  .app-shell.is-admin .statusbar{ display:none; }
+  .app-shell.is-admin main#app{ padding: 4px 28px 96px; max-width: 900px; margin: 0 auto; width:100%; }
+
+  .admin-role-toggle{ display:flex; gap:8px; margin: 6px 2px 20px; }
+  .admin-role-toggle button{
+    flex:1; padding:10px; border-radius: var(--radius-m); border:1.5px solid var(--paper-line);
+    background:#fff; font-weight:700; font-size:12.5px; cursor:pointer; color: var(--slate);
+  }
+  .admin-role-toggle button[data-active="true"]{ background: var(--ink); color: var(--amber); border-color: var(--ink); }
+  .admin-role-hint{ font-size:12px; color: var(--slate); margin: -12px 2px 20px; }
+
+  .admin-card{
+    display:block; width:100%; text-align:left; background:#fff; border:1.5px solid var(--paper-line);
+    border-radius: var(--radius-m); padding:16px; margin-bottom:10px; cursor:pointer;
+  }
+  .admin-card:active{ transform: scale(0.99); }
+  .admin-card[disabled]{ opacity:.5; cursor:default; }
+  .admin-card__title{ font-weight:800; font-size:15px; }
+  .admin-card__meta{ font-size:12px; color: var(--slate); margin-top:4px; font-family: var(--font-mono); }
+
+  .admin-status{
+    font-family: var(--font-mono); font-size:10.5px; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; padding:3px 8px; border-radius:4px; display:inline-block; white-space:nowrap;
+  }
+  .admin-status--draft{ background: var(--paper-dim); color: var(--slate); }
+  .admin-status--in_review{ background: rgba(255,179,0,.2); color: var(--amber-deep); }
+  .admin-status--changes_requested{ background: rgba(216,64,43,.12); color: var(--red-alert); }
+  .admin-status--approved{ background: rgba(30,143,95,.15); color: var(--green-ok); }
+  .admin-status--published{ background: var(--ink); color: var(--amber); }
+  .admin-status--archived{ background: var(--paper-dim); color: var(--slate); }
+
+  .admin-list-row{
+    display:flex; align-items:center; gap:12px; background:#fff; border:1.5px solid var(--paper-line);
+    border-radius: var(--radius-m); padding:12px 14px; margin-bottom:8px; cursor:pointer; width:100%; text-align:left;
+  }
+  .admin-list-row:active{ transform: scale(0.99); }
+  .admin-list-row__flag{ width:30px; height:20px; flex-shrink:0; }
+  .admin-list-row__mid{ flex:1; min-width:0; }
+  .admin-list-row__name{ font-weight:700; font-size:14px; }
+  .admin-list-row__sub{ font-size:11.5px; color: var(--slate); margin-top:2px; font-family: var(--font-mono); }
+
+  .admin-empty{
+    border: 1.5px dashed var(--paper-line); border-radius: var(--radius-m);
+    padding: 20px 16px; text-align:center; color: var(--slate); font-size:13px; margin-top:6px;
+  }
+
+  .text-input{
+    width:100%; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+    padding:12px; font-family:inherit; font-size:13.5px; background:#fff; color: var(--ink);
+  }
+  .text-input:focus{ outline:none; border-color:var(--ink); }
+  .admin-form-grid{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+  .admin-colour-field{ display:flex; flex-direction:column; gap:4px; }
+  .admin-colour-field label{ font-size:10.5px; color: var(--slate); font-family: var(--font-mono); text-transform:uppercase; letter-spacing:.05em; }
+  .admin-colour-field input[type="color"]{
+    width:100%; height:38px; border:1.5px solid var(--paper-line); border-radius: var(--radius-s);
+    padding:2px; background:#fff; cursor:pointer;
+  }
+  select.admin-select{
+    width:100%; border:1.5px solid var(--paper-line); border-radius: var(--radius-m); padding:11px 12px;
+    font-family:inherit; font-size:13.5px; background:#fff; color: var(--ink);
+  }
+
+  .admin-preview{ margin-top:24px; padding-top:18px; border-top:1.5px dashed var(--paper-line); }
+  .admin-preview__label{ font-family: var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color: var(--slate); margin-bottom:10px; }
+  .admin-preview .country-card{ margin-bottom:14px; }
+  .admin-preview .ticket{ margin-bottom:14px; }
+
+  .admin-actions{ display:flex; gap:10px; }
+  .admin-actions .btn-primary, .admin-actions .btn-secondary{ margin:0; }
+  .admin-hint{ font-size:12.5px; color: var(--slate); margin-top:16px; padding:12px; background: var(--paper-dim); border-radius: var(--radius-m); }
+  .admin-change-note{
+    font-size:13px; color: var(--red-alert); background: rgba(216,64,43,.08);
+    border:1.5px solid rgba(216,64,43,.25); border-radius: var(--radius-m); padding:12px 14px; margin: 4px 0 4px;
+  }
+
+  /* Module completeness grid (§4) and Lesson question editor (§3) */
+  .admin-grid-scroll{ overflow-x:auto; margin-top:12px; }
+  .admin-grid-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:360px; }
+  .admin-grid-table th, .admin-grid-table td{ border:1px solid var(--paper-line); padding:0; text-align:center; }
+  .admin-grid-table th{
+    background: var(--paper-dim); font-family: var(--font-mono); font-size:10.5px;
+    text-transform:uppercase; letter-spacing:.04em; color:var(--slate); padding:8px 6px;
+  }
+  .admin-grid-table td.admin-grid-row-label{
+    text-align:left; font-weight:700; background: var(--paper-dim); padding:8px 10px; white-space:nowrap;
+  }
+  .admin-grid-cell{
+    cursor:pointer; border:none; background:none; width:100%; padding:10px 6px; font:inherit;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  .admin-grid-cell:hover{ background: rgba(0,0,0,.04); }
+
+  .admin-question-card{
+    border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+    padding:14px; margin-bottom:12px; background:#fff;
+  }
+  .admin-question-card__head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .admin-question-card__index{ font-family: var(--font-mono); font-size:11px; color:var(--slate); font-weight:700; text-transform:uppercase; }
+  .admin-remove-btn{ appearance:none; border:none; background:none; color: var(--red-alert); font-size:12px; font-weight:700; cursor:pointer; padding:2px 4px; }
+  .admin-question-card .field-label{ margin:12px 2px 6px; }
+  .admin-question-card .field-label:first-of-type{ margin-top:0; }
 </style>
 </head>
 <body>
@@ -799,23 +916,21 @@ current code.
   <main id="app"></main>
 
   <!--
-    TODO(admin): As a content author or approver, I need an entry point into
-    the admin surface (Lesson/Module/Blueprint builders + review queue).
-    DEMO-ONLY decision: for now this lives in THIS file as new stack screens
-    (see ADMIN-CONTENT-PLAN.md §10), so we can nail down the feature set in
-    one place. Needs: a way in (e.g. a 4th tab here, or a hidden entry point
-    since this tab bar is otherwise traveler-facing), a simple Author/
-    Approver role toggle standing in for real auth, and admin screens
-    rendered full-width (the 400px phone frame below is a poor fit for
-    review-queue tables/diffs — see the @media (min-width: 640px) rule).
-    NOT the intended end state: the real admin surface should be its own
-    separate app, optimised for desktop/laptop, not a mode bolted onto this
-    mobile traveler app or shipped in the same bundle.
+    Admin entry point (see ADMIN-CONTENT-PLAN.md §10): the 4th "Admin" tab
+    below drops into the admin stack (admin-home / admin-destinations /
+    admin-review-queue / admin-destination), rendered full-width with the
+    Author/Approver role toggle standing in for real auth — see
+    .app-shell.is-admin and the admin-* SCREENS entries.
+    STILL NOT the intended end state: this is demo-phase scaffolding for
+    validating the flows. The real admin surface should be its own
+    separate app, optimised for desktop/laptop, not a mode bolted onto
+    this mobile traveler app or shipped in the same bundle.
   -->
   <div class="tabbar">
     <button class="tabbar__item" data-active="true" data-action="go-home"><span>Trips</span></button>
     <button class="tabbar__item" disabled data-action="stub-tab"><span>Explore</span></button>
     <button class="tabbar__item" disabled data-action="stub-tab"><span>Profile</span></button>
+    <button class="tabbar__item" data-action="go-admin"><span>Admin</span></button>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -1252,6 +1367,235 @@ let feedbackDraft = { score:null, cultureHelped:null };
 let currentBeat = null;
 let beatResult = null;
 
+/* ================================================================
+   ADMIN CONTENT BANK (demo-phase, in-memory) — ADMIN-CONTENT-PLAN.md
+   §2a/§6. This pass implements the Destination-creation flow plus the
+   shared approval state machine; Phrase/Question/Lesson/Module/
+   Blueprint authoring (§3-5) follow the same record/status shape as a
+   later pass and are stubbed as "coming soon" in screenAdminHome.
+
+   State machine (identical for every content type per §6):
+     draft -> in_review -> approved -> published -> archived
+                 ^              |
+                 └─ changes_requested (author edits, resubmits)
+
+   Seeded with the six existing hardcoded COUNTRIES as read-only-by-
+   default "published" legacy rows so the review queue/state machine
+   has real content on day one, and a 7th destination can be authored
+   right alongside them — the exact motivating example from
+   ADMIN-CONTENT-PLAN.md §1/§2a. A legacy row can still be revised via
+   "Create new draft version," which produces a normal (non-legacy)
+   draft that, once published, archives the legacy row.
+   ================================================================ */
+const FLAG_PATTERNS = {
+  "vertical-tricolor": "Vertical tricolor",
+  "horizontal-tricolor": "Horizontal tricolor",
+  "circle-on-field": "Circle on field",
+  "cross-on-field": "Cross on field"
+};
+
+// Per PRD §12, flags are hand-built shapes from the destination's three
+// colours, not an upload/photo picker — this is that "small in-app tool"
+// called for in ADMIN-CONTENT-PLAN.md §2a step 2, applied to whichever
+// colours the author has picked so far.
+function buildFlagSvg(pattern, colours){
+  const p = colours.primary, s = colours.secondary, t = colours.tertiary;
+  switch (pattern){
+    case "horizontal-tricolor":
+      return `<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="${s}"/><rect width="30" height="6.67" fill="${p}"/><rect y="13.33" width="30" height="6.67" fill="${t}"/></svg>`;
+    case "circle-on-field":
+      return `<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="${s}"/><circle cx="15" cy="10" r="6" fill="${p}"/><circle cx="15" cy="10" r="6" fill="none" stroke="${t}" stroke-width="1.2"/></svg>`;
+    case "cross-on-field":
+      return `<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="${t}"/><rect x="12" width="6" height="20" fill="${s}"/><rect y="7" width="30" height="6" fill="${s}"/><rect x="13.2" width="3.6" height="20" fill="${p}"/><rect y="8.2" width="30" height="3.6" fill="${p}"/></svg>`;
+    case "vertical-tricolor":
+    default:
+      return `<svg viewBox="0 0 30 20"><rect width="10" height="20" fill="${p}"/><rect x="10" width="10" height="20" fill="${s}"/><rect x="20" width="10" height="20" fill="${t}"/></svg>`;
+  }
+}
+
+function adminFlagMarkup(record){
+  if (record.legacy) return FLAGS[record.countryKey];
+  return buildFlagSvg(record.data.flagPattern || "vertical-tricolor", record.data.colours);
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
+}
+
+function slugify(name){
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "destination";
+}
+
+let adminIdSeq = 1;
+function nextAdminId(prefix){ return prefix + "-" + (adminIdSeq++); }
+
+let adminDestinations = Object.entries(COUNTRIES).map(([key, c]) => ({
+  id: nextAdminId("dest"),
+  countryKey: key,
+  status: "published",
+  version: 1,
+  legacy: true,
+  changeNote: null,
+  data: {
+    name: c.name,
+    capital: c.capital,
+    colours: { ...c.colours },
+    flagPattern: null,
+    cultureTip: c.cultureTip
+  }
+}));
+
+let adminRole = "author"; // "author" | "approver" — stands in for real auth, per §10
+let adminDraft = null;    // working copy of a destination while an Author is editing it
+
+// Destinations Module/Lesson content is authored against — only published
+// ones are offered, so authoring a 7th destination (see the Destination
+// flow above) genuinely unlocks it as a target here, the same way it
+// would gate a real Blueprint's country coverage (§4/§6).
+function publishedDestinations(){
+  return adminDestinations.filter(d => d.status === "published");
+}
+
+/* ================================================================
+   ADMIN CONTENT BANK — Module (§4) + Lesson (§3)
+
+   A Lesson always names the Module + Tier it belongs to; a Module's
+   "tier ladder completeness" grid (§4 step 3) is derived by scanning
+   Lessons for that (moduleId, tier[, countryKey]) rather than stored
+   redundantly, so the two can never drift out of sync. Publishing a
+   Module is blocked until every cell it claims is itself Published
+   (moduleIsComplete below) — the gating cascade from §6.
+
+   Question authoring here is a deliberate simplification of §3 step 2:
+   the plan calls for a searchable, reusable Phrase/Question library
+   ("attach by reference, only create new if nothing fits" — see §7).
+   This pass authors each Question inline on the Lesson instead of
+   against a separate library, so content isn't actually reused across
+   Lessons yet — the record shape (kind/context/prompt/answer/
+   distractors) is what a future library-backed picker would slot into
+   without a rewrite.
+   ================================================================ */
+let adminModules = [];
+let adminModuleDraft = null;
+let adminLessons = [];
+let adminLessonDraft = null;
+let adminLessonPreviewIndex = 0; // which authored question the Lesson editor's live preview is showing
+
+const ADMIN_STATUS_RANK = { missing:0, archived:0, draft:1, changes_requested:1, in_review:2, approved:3, published:4 };
+
+function moduleLessonCandidates(mod, tier, countryKey){
+  return adminLessons.filter(l =>
+    l.data.moduleId === mod.id &&
+    l.data.tier === tier &&
+    (mod.data.kind === "generic" ? l.data.scope === "generic" : l.data.countryKey === countryKey)
+  );
+}
+function moduleCellStatus(mod, tier, countryKey){
+  const candidates = moduleLessonCandidates(mod, tier, countryKey);
+  if (!candidates.length) return "missing";
+  return candidates.reduce((best, l) => ADMIN_STATUS_RANK[l.status] > ADMIN_STATUS_RANK[best] ? l.status : best, "missing");
+}
+function moduleGridRows(mod){
+  return mod.data.kind === "generic" ? [null] : mod.data.countryKeys;
+}
+function moduleIsComplete(mod){
+  const rows = moduleGridRows(mod);
+  if (!rows.length) return false;
+  for (const countryKey of rows){
+    for (let tier = 1; tier <= mod.data.tierCount; tier++){
+      if (moduleCellStatus(mod, tier, countryKey) !== "published") return false;
+    }
+  }
+  return true;
+}
+
+// Turns an admin-authored Question row into the exact beat shape
+// renderBeat()/makeQuestion() already produce for the traveler-facing
+// lesson screen (see buildBeat below), so the Lesson editor's live
+// preview is the literal traveler beat renderer, not a lookalike copy —
+// ADMIN-CONTENT-PLAN.md §3 step 3.
+function adminQuestionToBeat(q){
+  const mq = makeQuestion(q.question, q.correctAnswer, (q.distractors || []).filter(Boolean));
+  if (q.kind === "symbol") return { kind:"symbol", context:q.context, symbol:q.symbol, ...mq };
+  if (q.kind === "comprehend") return { kind:"comprehend", context:q.context, heard:q.heard, ...mq };
+  return { kind:q.kind, context:q.context, ...mq };
+}
+
+/* ================================================================
+   ADMIN CONTENT BANK — Trip Type Blueprint (§5)
+
+   Simplification: authored against the 6 existing hardcoded TRIP_TYPES
+   keys rather than also supporting "define a new Trip Type" (§5 step 1)
+   — adding a wholly new trip type is really its own small Destination-
+   shaped flow (name a thing, theme it) and isn't needed to demonstrate
+   the Blueprint/Leg/gating machinery itself.
+
+   Leg gating is deliberately cheap to compute: a Module's own Publish
+   action already requires moduleIsComplete() (§4) — every Tier it
+   claims, for every country it claims, has a Published Lesson — so a
+   Blueprint only needs to check that every Module it gates in is
+   itself Published; it doesn't need to re-walk tiers/countries itself.
+   ================================================================ */
+const LEG_LADDER = ["Slightly Scared Tourist", "Confident Traveller", "Seasoned Explorer", "Honorary Local"];
+
+let adminBlueprints = [];
+let adminBlueprintDraft = null;
+let adminBlueprintPreviewCountry = null;
+
+function blankLeg(name){
+  return { name: name || "", blurb: "", moduleGates: [] };
+}
+
+function resolveBlueprintGateLesson(gate, countryKey){
+  const mod = adminModules.find(m => m.id === gate.moduleId);
+  if (!mod) return null;
+  return adminLessons.find(l =>
+    l.status === "published" &&
+    l.data.moduleId === mod.id &&
+    l.data.tier === gate.tier &&
+    (mod.data.kind === "generic" ? l.data.scope === "generic" : l.data.countryKey === countryKey)
+  ) || null;
+}
+
+function blueprintIsPublishable(bp){
+  const allGates = bp.data.legs.flatMap(leg => leg.moduleGates);
+  if (!allGates.length) return false;
+  return allGates.every(gate => {
+    const mod = adminModules.find(m => m.id === gate.moduleId);
+    return mod && mod.status === "published";
+  });
+}
+
+// Resolves a traveler's (countryKey, tripKey) against a published
+// Blueprint for that Trip Type (§8/§9), one "week" per gated Module in
+// Leg order. Skips empty Legs and any gate that fails to resolve for
+// this specific country (only possible for a bespoke Module gated to a
+// different country than the traveler picked — a published Blueprint
+// otherwise guarantees every gate resolves, since Module publish itself
+// requires every tier/country cell to already be a published Lesson).
+// Returns null if there's no published Blueprint for this Trip Type, or
+// nothing resolves for this country — the caller falls back to the
+// legacy hardcoded syllabus() so unauthored Trip Types keep working.
+function resolveBlueprintSyllabus(countryKey, tripKey){
+  const bp = adminBlueprints.find(b => b.status === "published" && b.data.tripKey === tripKey);
+  if (!bp) return null;
+  const legs = [];
+  const weeks = [];
+  bp.data.legs.forEach(leg => {
+    if (!leg.moduleGates.length) return;
+    const legIndex = legs.length;
+    let legUsed = false;
+    leg.moduleGates.forEach(gate => {
+      const lesson = resolveBlueprintGateLesson(gate, countryKey);
+      if (!lesson) return;
+      if (!legUsed){ legs.push({ name: leg.name, blurb: leg.blurb }); legUsed = true; }
+      weeks.push({ title: lesson.data.title, type: lesson.data.type, source: "authored", legIndex, lessonId: lesson.id });
+    });
+  });
+  if (!weeks.length) return null;
+  return { legs, weeks };
+}
+
 function push(name, payload){ stack.push({ name, payload }); render(); }
 function pop(){ if (stack.length > 1){ stack.pop(); render(); } }
 function resetToHome(){ stack = [{ name:"home" }]; render(); }
@@ -1278,6 +1622,15 @@ function renderAppBar(top){
       </div>`;
     return;
   }
+  if (top.name === "admin-home"){
+    bar.className = "appbar appbar--home";
+    bar.innerHTML = `
+      <div>
+        <div class="wordmark">Hola<span>day</span> <span style="color:var(--slate);font-weight:700;">Admin</span></div>
+        <span class="tagline">Demo-phase content authoring</span>
+      </div>`;
+    return;
+  }
   const titles = {
     country: "Choose a country",
     trip: "Describe the trip",
@@ -1285,7 +1638,28 @@ function renderAppBar(top){
     dashboard: (p)=> COUNTRIES[p.course.countryKey].name + " — " + TRIP_TYPES[p.course.tripKey].label,
     lesson: (p)=> "Week " + p.week,
     phrasebook: (p)=> "Phrasebook",
-    feedback: "Trip feedback"
+    feedback: "Trip feedback",
+    "admin-destinations": "Destinations",
+    "admin-review-queue": "Review queue",
+    "admin-destination": (p) => {
+      const rec = p && p.id ? adminDestinations.find(d => d.id === p.id) : null;
+      return rec ? rec.data.name : "New destination";
+    },
+    "admin-modules": "Modules",
+    "admin-module": (p) => {
+      const rec = p && p.id ? adminModules.find(m => m.id === p.id) : null;
+      return rec ? rec.data.name : "New module";
+    },
+    "admin-lessons": "Lessons",
+    "admin-lesson": (p) => {
+      const rec = p && p.id ? adminLessons.find(l => l.id === p.id) : null;
+      return rec ? rec.data.title : "New lesson";
+    },
+    "admin-blueprints": "Trip Type Blueprints",
+    "admin-blueprint": (p) => {
+      const rec = p && p.id ? adminBlueprints.find(b => b.id === p.id) : null;
+      return rec ? TRIP_TYPES[rec.data.tripKey].label : "New blueprint";
+    }
   };
   const raw = titles[top.name];
   const title = typeof raw === "function" ? raw(top.payload) : raw;
@@ -1296,6 +1670,7 @@ function renderAppBar(top){
     </button>
     <div class="appbar__title">${title}</div>
     ${top.name === "dashboard" ? `<div class="appbar__badge">${top.payload.course.status === "completed" ? "LANDED" : "WEEK " + top.payload.course.currentWeek + "/" + top.payload.course.weeks}</div>` : ""}
+    ${top.name.startsWith("admin-") ? `<div class="appbar__badge">${adminRole === "author" ? "AUTHOR" : "APPROVER"}</div>` : ""}
   `;
 }
 
@@ -1539,20 +1914,29 @@ function runGenerating(payload){
 // PRD §14. `weeks`/pacing still comes from the trip-type default, not from
 // the date range (see PRD §10 open question — that's still unresolved).
 //
-// TODO(admin): This is where a real build resolves the traveler's Trip
-// Type's *published* Blueprint (not `TRIP_TYPES[key].weeks` directly) into
-// this course: set `currentLeg`/`totalLegs`/`legName` from the Blueprint's
-// first Leg, and derive `weeks` from the sum of every Leg's length rather
-// than a flat per-trip-type constant. Also pin a `templateVersion` (the
-// Blueprint version resolved right now) on the course object, so
-// publishing a newer Blueprint later doesn't retroactively change the
-// syllabus of a trip already in progress. See ADMIN-CONTENT-PLAN.md §6/§9.
+// Resolves the traveler's Trip Type against a *published* Blueprint
+// (ADMIN-CONTENT-PLAN.md §8/§9) rather than the flat TRIP_TYPES.weeks
+// constant, when one exists for this Trip Type. `course.syllabus` is
+// snapshotted here (each entry's `lessonId`, not a live Blueprint/Module
+// lookup) so a Blueprint published later doesn't retroactively change the
+// syllabus of a trip already in progress — the same effect the plan's
+// "pin a templateVersion" note calls for, achieved by pinning the
+// resolved Lesson ids instead of re-resolving from the Blueprint at
+// render time. Trip Types with no published Blueprint yet fall back to
+// the legacy hardcoded syllabus() so the rest of the prototype's trip
+// types keep working unauthored.
 function finalizeCourse(payload){
+  const resolved = resolveBlueprintSyllabus(payload.countryKey, payload.tripKey);
+  const syllabusWeeks = resolved
+    ? resolved.weeks
+    : syllabus(payload.tripKey).map(w => ({ title: w.title, type: w.type, source: "legacy", legIndex: null, lessonId: null }));
   const course = {
     id: "c" + Date.now(),
     countryKey: payload.countryKey,
     tripKey: payload.tripKey,
-    weeks: TRIP_TYPES[payload.tripKey].weeks,
+    weeks: syllabusWeeks.length,
+    syllabus: syllabusWeeks,
+    legs: resolved ? resolved.legs : null,
     currentWeek: 1,
     status: "active",
     notes: payload.notes || "",
@@ -1599,23 +1983,21 @@ function needsFeedback(course){
    completion-rate comparison if/when we A/B against an
    unlocked-all-weeks variant.
 
-   TODO(admin): As a traveler, I want to see this course presented as a
-   series of named Legs, not one flat week list, so progression actually
-   feels like something (see ADMIN-CONTENT-PLAN.md §8/§9). Concretely:
-     - Ticket stats: swap/add "Leg n of N" as the primary stat, keep total
-       weeks as a secondary stat for trip-date pacing.
-     - Week-list becomes Leg-grouped: reuse the existing `.section-label`
-       pattern as Leg headers (e.g. "LEG 1 — SLIGHTLY SCARED TOURIST"),
-       with each Leg's rows locked until the prior Leg is fully complete
-       (not just the prior week).
-     - A dedicated Leg-complete moment (distinct from the generic "Lesson
-       complete" toast in the beat-continue handler below) that pairs the
-       functional unlock with the Leg's `blurb` copy — e.g. "Leg 1
-       complete — you can order food, ask directions, and get through an
-       airport without panicking. Confident Traveller starts now."
-     - Recommended default: Leg 1 complete = "trip-ready" floor, later
-       Legs framed as optional sharpening before departure (open call,
-       see plan §9/§11).
+   Course progression is Leg-grouped whenever `course.legs` is present
+   (ADMIN-CONTENT-PLAN.md §8/§9) — i.e. the course was resolved from a
+   published Blueprint rather than the legacy hardcoded syllabus():
+     - Ticket stats: "Leg n of N" is added alongside total weeks (kept as
+       a secondary stat for trip-date pacing, not replaced).
+     - Week-list is Leg-grouped, reusing the existing `.section-label`
+       pattern as Leg headers ("LEG 1 — SLIGHTLY SCARED TOURIST").
+       Locking is still sequential by week number (not per-Leg) — a
+       real build would lock a whole Leg until the prior one finishes;
+       this demo keeps the simpler per-week unlock rule and layers Leg
+       headers on top of it.
+     - A dedicated Leg-complete toast (see the beat-continue handler
+       below) fires the Leg's `blurb` copy instead of the generic
+       "Lesson complete" message when the finished lesson was the last
+       one in its Leg.
    ================================================================ */
 function applyFlagVars(container, colours){
   container.style.setProperty("--flag-primary", colours.primary);
@@ -1627,13 +2009,16 @@ function screenDashboard(payload){
   const c = payload.course;
   const country = COUNTRIES[c.countryKey];
   const trip = TRIP_TYPES[c.tripKey];
-  const weeks = syllabus(c.tripKey);
+  const weeks = c.syllabus;
   const doneCount = c.status === "completed" ? c.weeks : Math.max(0, c.currentWeek - 1);
   const pct = Math.round((doneCount / c.weeks) * 100);
 
-  const weekRows = weeks.map((week, idx) => {
+  const weekRowHtml = (week, idx) => {
     const num = idx + 1;
-    const built = num <= 3; // weeks 1-3 have real lesson content in this prototype
+    // Legacy weeks 1-3 have real lesson content in this prototype; every
+    // authored (Blueprint-resolved) week does, since Module publish
+    // already requires a real Lesson behind every tier/country cell.
+    const built = week.source === "authored" || num <= 3;
     const done = c.status === "completed" || num < c.currentWeek;
     const locked = !built || (c.status !== "completed" && num > c.currentWeek);
     const statusTag = locked ? (built ? "Upcoming" : "Preview only") : (done ? "Review" : "Start");
@@ -1643,7 +2028,34 @@ function screenDashboard(payload){
         <span class="week-row__title">${week.title}</span>
         <span class="week-row__tag">${week.type} · ${statusTag}</span>
       </button>`;
-  }).join("");
+  };
+
+  let weekListHtml;
+  if (c.legs){
+    let idx = 0;
+    weekListHtml = c.legs.map((leg, legIndex) => {
+      const rows = [];
+      while (idx < weeks.length && weeks[idx].legIndex === legIndex){
+        rows.push(weekRowHtml(weeks[idx], idx));
+        idx++;
+      }
+      return `
+        <div class="section-label" style="margin-top:20px;">Leg ${legIndex + 1} — ${leg.name.toUpperCase()}</div>
+        <div class="week-list">${rows.join("")}</div>
+      `;
+    }).join("");
+  } else {
+    weekListHtml = `
+      <div class="section-label" style="margin-top:20px;">Your syllabus</div>
+      <div class="week-list">${weeks.map(weekRowHtml).join("")}</div>
+    `;
+  }
+
+  const legStatHtml = c.legs ? (() => {
+    const currentEntry = weeks[Math.min(c.currentWeek, c.weeks) - 1];
+    const currentLegNum = c.status === "completed" ? c.legs.length : (currentEntry ? currentEntry.legIndex + 1 : 1);
+    return `<div><b>${currentLegNum}/${c.legs.length}</b><small>Current leg</small></div>`;
+  })() : "";
 
   return `
     <div class="ticket" id="ticket">
@@ -1655,6 +2067,7 @@ function screenDashboard(payload){
       <div class="ticket__eyebrow">${trip.label} · ${country.capital}</div>
       <div class="ticket__title"><span class="flag-icon ticket__flag">${FLAGS[c.countryKey]}</span>${country.name}</div>
       <div class="ticket__meta">
+        ${legStatHtml}
         <div><b>${c.weeks}</b><small>Weeks total</small></div>
         <div><b>${c.status === "completed" ? c.weeks : c.currentWeek}</b><small>${c.status === "completed" ? "Completed" : "Current week"}</small></div>
       </div>
@@ -1671,8 +2084,7 @@ function screenDashboard(payload){
       <div class="culture-card__body">${country.cultureTip}</div>
     </div>
 
-    <div class="section-label" style="margin-top:20px;">Your syllabus</div>
-    <div class="week-list">${weekRows}</div>
+    ${weekListHtml}
   `;
 }
 
@@ -1900,6 +2312,26 @@ function buildLessonBeats(country, trip, week){
   return plan.map(entry => buildBeat(entry, country.phrases, 2));
 }
 
+// Turns an authored admin Lesson's Questions into real beats, via the
+// same adminQuestionToBeat() the admin Lesson editor's own live preview
+// uses (see screenAdminLesson) — the traveler is looking at literally
+// the same rendering path an author checked before publishing.
+function adminLessonBeats(lessonId){
+  const lesson = adminLessons.find(l => l.id === lessonId);
+  return lesson ? lesson.data.questions.map(adminQuestionToBeat) : [];
+}
+
+// Picks legacy hardcoded beats or authored-Lesson beats for a given
+// week of a course, based on how that week was resolved in
+// finalizeCourse() (see course.syllabus / resolveBlueprintSyllabus).
+function courseLessonBeats(course, week){
+  const entry = course.syllabus[week - 1];
+  if (entry && entry.source === "authored") return adminLessonBeats(entry.lessonId);
+  const country = COUNTRIES[course.countryKey];
+  const trip = TRIP_TYPES[course.tripKey];
+  return buildLessonBeats(country, trip, week);
+}
+
 function renderBeat(beat){
   const visual = beat.kind === "symbol"
     ? `<div class="beat-symbol"><span class="beat-symbol__icon">${SYMBOLS[beat.symbol]}</span></div>`
@@ -1923,8 +2355,9 @@ function screenLesson(payload){
   const trip = TRIP_TYPES[c.tripKey];
   const week = payload.week;
   const stepIndex = payload.stepIndex || 0;
-  const meta = lessonMeta(week, country, trip);
-  const beats = buildLessonBeats(country, trip, week);
+  const entry = c.syllabus[week - 1];
+  const meta = entry.source === "authored" ? { title: entry.title, type: entry.type + " lesson" } : lessonMeta(week, country, trip);
+  const beats = courseLessonBeats(c, week);
   const total = beats.length;
   const isLast = stepIndex + 1 >= total;
 
@@ -1961,16 +2394,937 @@ function shuffle(arr){
 }
 
 /* ================================================================
+   ADMIN SCREENS (demo-phase — ADMIN-CONTENT-PLAN.md §10)
+
+   Only the Destination-creation flow (§2a) and the shared approval
+   state machine (§6) are implemented here. Module/Lesson/Blueprint
+   authoring (§3-5) follow this same record/status shape and are left
+   as "coming soon" cards in screenAdminHome for a later pass — see the
+   dispatch table below for where they'd register.
+   ================================================================ */
+const ADMIN_STATUS_LABELS = {
+  draft: "Draft", in_review: "In review", changes_requested: "Changes requested",
+  approved: "Approved", published: "Published", archived: "Archived"
+};
+function adminStatusChip(status){
+  return `<span class="admin-status admin-status--${status}">${ADMIN_STATUS_LABELS[status]}</span>`;
+}
+
+function screenAdminHome(){
+  const destCounts = { draft:0, in_review:0, changes_requested:0, approved:0, published:0, archived:0 };
+  adminDestinations.forEach(d => destCounts[d.status]++);
+  const moduleCounts = { draft:0, in_review:0, changes_requested:0, approved:0, published:0, archived:0 };
+  adminModules.forEach(m => moduleCounts[m.status]++);
+  const lessonCounts = { draft:0, in_review:0, changes_requested:0, approved:0, published:0, archived:0 };
+  adminLessons.forEach(l => lessonCounts[l.status]++);
+  const bpCounts = { draft:0, in_review:0, changes_requested:0, approved:0, published:0, archived:0 };
+  adminBlueprints.forEach(b => bpCounts[b.status]++);
+  const totalInReview = destCounts.in_review + moduleCounts.in_review + lessonCounts.in_review + bpCounts.in_review;
+
+  return `
+    <p style="font-size:13px;color:var(--slate);margin:6px 2px 4px;">Demo-phase content authoring surface (ADMIN-CONTENT-PLAN.md). The toggle below stands in for real auth — everything Approve/Publish-shaped only appears in the Approver role.</p>
+    <div class="admin-role-toggle">
+      <button data-action="admin-set-role" data-role="author" data-active="${adminRole === "author"}">Author</button>
+      <button data-action="admin-set-role" data-role="approver" data-active="${adminRole === "approver"}">Approver</button>
+    </div>
+    <div class="admin-role-hint">${adminRole === "author" ? "Create and edit content, then submit it for review." : "Review submitted content: approve, request changes, or publish."}</div>
+
+    <div class="section-label">Content</div>
+    <button class="admin-card" data-action="admin-open-destinations">
+      <div class="admin-card__title">Destinations</div>
+      <div class="admin-card__meta">${destCounts.published} published · ${destCounts.draft} draft · ${destCounts.in_review} in review</div>
+    </button>
+    <button class="admin-card" data-action="admin-open-modules">
+      <div class="admin-card__title">Modules</div>
+      <div class="admin-card__meta">${moduleCounts.published} published · ${moduleCounts.draft} draft · ${moduleCounts.in_review} in review</div>
+    </button>
+    <button class="admin-card" data-action="admin-open-lessons">
+      <div class="admin-card__title">Lessons</div>
+      <div class="admin-card__meta">${lessonCounts.published} published · ${lessonCounts.draft} draft · ${lessonCounts.in_review} in review</div>
+    </button>
+    <button class="admin-card" data-action="admin-open-blueprints">
+      <div class="admin-card__title">Trip Type Blueprints</div>
+      <div class="admin-card__meta">${bpCounts.published} published · ${bpCounts.draft} draft · ${bpCounts.in_review} in review</div>
+    </button>
+
+    <div class="section-label">Approvals</div>
+    <button class="admin-card" data-action="admin-open-review-queue">
+      <div class="admin-card__title">Review queue</div>
+      <div class="admin-card__meta">${totalInReview} item${totalInReview === 1 ? "" : "s"} waiting on an Approver</div>
+    </button>
+  `;
+}
+
+function screenAdminDestinations(){
+  const rows = adminDestinations
+    .slice()
+    .sort((a, b) => a.data.name.localeCompare(b.data.name))
+    .map(d => `
+      <button class="admin-list-row" data-action="admin-open-destination" data-id="${d.id}">
+        <span class="admin-list-row__flag flag-icon">${adminFlagMarkup(d)}</span>
+        <span class="admin-list-row__mid">
+          <div class="admin-list-row__name">${escapeHtml(d.data.name)}${d.legacy ? " (legacy)" : ""}</div>
+          <div class="admin-list-row__sub">${escapeHtml(d.data.capital)} · v${d.version}</div>
+        </span>
+        ${adminStatusChip(d.status)}
+      </button>
+    `).join("");
+
+  return `
+    ${adminRole === "author" ? `<button class="btn-primary" style="margin:6px 0 18px;" data-action="admin-new-destination">+ New destination</button>` : ""}
+    ${rows || `<div class="admin-empty">No destinations yet.</div>`}
+  `;
+}
+
+function screenAdminReviewQueue(){
+  const destRows = adminDestinations.filter(d => d.status === "in_review").map(d => `
+    <button class="admin-list-row" data-action="admin-open-destination" data-id="${d.id}">
+      <span class="admin-list-row__flag flag-icon">${adminFlagMarkup(d)}</span>
+      <span class="admin-list-row__mid">
+        <div class="admin-list-row__name">${escapeHtml(d.data.name)}</div>
+        <div class="admin-list-row__sub">Destination · v${d.version}</div>
+      </span>
+      ${adminStatusChip(d.status)}
+    </button>
+  `).join("");
+  const moduleRows = adminModules.filter(m => m.status === "in_review").map(m => `
+    <button class="admin-list-row" data-action="admin-open-module" data-id="${m.id}">
+      <span class="admin-list-row__mid">
+        <div class="admin-list-row__name">${escapeHtml(m.data.name)}</div>
+        <div class="admin-list-row__sub">Module · v${m.version}</div>
+      </span>
+      ${adminStatusChip(m.status)}
+    </button>
+  `).join("");
+  const lessonRows = adminLessons.filter(l => l.status === "in_review").map(l => `
+    <button class="admin-list-row" data-action="admin-open-lesson" data-id="${l.id}">
+      <span class="admin-list-row__mid">
+        <div class="admin-list-row__name">${escapeHtml(l.data.title)}</div>
+        <div class="admin-list-row__sub">Lesson · v${l.version}</div>
+      </span>
+      ${adminStatusChip(l.status)}
+    </button>
+  `).join("");
+  const blueprintRows = adminBlueprints.filter(b => b.status === "in_review").map(b => `
+    <button class="admin-list-row" data-action="admin-open-blueprint" data-id="${b.id}">
+      <span class="admin-list-row__mid">
+        <div class="admin-list-row__name">${escapeHtml(TRIP_TYPES[b.data.tripKey].label)}</div>
+        <div class="admin-list-row__sub">Blueprint · v${b.version}</div>
+      </span>
+      ${adminStatusChip(b.status)}
+    </button>
+  `).join("");
+  const rows = destRows + moduleRows + lessonRows + blueprintRows;
+  return `
+    <p style="font-size:13px;color:var(--slate);margin:6px 2px 14px;">Everything currently submitted and waiting on an Approver, across destinations, modules, lessons, and blueprints.</p>
+    ${rows || `<div class="admin-empty">Nothing waiting for review.</div>`}
+  `;
+}
+
+// Reads the editable form fields into `adminDraft` — called before every
+// Save Draft / Submit for Review, same "read on submit" pattern as
+// confirm-trip (trip-notes/trip-start/trip-end) rather than binding on
+// every keystroke, so the fields never lose focus mid-render.
+function readAdminDestinationForm(){
+  adminDraft.data.name = document.getElementById("admin-dest-name").value.trim();
+  adminDraft.data.capital = document.getElementById("admin-dest-capital").value.trim();
+  adminDraft.data.cultureTip = document.getElementById("admin-dest-culturetip").value.trim();
+  adminDraft.data.flagPattern = document.getElementById("admin-dest-pattern").value;
+  adminDraft.data.colours = {
+    primary: document.getElementById("admin-dest-primary").value,
+    secondary: document.getElementById("admin-dest-secondary").value,
+    tertiary: document.getElementById("admin-dest-tertiary").value
+  };
+}
+
+function commitAdminDraft(status){
+  readAdminDestinationForm();
+  if (!adminDraft.data.name){
+    showToast("Destination name is required");
+    return false;
+  }
+  if (!adminDraft.id){
+    adminDraft.id = nextAdminId("dest");
+    adminDraft.countryKey = slugify(adminDraft.data.name);
+    adminDraft.version = 1;
+    adminDraft.legacy = false;
+    adminDestinations.push(adminDraft);
+  } else {
+    const idx = adminDestinations.findIndex(d => d.id === adminDraft.id);
+    if (idx >= 0) adminDestinations[idx] = adminDraft;
+  }
+  adminDraft.status = status;
+  if (status !== "changes_requested") adminDraft.changeNote = null;
+  return true;
+}
+
+// Live-updates the preview pane straight from the DOM on every keystroke/
+// colour change, same "direct DOM patch, no full render()" approach as
+// updateTripCta — a full re-render here would close the native colour
+// picker mid-pick and drop cursor position in the text fields.
+function refreshAdminPreview(){
+  const nameEl = document.getElementById("admin-dest-name");
+  if (!nameEl) return;
+  const name = nameEl.value.trim() || "Untitled destination";
+  const capital = document.getElementById("admin-dest-capital").value.trim() || "—";
+  const cultureTip = document.getElementById("admin-dest-culturetip").value.trim() || "No culture tip written yet.";
+  const colours = {
+    primary: document.getElementById("admin-dest-primary").value,
+    secondary: document.getElementById("admin-dest-secondary").value,
+    tertiary: document.getElementById("admin-dest-tertiary").value
+  };
+  const flagSvg = buildFlagSvg(document.getElementById("admin-dest-pattern").value, colours);
+
+  document.getElementById("admin-preview-name").textContent = name;
+  document.getElementById("admin-preview-name2").textContent = name;
+  document.getElementById("admin-preview-capital").textContent = capital;
+  document.getElementById("admin-preview-culturetip").textContent = cultureTip;
+  document.getElementById("admin-preview-flag-a").innerHTML = flagSvg;
+  document.getElementById("admin-preview-flag-b").innerHTML = flagSvg;
+
+  const ticket = document.getElementById("admin-preview-ticket");
+  applyFlagVars(ticket, colours);
+  ticket.querySelectorAll(".ticket__stripe span").forEach((span, i) => {
+    span.style.background = [colours.primary, colours.secondary, colours.tertiary][i];
+  });
+}
+
+function screenAdminDestination(payload){
+  const id = payload && payload.id;
+  const record = id ? adminDestinations.find(d => d.id === id) : null;
+  const canEdit = adminRole === "author" && (!record || record.status === "draft" || record.status === "changes_requested");
+
+  if (canEdit && (!adminDraft || adminDraft.id !== id)){
+    adminDraft = record ? JSON.parse(JSON.stringify(record)) : adminDraft;
+  }
+  const view = canEdit ? adminDraft : record;
+  if (!view) return `<div class="admin-empty">Destination not found.</div>`;
+
+  const flagSvg = canEdit
+    ? buildFlagSvg(view.data.flagPattern || "vertical-tricolor", view.data.colours)
+    : adminFlagMarkup(view);
+
+  const fields = canEdit ? `
+    <label class="field-label" for="admin-dest-name">Destination name</label>
+    <input class="text-input" id="admin-dest-name" value="${escapeHtml(view.data.name)}" placeholder="e.g. Portugal">
+
+    <label class="field-label" for="admin-dest-capital">Capital</label>
+    <input class="text-input" id="admin-dest-capital" value="${escapeHtml(view.data.capital)}" placeholder="e.g. Lisbon">
+
+    <label class="field-label">Flag colours</label>
+    <div class="admin-form-grid">
+      <div class="admin-colour-field"><label for="admin-dest-primary">Primary</label><input type="color" id="admin-dest-primary" value="${view.data.colours.primary}"></div>
+      <div class="admin-colour-field"><label for="admin-dest-secondary">Secondary</label><input type="color" id="admin-dest-secondary" value="${view.data.colours.secondary}"></div>
+      <div class="admin-colour-field"><label for="admin-dest-tertiary">Tertiary</label><input type="color" id="admin-dest-tertiary" value="${view.data.colours.tertiary}"></div>
+    </div>
+
+    <label class="field-label" for="admin-dest-pattern">Flag pattern</label>
+    <select class="admin-select" id="admin-dest-pattern">
+      ${Object.entries(FLAG_PATTERNS).map(([key, label]) => `<option value="${key}" ${((view.data.flagPattern || "vertical-tricolor") === key) ? "selected" : ""}>${label}</option>`).join("")}
+    </select>
+
+    <label class="field-label" for="admin-dest-culturetip">"Know before you go" culture tip</label>
+    <textarea class="notes" id="admin-dest-culturetip" placeholder="One or two sentences travelers see on the dashboard's culture card...">${escapeHtml(view.data.cultureTip)}</textarea>
+  ` : `
+    <div style="font-weight:800;font-size:19px;margin-top:14px;">${escapeHtml(view.data.name)}</div>
+    <div style="font-size:13px;color:var(--slate);margin-bottom:16px;">${escapeHtml(view.data.capital)}</div>
+    <label class="field-label">"Know before you go" culture tip</label>
+    <p style="font-size:13.5px;line-height:1.5;">${escapeHtml(view.data.cultureTip) || "—"}</p>
+  `;
+
+  const changeNoteHtml = (record && record.status === "changes_requested" && record.changeNote)
+    ? `<div class="admin-change-note"><b>Changes requested:</b> ${escapeHtml(record.changeNote)}</div>` : "";
+
+  let actionsHtml = "";
+  if (canEdit){
+    actionsHtml = `
+      <div class="sticky-cta admin-actions">
+        <button class="btn-secondary" data-action="admin-save-draft">Save Draft</button>
+        <button class="btn-primary" data-action="admin-submit-review">Submit for Review</button>
+      </div>`;
+  } else if (record && adminRole === "approver" && record.status === "in_review"){
+    actionsHtml = `
+      <div class="sticky-cta admin-actions">
+        <button class="btn-secondary" data-action="admin-request-changes">Request Changes</button>
+        <button class="btn-primary" data-action="admin-approve">Approve</button>
+      </div>`;
+  } else if (record && adminRole === "approver" && record.status === "approved"){
+    actionsHtml = `<div class="sticky-cta admin-actions"><button class="btn-primary" data-action="admin-publish">Publish</button></div>`;
+  } else if (record && adminRole === "author" && record.status === "published"){
+    actionsHtml = `<div class="sticky-cta admin-actions"><button class="btn-secondary" data-action="admin-new-version">Create new draft version</button></div>`;
+  } else if (record && record.status === "in_review"){
+    actionsHtml = `<p class="admin-hint">Submitted — waiting for an Approver to review this.</p>`;
+  } else if (record && record.status === "approved"){
+    actionsHtml = `<p class="admin-hint">Approved — waiting to be published.</p>`;
+  } else if (record && record.status === "archived"){
+    actionsHtml = `<p class="admin-hint">Archived — superseded by a newer published version.</p>`;
+  }
+
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 2px 4px;">
+      <span style="font-size:12px;color:var(--slate);font-family:var(--font-mono);">${record ? "v" + record.version : "New destination"}</span>
+      ${adminStatusChip(view.status)}
+    </div>
+    ${changeNoteHtml}
+    ${fields}
+    <div class="admin-preview" id="admin-preview">
+      <div class="admin-preview__label">Live preview</div>
+      <button class="country-card" style="pointer-events:none;" tabindex="-1">
+        <span class="country-card__flag flag-icon" id="admin-preview-flag-a">${flagSvg}</span>
+        <span class="country-card__body">
+          <div class="country-card__name" id="admin-preview-name">${escapeHtml(view.data.name) || "Untitled destination"}</div>
+          <div class="country-card__capital" id="admin-preview-capital">${escapeHtml(view.data.capital) || "—"}</div>
+        </span>
+      </button>
+      <div class="ticket" id="admin-preview-ticket">
+        <div class="ticket__stripe">
+          <span style="background:${view.data.colours.primary}"></span>
+          <span style="background:${view.data.colours.secondary}"></span>
+          <span style="background:${view.data.colours.tertiary}"></span>
+        </div>
+        <div class="ticket__eyebrow">Dashboard theme preview</div>
+        <div class="ticket__title"><span class="flag-icon ticket__flag" id="admin-preview-flag-b">${flagSvg}</span><span id="admin-preview-name2">${escapeHtml(view.data.name) || "Untitled destination"}</span></div>
+      </div>
+      <div class="culture-card">
+        <div class="culture-card__label">Know before you go</div>
+        <div class="culture-card__body" id="admin-preview-culturetip">${escapeHtml(view.data.cultureTip) || "No culture tip written yet."}</div>
+      </div>
+    </div>
+    ${actionsHtml}
+  `;
+}
+
+/* ================================================================
+   ADMIN SCREENS — Module (§4)
+   ================================================================ */
+function screenAdminModules(){
+  const rows = adminModules.slice().sort((a, b) => a.data.name.localeCompare(b.data.name)).map(m => `
+    <button class="admin-list-row" data-action="admin-open-module" data-id="${m.id}">
+      <span class="admin-list-row__mid">
+        <div class="admin-list-row__name">${escapeHtml(m.data.name)}</div>
+        <div class="admin-list-row__sub">${m.data.kind === "generic" ? "Generic" : "Country-bespoke"} · ${m.data.tierCount} tier${m.data.tierCount === 1 ? "" : "s"} · v${m.version}</div>
+      </span>
+      ${adminStatusChip(m.status)}
+    </button>
+  `).join("");
+  return `
+    ${adminRole === "author" ? `<button class="btn-primary" style="margin:6px 0 18px;" data-action="admin-new-module">+ New module</button>` : ""}
+    ${rows || `<div class="admin-empty">No modules yet.</div>`}
+  `;
+}
+
+// Mirrors readAdminDestinationForm/commitAdminDraft: read-on-submit
+// rather than live-bound, but here it's also called before every action
+// that re-renders the grid (kind/tierCount/country toggles) so a real
+// re-render never clobbers whatever's currently in the Name field.
+function readAdminModuleForm(){
+  adminModuleDraft.data.name = document.getElementById("admin-module-name").value.trim();
+  adminModuleDraft.data.kind = document.getElementById("admin-module-kind").value;
+  adminModuleDraft.data.tierCount = Math.max(1, Math.min(6, Number(document.getElementById("admin-module-tiercount").value) || 1));
+}
+
+function commitAdminModuleDraft(status){
+  readAdminModuleForm();
+  if (!adminModuleDraft.data.name){
+    showToast("Module name is required");
+    return false;
+  }
+  if (adminModuleDraft.data.kind === "bespoke" && !adminModuleDraft.data.countryKeys.length){
+    showToast("Pick at least one country for a bespoke module");
+    return false;
+  }
+  if (!adminModuleDraft.id){
+    adminModuleDraft.id = nextAdminId("mod");
+    adminModuleDraft.version = 1;
+    adminModules.push(adminModuleDraft);
+  } else {
+    const idx = adminModules.findIndex(m => m.id === adminModuleDraft.id);
+    if (idx >= 0) adminModules[idx] = adminModuleDraft;
+  }
+  adminModuleDraft.status = status;
+  if (status !== "changes_requested") adminModuleDraft.changeNote = null;
+  return true;
+}
+
+function screenAdminModule(payload){
+  const id = payload && payload.id;
+  const record = id ? adminModules.find(m => m.id === id) : null;
+  const canEdit = adminRole === "author" && (!record || record.status === "draft" || record.status === "changes_requested");
+
+  if (canEdit && (!adminModuleDraft || adminModuleDraft.id !== id)){
+    adminModuleDraft = record ? JSON.parse(JSON.stringify(record)) : adminModuleDraft;
+  }
+  const view = canEdit ? adminModuleDraft : record;
+  if (!view) return `<div class="admin-empty">Module not found.</div>`;
+
+  const dests = publishedDestinations();
+  const fields = canEdit ? `
+    <label class="field-label" for="admin-module-name">Module name</label>
+    <input class="text-input" id="admin-module-name" value="${escapeHtml(view.data.name)}" placeholder="e.g. Ordering Food">
+
+    <label class="field-label" for="admin-module-kind">Ladder type</label>
+    <select class="admin-select" id="admin-module-kind">
+      <option value="generic" ${view.data.kind === "generic" ? "selected" : ""}>Generic — one Lesson per Tier, shared across every country</option>
+      <option value="bespoke" ${view.data.kind === "bespoke" ? "selected" : ""}>Country-bespoke — one Lesson per Tier, per country</option>
+    </select>
+
+    <label class="field-label" for="admin-module-tiercount">Number of tiers</label>
+    <input class="text-input" type="number" min="1" max="6" id="admin-module-tiercount" value="${view.data.tierCount}">
+
+    ${view.data.kind === "bespoke" ? `
+      <label class="field-label">Countries this module supports</label>
+      <div class="chip-grid">
+        ${dests.length ? dests.map(d => `
+          <button type="button" class="chip" data-action="admin-module-toggle-country" data-country="${d.countryKey}" data-selected="${view.data.countryKeys.includes(d.countryKey)}">
+            <span class="chip__label">${escapeHtml(d.data.name)}</span>
+          </button>
+        `).join("") : `<div class="admin-empty">No published destinations yet — publish one first (see Destinations).</div>`}
+      </div>
+    ` : ""}
+  ` : `
+    <div style="font-weight:800;font-size:19px;margin-top:14px;">${escapeHtml(view.data.name)}</div>
+    <div style="font-size:13px;color:var(--slate);margin-bottom:10px;">${view.data.kind === "generic" ? "Generic" : "Country-bespoke"} · ${view.data.tierCount} tier${view.data.tierCount === 1 ? "" : "s"}</div>
+  `;
+
+  const changeNoteHtml = (record && record.status === "changes_requested" && record.changeNote)
+    ? `<div class="admin-change-note"><b>Changes requested:</b> ${escapeHtml(record.changeNote)}</div>` : "";
+
+  const gridRows = moduleGridRows(view);
+  const tiers = Array.from({ length: view.data.tierCount }, (_, i) => i + 1);
+  const gridHtml = !view.id ? `<p class="admin-hint">Save this module as a Draft first to start attaching Lessons to its tier ladder.</p>` : `
+    <label class="field-label">Tier ladder completeness</label>
+    <div class="admin-grid-scroll">
+      <table class="admin-grid-table">
+        <thead><tr><th></th>${tiers.map(t => `<th>Tier ${t}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${gridRows.map(countryKey => {
+            const rowLabel = countryKey === null ? "All countries" : (dests.find(d => d.countryKey === countryKey)?.data.name || countryKey);
+            return `<tr>
+              <td class="admin-grid-row-label">${escapeHtml(rowLabel)}</td>
+              ${tiers.map(t => {
+                const cellStatus = moduleCellStatus(view, t, countryKey);
+                const candidates = moduleLessonCandidates(view, t, countryKey);
+                const lesson = candidates.find(l => l.status === "published") || candidates[0];
+                return `<td>
+                  <button class="admin-grid-cell" data-action="${lesson ? "admin-open-lesson" : "admin-new-lesson-for-module"}"
+                    data-id="${lesson ? lesson.id : ""}" data-module-id="${view.id}" data-tier="${t}" data-country="${countryKey || ""}">
+                    ${adminStatusChip(cellStatus)}
+                  </button>
+                </td>`;
+              }).join("")}
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+    ${moduleIsComplete(view) ? "" : `<p class="admin-hint">Every cell needs a Published Lesson before this module can be published.</p>`}
+  `;
+
+  let actionsHtml = "";
+  if (canEdit){
+    actionsHtml = `
+      <div class="sticky-cta admin-actions">
+        <button class="btn-secondary" data-action="admin-module-save-draft">Save Draft</button>
+        <button class="btn-primary" data-action="admin-module-submit-review">Submit for Review</button>
+      </div>`;
+  } else if (record && adminRole === "approver" && record.status === "in_review"){
+    actionsHtml = `
+      <div class="sticky-cta admin-actions">
+        <button class="btn-secondary" data-action="admin-module-request-changes">Request Changes</button>
+        <button class="btn-primary" data-action="admin-module-approve">Approve</button>
+      </div>`;
+  } else if (record && adminRole === "approver" && record.status === "approved"){
+    actionsHtml = moduleIsComplete(record)
+      ? `<div class="sticky-cta admin-actions"><button class="btn-primary" data-action="admin-module-publish">Publish</button></div>`
+      : `<p class="admin-hint">Can't publish yet — the tier ladder above isn't fully Published.</p>`;
+  } else if (record && adminRole === "author" && record.status === "published"){
+    actionsHtml = `<div class="sticky-cta admin-actions"><button class="btn-secondary" data-action="admin-module-new-version">Create new draft version</button></div>`;
+  } else if (record && record.status === "in_review"){
+    actionsHtml = `<p class="admin-hint">Submitted — waiting for an Approver to review this.</p>`;
+  } else if (record && record.status === "approved"){
+    actionsHtml = `<p class="admin-hint">Approved — waiting to be published.</p>`;
+  } else if (record && record.status === "archived"){
+    actionsHtml = `<p class="admin-hint">Archived — superseded by a newer published version.</p>`;
+  }
+
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 2px 4px;">
+      <span style="font-size:12px;color:var(--slate);font-family:var(--font-mono);">${record ? "v" + record.version : "New module"}</span>
+      ${adminStatusChip(view.status)}
+    </div>
+    ${changeNoteHtml}
+    ${fields}
+    ${gridHtml}
+    ${actionsHtml}
+  `;
+}
+
+/* ================================================================
+   ADMIN SCREENS — Lesson (§3)
+   ================================================================ */
+function blankAdminQuestion(){
+  return { kind:"produce", context:"", question:"", correctAnswer:"", distractors:[], symbol:Object.keys(SYMBOLS)[0], heard:"" };
+}
+
+function screenAdminLessons(){
+  const rows = adminLessons.slice().sort((a, b) => a.data.title.localeCompare(b.data.title)).map(l => {
+    const mod = adminModules.find(m => m.id === l.data.moduleId);
+    return `
+    <button class="admin-list-row" data-action="admin-open-lesson" data-id="${l.id}">
+      <span class="admin-list-row__mid">
+        <div class="admin-list-row__name">${escapeHtml(l.data.title)}</div>
+        <div class="admin-list-row__sub">${mod ? escapeHtml(mod.data.name) : "No module"} · Tier ${l.data.tier} · v${l.version}</div>
+      </span>
+      ${adminStatusChip(l.status)}
+    </button>
+  `;
+  }).join("");
+  return `
+    ${adminRole === "author" ? `<button class="btn-primary" style="margin:6px 0 18px;" data-action="admin-new-lesson" ${adminModules.length ? "" : "disabled"}>+ New lesson</button>` : ""}
+    ${!adminModules.length ? `<p class="admin-hint">Create a Module first — every Lesson belongs to one.</p>` : ""}
+    ${rows || `<div class="admin-empty">No lessons yet.</div>`}
+  `;
+}
+
+function readAdminLessonForm(){
+  const d = adminLessonDraft.data;
+  d.title = document.getElementById("admin-lesson-title").value.trim();
+  d.type = document.getElementById("admin-lesson-type").value;
+  d.moduleId = document.getElementById("admin-lesson-module").value || null;
+  d.tier = Math.max(1, Number(document.getElementById("admin-lesson-tier").value) || 1);
+  d.scope = document.getElementById("admin-lesson-scope").value;
+  const countryEl = document.getElementById("admin-lesson-country");
+  d.countryKey = d.scope === "country-specific" && countryEl ? countryEl.value : null;
+
+  d.questions.forEach((q, i) => {
+    const kindEl = document.getElementById(`q-kind-${i}`);
+    if (!kindEl) return; // row was removed from the DOM already
+    q.kind = kindEl.value;
+    q.context = document.getElementById(`q-context-${i}`).value.trim();
+    q.question = document.getElementById(`q-question-${i}`).value.trim();
+    q.correctAnswer = document.getElementById(`q-answer-${i}`).value.trim();
+    q.distractors = document.getElementById(`q-distractors-${i}`).value.split(",").map(s => s.trim()).filter(Boolean);
+    // The symbol/heard fields only exist in the DOM when the row's kind
+    // already was symbol/comprehend at last render — if this read was
+    // triggered by the kind select itself just switching TO one of those
+    // kinds, the field hasn't been rendered yet, so keep whatever value
+    // was already on the draft (blankAdminQuestion seeds a sane default).
+    const symbolEl = document.getElementById(`q-symbol-${i}`);
+    if (q.kind === "symbol" && symbolEl) q.symbol = symbolEl.value;
+    const heardEl = document.getElementById(`q-heard-${i}`);
+    if (q.kind === "comprehend" && heardEl) q.heard = heardEl.value.trim();
+  });
+}
+
+function commitAdminLessonDraft(status){
+  readAdminLessonForm();
+  const d = adminLessonDraft.data;
+  if (!d.title){ showToast("Lesson title is required"); return false; }
+  if (!d.moduleId){ showToast("Pick a module for this lesson"); return false; }
+  const mod = adminModules.find(m => m.id === d.moduleId);
+  if (mod && d.tier > mod.data.tierCount){ showToast(`${mod.data.name} only goes up to Tier ${mod.data.tierCount}`); return false; }
+  if (d.scope === "country-specific" && !d.countryKey){ showToast("Pick a country for a country-specific lesson"); return false; }
+
+  if (status === "in_review"){
+    if (d.questions.length < 5){ showToast("Needs at least 5 questions before it can be submitted"); return false; }
+    if (new Set(d.questions.map(q => q.kind)).size < 2){ showToast("Mix at least 2 question kinds before submitting (per PRD §11a)"); return false; }
+    if (d.questions.some(q => !q.question.trim() || !q.correctAnswer.trim() || q.distractors.length < 1)){
+      showToast("Every question needs prompt text, a correct answer, and at least one distractor");
+      return false;
+    }
+  }
+
+  if (!adminLessonDraft.id){
+    adminLessonDraft.id = nextAdminId("lsn");
+    adminLessonDraft.version = 1;
+    adminLessons.push(adminLessonDraft);
+  } else {
+    const idx = adminLessons.findIndex(l => l.id === adminLessonDraft.id);
+    if (idx >= 0) adminLessons[idx] = adminLessonDraft;
+  }
+  adminLessonDraft.status = status;
+  if (status !== "changes_requested") adminLessonDraft.changeNote = null;
+  return true;
+}
+
+function screenAdminLesson(payload){
+  const id = payload && payload.id;
+  const record = id ? adminLessons.find(l => l.id === id) : null;
+  const canEdit = adminRole === "author" && (!record || record.status === "draft" || record.status === "changes_requested");
+
+  if (canEdit && (!adminLessonDraft || adminLessonDraft.id !== id)){
+    adminLessonDraft = record ? JSON.parse(JSON.stringify(record)) : adminLessonDraft;
+    adminLessonPreviewIndex = 0;
+  }
+  const view = canEdit ? adminLessonDraft : record;
+  if (!view) return `<div class="admin-empty">Lesson not found.</div>`;
+
+  const dests = publishedDestinations();
+  const questions = view.data.questions;
+  if (canEdit) adminLessonPreviewIndex = Math.min(adminLessonPreviewIndex, Math.max(0, questions.length - 1));
+
+  const fields = canEdit ? `
+    <label class="field-label" for="admin-lesson-title">Lesson title</label>
+    <input class="text-input" id="admin-lesson-title" value="${escapeHtml(view.data.title)}" placeholder="e.g. Ordering at a Restaurant">
+
+    <label class="field-label" for="admin-lesson-type">Type</label>
+    <select class="admin-select" id="admin-lesson-type">
+      <option value="Phrase" ${view.data.type === "Phrase" ? "selected" : ""}>Phrase</option>
+      <option value="Culture" ${view.data.type === "Culture" ? "selected" : ""}>Culture</option>
+    </select>
+
+    <label class="field-label" for="admin-lesson-module">Module</label>
+    <select class="admin-select" id="admin-lesson-module">
+      <option value="">— pick a module —</option>
+      ${adminModules.map(m => `<option value="${m.id}" ${view.data.moduleId === m.id ? "selected" : ""}>${escapeHtml(m.data.name)}</option>`).join("")}
+    </select>
+
+    <label class="field-label" for="admin-lesson-tier">Tier</label>
+    <input class="text-input" type="number" min="1" id="admin-lesson-tier" value="${view.data.tier}">
+
+    <label class="field-label" for="admin-lesson-scope">Scope</label>
+    <select class="admin-select" id="admin-lesson-scope">
+      <option value="generic" ${view.data.scope === "generic" ? "selected" : ""}>Generic — reusable across countries</option>
+      <option value="country-specific" ${view.data.scope === "country-specific" ? "selected" : ""}>Country-specific</option>
+    </select>
+
+    ${view.data.scope === "country-specific" ? `
+      <label class="field-label" for="admin-lesson-country">Country</label>
+      <select class="admin-select" id="admin-lesson-country">
+        ${dests.length ? dests.map(d => `<option value="${d.countryKey}" ${view.data.countryKey === d.countryKey ? "selected" : ""}>${escapeHtml(d.data.name)}</option>`).join("") : `<option value="">No published destinations yet</option>`}
+      </select>
+    ` : ""}
+
+    <label class="field-label" style="margin-top:24px;">Questions (${questions.length}${questions.length < 5 ? " — needs 5+ to submit" : ""})</label>
+    ${questions.map((q, i) => adminQuestionCardHtml(q, i)).join("")}
+    <button type="button" class="btn-secondary" data-action="admin-lesson-add-question">+ Add question</button>
+  ` : `
+    <div style="font-weight:800;font-size:19px;margin-top:14px;">${escapeHtml(view.data.title)}</div>
+    <div style="font-size:13px;color:var(--slate);margin-bottom:10px;">${escapeHtml(view.data.type)} · Tier ${view.data.tier} · ${questions.length} questions</div>
+  `;
+
+  const changeNoteHtml = (record && record.status === "changes_requested" && record.changeNote)
+    ? `<div class="admin-change-note"><b>Changes requested:</b> ${escapeHtml(record.changeNote)}</div>` : "";
+
+  const previewQ = questions[adminLessonPreviewIndex];
+  // The shared "beat-answer" click handler (see EVENT DELEGATION below)
+  // reads the module-level `currentBeat`/`beatResult` that screenLesson()
+  // normally sets — mirror that here so the reused renderBeat() markup
+  // is actually interactive in the preview, not just a static mockup.
+  if (previewQ){
+    currentBeat = adminQuestionToBeat(previewQ);
+    beatResult = null;
+  }
+  const previewHtml = previewQ ? `
+    <div class="admin-preview">
+      <div class="admin-preview__label">Live preview — reuses the real traveler beat renderer, and the option buttons below actually work</div>
+      ${renderBeat(adminQuestionToBeat(previewQ))}
+      <div class="admin-actions" style="margin-top:10px;">
+        <button class="btn-secondary" data-action="admin-lesson-preview-step" data-dir="-1" ${adminLessonPreviewIndex === 0 ? "disabled" : ""}>Prev</button>
+        <button class="btn-secondary" data-action="admin-lesson-preview-step" data-dir="1" ${adminLessonPreviewIndex >= questions.length - 1 ? "disabled" : ""}>Next</button>
+      </div>
+      <div style="font-size:11.5px;color:var(--slate);text-align:center;margin-top:6px;">Question ${adminLessonPreviewIndex + 1} of ${questions.length}</div>
+    </div>
+  ` : `<div class="admin-preview"><div class="admin-preview__label">Live preview</div><div class="admin-empty">Add a question to preview it.</div></div>`;
+
+  let actionsHtml = "";
+  if (canEdit){
+    actionsHtml = `
+      <div class="sticky-cta admin-actions">
+        <button class="btn-secondary" data-action="admin-lesson-save-draft">Save Draft</button>
+        <button class="btn-primary" data-action="admin-lesson-submit-review">Submit for Review</button>
+      </div>`;
+  } else if (record && adminRole === "approver" && record.status === "in_review"){
+    actionsHtml = `
+      <div class="sticky-cta admin-actions">
+        <button class="btn-secondary" data-action="admin-lesson-request-changes">Request Changes</button>
+        <button class="btn-primary" data-action="admin-lesson-approve">Approve</button>
+      </div>`;
+  } else if (record && adminRole === "approver" && record.status === "approved"){
+    actionsHtml = `<div class="sticky-cta admin-actions"><button class="btn-primary" data-action="admin-lesson-publish">Publish</button></div>`;
+  } else if (record && adminRole === "author" && record.status === "published"){
+    actionsHtml = `<div class="sticky-cta admin-actions"><button class="btn-secondary" data-action="admin-lesson-new-version">Create new draft version</button></div>`;
+  } else if (record && record.status === "in_review"){
+    actionsHtml = `<p class="admin-hint">Submitted — waiting for an Approver to review this.</p>`;
+  } else if (record && record.status === "approved"){
+    actionsHtml = `<p class="admin-hint">Approved — waiting to be published.</p>`;
+  } else if (record && record.status === "archived"){
+    actionsHtml = `<p class="admin-hint">Archived — superseded by a newer published version.</p>`;
+  }
+
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 2px 4px;">
+      <span style="font-size:12px;color:var(--slate);font-family:var(--font-mono);">${record ? "v" + record.version : "New lesson"}</span>
+      ${adminStatusChip(view.status)}
+    </div>
+    ${changeNoteHtml}
+    ${fields}
+    ${previewHtml}
+    ${actionsHtml}
+  `;
+}
+
+function adminQuestionCardHtml(q, i){
+  return `
+    <div class="admin-question-card">
+      <div class="admin-question-card__head">
+        <span class="admin-question-card__index">Question ${i + 1}</span>
+        <button type="button" class="admin-remove-btn" data-action="admin-lesson-remove-question" data-index="${i}">Remove</button>
+      </div>
+
+      <label class="field-label">Kind</label>
+      <select class="admin-select" id="q-kind-${i}">
+        <option value="produce" ${q.kind === "produce" ? "selected" : ""}>Produce — "How do you say X?"</option>
+        <option value="comprehend" ${q.kind === "comprehend" ? "selected" : ""}>Comprehend — hear a phrase, pick what it means</option>
+        <option value="symbol" ${q.kind === "symbol" ? "selected" : ""}>Symbol — read a sign/icon</option>
+        <option value="situational" ${q.kind === "situational" ? "selected" : ""}>Situational — "what would you do?"</option>
+      </select>
+
+      <label class="field-label">Scenario context</label>
+      <textarea class="notes" id="q-context-${i}" style="min-height:44px;" placeholder="e.g. You sit down and a waiter hands you a menu.">${escapeHtml(q.context)}</textarea>
+
+      ${q.kind === "symbol" ? `
+        <label class="field-label">Symbol icon</label>
+        <select class="admin-select" id="q-symbol-${i}">
+          ${Object.keys(SYMBOLS).map(key => `<option value="${key}" ${q.symbol === key ? "selected" : ""}>${key}</option>`).join("")}
+        </select>
+      ` : ""}
+      ${q.kind === "comprehend" ? `
+        <label class="field-label">What they say (local phrase)</label>
+        <input class="text-input" id="q-heard-${i}" value="${escapeHtml(q.heard)}" placeholder="e.g. Nan-ban-sen desu ka?">
+      ` : ""}
+
+      <label class="field-label">Question prompt</label>
+      <input class="text-input" id="q-question-${i}" value="${escapeHtml(q.question)}" placeholder="e.g. What are they asking?">
+
+      <label class="field-label">Correct answer</label>
+      <input class="text-input" id="q-answer-${i}" value="${escapeHtml(q.correctAnswer)}" placeholder="The right option">
+
+      <label class="field-label">Distractors (comma-separated)</label>
+      <input class="text-input" id="q-distractors-${i}" value="${escapeHtml((q.distractors || []).join(", "))}" placeholder="Wrong option one, wrong option two">
+    </div>
+  `;
+}
+
+/* ================================================================
+   ADMIN SCREENS — Trip Type Blueprint (§5)
+   ================================================================ */
+function screenAdminBlueprints(){
+  const rows = adminBlueprints
+    .slice()
+    .sort((a, b) => TRIP_TYPES[a.data.tripKey].label.localeCompare(TRIP_TYPES[b.data.tripKey].label))
+    .map(bp => `
+      <button class="admin-list-row" data-action="admin-open-blueprint" data-id="${bp.id}">
+        <span class="admin-list-row__mid">
+          <div class="admin-list-row__name">${escapeHtml(TRIP_TYPES[bp.data.tripKey].label)}</div>
+          <div class="admin-list-row__sub">${bp.data.legs.length} leg${bp.data.legs.length === 1 ? "" : "s"} · v${bp.version}</div>
+        </span>
+        ${adminStatusChip(bp.status)}
+      </button>
+    `).join("");
+  return `
+    ${adminRole === "author" ? `<button class="btn-primary" style="margin:6px 0 18px;" data-action="admin-new-blueprint" ${adminModules.length ? "" : "disabled"}>+ New blueprint</button>` : ""}
+    ${!adminModules.length ? `<p class="admin-hint">Create a Module first — Blueprints gate Modules into Legs.</p>` : ""}
+    ${rows || `<div class="admin-empty">No blueprints yet.</div>`}
+  `;
+}
+
+function readAdminBlueprintForm(){
+  const d = adminBlueprintDraft.data;
+  const tripEl = document.getElementById("admin-bp-triptype");
+  if (tripEl) d.tripKey = tripEl.value;
+  d.legs.forEach((leg, li) => {
+    const nameEl = document.getElementById(`bp-leg-name-${li}`);
+    if (!nameEl) return; // leg row isn't in the DOM (view-only render)
+    leg.name = nameEl.value.trim();
+    leg.blurb = document.getElementById(`bp-leg-blurb-${li}`).value.trim();
+    const gates = [];
+    adminModules.forEach(mod => {
+      const chk = document.getElementById(`bp-gate-${li}-${mod.id}`);
+      if (chk && chk.checked){
+        const tierEl = document.getElementById(`bp-gate-tier-${li}-${mod.id}`);
+        const tier = Math.max(1, Math.min(mod.data.tierCount, Number(tierEl.value) || 1));
+        gates.push({ moduleId: mod.id, tier });
+      }
+    });
+    leg.moduleGates = gates;
+  });
+}
+
+function commitAdminBlueprintDraft(status){
+  readAdminBlueprintForm();
+  const d = adminBlueprintDraft.data;
+  if (!d.legs.length){ showToast("Add at least one leg"); return false; }
+  if (d.legs.some(leg => !leg.name)){ showToast("Every leg needs a name"); return false; }
+  if (status === "in_review" && !d.legs.some(leg => leg.moduleGates.length)){
+    showToast("Gate at least one module into a leg before submitting");
+    return false;
+  }
+  if (!adminBlueprintDraft.id){
+    adminBlueprintDraft.id = nextAdminId("bp");
+    adminBlueprintDraft.version = 1;
+    adminBlueprints.push(adminBlueprintDraft);
+  } else {
+    const idx = adminBlueprints.findIndex(b => b.id === adminBlueprintDraft.id);
+    if (idx >= 0) adminBlueprints[idx] = adminBlueprintDraft;
+  }
+  adminBlueprintDraft.status = status;
+  if (status !== "changes_requested") adminBlueprintDraft.changeNote = null;
+  return true;
+}
+
+function adminLegCardHtml(leg, li){
+  return `
+    <div class="admin-question-card">
+      <div class="admin-question-card__head">
+        <span class="admin-question-card__index">${LEG_LADDER[li] || `Leg ${li + 1}`}</span>
+        <button type="button" class="admin-remove-btn" data-action="admin-blueprint-remove-leg" data-index="${li}">Remove</button>
+      </div>
+
+      <label class="field-label">Leg name</label>
+      <input class="text-input" id="bp-leg-name-${li}" value="${escapeHtml(leg.name)}" placeholder="e.g. ${LEG_LADDER[li] || "Leg name"}">
+
+      <label class="field-label">Blurb</label>
+      <textarea class="notes" id="bp-leg-blurb-${li}" style="min-height:44px;" placeholder="What does this leg feel like for the traveler?">${escapeHtml(leg.blurb)}</textarea>
+
+      <label class="field-label">Modules gated into this leg</label>
+      ${adminModules.length ? adminModules.map(mod => {
+        const gate = leg.moduleGates.find(g => g.moduleId === mod.id);
+        return `
+          <div class="admin-list-row" style="cursor:default;">
+            <input type="checkbox" id="bp-gate-${li}-${mod.id}" ${gate ? "checked" : ""} style="width:18px;height:18px;flex-shrink:0;">
+            <span class="admin-list-row__mid">
+              <div class="admin-list-row__name">${escapeHtml(mod.data.name)}</div>
+              <div class="admin-list-row__sub">${mod.data.kind === "generic" ? "Generic" : "Bespoke"} · up to Tier ${mod.data.tierCount}${mod.status !== "published" ? " · not yet published" : ""}</div>
+            </span>
+            <input class="text-input" type="number" min="1" max="${mod.data.tierCount}" id="bp-gate-tier-${li}-${mod.id}" value="${gate ? gate.tier : 1}" style="width:52px;text-align:center;flex-shrink:0;">
+          </div>
+        `;
+      }).join("") : `<p class="admin-hint">No modules yet — create one first.</p>`}
+    </div>
+  `;
+}
+
+function screenAdminBlueprint(payload){
+  const id = payload && payload.id;
+  const record = id ? adminBlueprints.find(b => b.id === id) : null;
+  const canEdit = adminRole === "author" && (!record || record.status === "draft" || record.status === "changes_requested");
+
+  if (canEdit && (!adminBlueprintDraft || adminBlueprintDraft.id !== id)){
+    adminBlueprintDraft = record ? JSON.parse(JSON.stringify(record)) : adminBlueprintDraft;
+  }
+  const view = canEdit ? adminBlueprintDraft : record;
+  if (!view) return `<div class="admin-empty">Blueprint not found.</div>`;
+
+  const dests = publishedDestinations();
+  if (!adminBlueprintPreviewCountry || !dests.some(d => d.countryKey === adminBlueprintPreviewCountry)){
+    adminBlueprintPreviewCountry = dests.length ? dests[0].countryKey : null;
+  }
+
+  const fields = canEdit ? `
+    <label class="field-label" for="admin-bp-triptype">Trip Type</label>
+    <select class="admin-select" id="admin-bp-triptype">
+      ${Object.entries(TRIP_TYPES).map(([key, t]) => `<option value="${key}" ${view.data.tripKey === key ? "selected" : ""}>${t.label}</option>`).join("")}
+    </select>
+
+    <label class="field-label" style="margin-top:24px;">Legs (${view.data.legs.length}/${LEG_LADDER.length})</label>
+    ${view.data.legs.map((leg, li) => adminLegCardHtml(leg, li)).join("")}
+    ${view.data.legs.length < LEG_LADDER.length
+      ? `<button type="button" class="btn-secondary" data-action="admin-blueprint-add-leg">+ Add leg</button>`
+      : `<p class="admin-hint">Maximum of ${LEG_LADDER.length} legs.</p>`}
+  ` : `
+    <div style="font-weight:800;font-size:19px;margin-top:14px;">${escapeHtml(TRIP_TYPES[view.data.tripKey].label)}</div>
+    <div style="font-size:13px;color:var(--slate);margin-bottom:10px;">${view.data.legs.length} leg${view.data.legs.length === 1 ? "" : "s"}</div>
+    ${view.data.legs.map((leg, li) => `
+      <div class="admin-question-card">
+        <div class="admin-question-card__head"><span class="admin-question-card__index">${escapeHtml(leg.name) || (LEG_LADDER[li] || `Leg ${li + 1}`)}</span></div>
+        <div style="font-size:13px;color:var(--slate);">${escapeHtml(leg.blurb) || "No blurb yet."}</div>
+        <div style="font-size:12px;color:var(--slate);margin-top:6px;">${leg.moduleGates.length} module${leg.moduleGates.length === 1 ? "" : "s"} gated</div>
+      </div>
+    `).join("")}
+  `;
+
+  const changeNoteHtml = (record && record.status === "changes_requested" && record.changeNote)
+    ? `<div class="admin-change-note"><b>Changes requested:</b> ${escapeHtml(record.changeNote)}</div>` : "";
+
+  // Dry-run preview (§5 step 3): resolves each Leg's gated Modules against
+  // a real published country, reusing the traveler week-row markup — the
+  // same resolution a Leg's actual syllabus generation will do (§8/§9),
+  // just run here against the Draft instead of a traveler's course.
+  const previewHtml = `
+    <div class="admin-preview">
+      <div class="admin-preview__label">Dry-run preview — resolves this Blueprint's Legs against a real country, the way a traveler's syllabus will (§8/§9)</div>
+      ${dests.length ? `
+        <label class="field-label" for="admin-bp-preview-country" style="margin-top:0;">Preview country</label>
+        <select class="admin-select" id="admin-bp-preview-country">
+          ${dests.map(d => `<option value="${d.countryKey}" ${adminBlueprintPreviewCountry === d.countryKey ? "selected" : ""}>${escapeHtml(d.data.name)}</option>`).join("")}
+        </select>
+        ${view.data.legs.map((leg, li) => `
+          <div style="font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);margin:16px 2px 6px;">${escapeHtml(leg.name) || (LEG_LADDER[li] || `Leg ${li + 1}`)}</div>
+          <div class="week-list">
+            ${leg.moduleGates.length ? leg.moduleGates.map(gate => {
+              const mod = adminModules.find(m => m.id === gate.moduleId);
+              const lesson = resolveBlueprintGateLesson(gate, adminBlueprintPreviewCountry);
+              return `
+                <div class="week-row" style="cursor:default;">
+                  <span class="week-row__num" data-done="${lesson ? "true" : "false"}">${lesson ? "&#10003;" : "&ndash;"}</span>
+                  <span class="week-row__title">${lesson ? escapeHtml(lesson.data.title) : `${mod ? escapeHtml(mod.data.name) : "Unknown module"} — not yet resolved`}</span>
+                  <span class="week-row__tag">${mod ? escapeHtml(mod.data.name) : ""} · Tier ${gate.tier}</span>
+                </div>`;
+            }).join("") : `<div class="admin-empty">No modules gated into this leg yet.</div>`}
+          </div>
+        `).join("")}
+      ` : `<p class="admin-hint">No published destinations yet — publish one to dry-run this Blueprint.</p>`}
+    </div>
+  `;
+
+  let actionsHtml = "";
+  if (canEdit){
+    actionsHtml = `
+      <div class="sticky-cta admin-actions">
+        <button class="btn-secondary" data-action="admin-blueprint-save-draft">Save Draft</button>
+        <button class="btn-primary" data-action="admin-blueprint-submit-review">Submit for Review</button>
+      </div>`;
+  } else if (record && adminRole === "approver" && record.status === "in_review"){
+    actionsHtml = `
+      <div class="sticky-cta admin-actions">
+        <button class="btn-secondary" data-action="admin-blueprint-request-changes">Request Changes</button>
+        <button class="btn-primary" data-action="admin-blueprint-approve">Approve</button>
+      </div>`;
+  } else if (record && adminRole === "approver" && record.status === "approved"){
+    actionsHtml = blueprintIsPublishable(record)
+      ? `<div class="sticky-cta admin-actions"><button class="btn-primary" data-action="admin-blueprint-publish">Publish</button></div>`
+      : `<p class="admin-hint">Can't publish yet — every gated Module needs to be Published first.</p>`;
+  } else if (record && adminRole === "author" && record.status === "published"){
+    actionsHtml = `<div class="sticky-cta admin-actions"><button class="btn-secondary" data-action="admin-blueprint-new-version">Create new draft version</button></div>`;
+  } else if (record && record.status === "in_review"){
+    actionsHtml = `<p class="admin-hint">Submitted — waiting for an Approver to review this.</p>`;
+  } else if (record && record.status === "approved"){
+    actionsHtml = `<p class="admin-hint">Approved — waiting to be published.</p>`;
+  } else if (record && record.status === "archived"){
+    actionsHtml = `<p class="admin-hint">Archived — superseded by a newer published version.</p>`;
+  }
+
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 2px 4px;">
+      <span style="font-size:12px;color:var(--slate);font-family:var(--font-mono);">${record ? "v" + record.version : "New blueprint"}</span>
+      ${adminStatusChip(view.status)}
+    </div>
+    ${changeNoteHtml}
+    ${fields}
+    ${previewHtml}
+    ${actionsHtml}
+  `;
+}
+
+/* ================================================================
    RENDER DISPATCH
 
-   TODO(admin): DEMO-ONLY — for this prototype phase, register new admin
-   screens here (e.g. admin-lessons, admin-modules, admin-blueprints,
-   admin-review) rather than building a separate app, so the Lesson/
-   Module/Blueprint-creation and approval flows can be validated in one
-   file (see ADMIN-CONTENT-PLAN.md §10). This is explicitly a shortcut:
-   the real admin surface should be its own separate app, optimised for
-   desktop/laptop, not more entries added to this mobile traveler app's
-   dispatch table long-term.
+   Admin screens (admin-home, admin-destinations, admin-review-queue,
+   admin-destination, admin-modules, admin-module, admin-lessons,
+   admin-lesson, admin-blueprints, admin-blueprint) are registered
+   below alongside the traveler screens — a demo-phase shortcut
+   (ADMIN-CONTENT-PLAN.md §10), not the intended end state.
    ================================================================ */
 const SCREENS = {
   home: screenHome,
@@ -1980,7 +3334,17 @@ const SCREENS = {
   dashboard: screenDashboard,
   lesson: screenLesson,
   phrasebook: screenPhrasebook,
-  feedback: screenFeedback
+  feedback: screenFeedback,
+  "admin-home": screenAdminHome,
+  "admin-destinations": screenAdminDestinations,
+  "admin-review-queue": screenAdminReviewQueue,
+  "admin-destination": screenAdminDestination,
+  "admin-modules": screenAdminModules,
+  "admin-module": screenAdminModule,
+  "admin-lessons": screenAdminLessons,
+  "admin-lesson": screenAdminLesson,
+  "admin-blueprints": screenAdminBlueprints,
+  "admin-blueprint": screenAdminBlueprint
 };
 
 function render(){
@@ -1995,10 +3359,20 @@ function render(){
   // var(--flag-*) — ticket, week rows, culture card, vocab cards, quiz —
   // picks up the same theme via normal CSS inheritance.
   if (top.name === "dashboard" || top.name === "lesson" || top.name === "phrasebook") applyFlagVars(app, COUNTRIES[top.payload.course.countryKey].colours);
+  if (top.name === "admin-blueprint" && adminBlueprintPreviewCountry){
+    const previewDest = adminDestinations.find(d => d.countryKey === adminBlueprintPreviewCountry);
+    if (previewDest) applyFlagVars(app, previewDest.data.colours);
+  }
   if (top.name === "generating") runGenerating(top.payload);
 
-  // keep tab bar's active state honest — Trips is the only implemented tab
-  document.querySelectorAll(".tabbar__item").forEach(el => el.dataset.active = (el.dataset.action === "go-home") ? "true" : "false");
+  // Admin screens render full-width, outside the phone frame (see
+  // .app-shell.is-admin — ADMIN-CONTENT-PLAN.md §10).
+  document.querySelector(".app-shell").classList.toggle("is-admin", top.name.startsWith("admin"));
+
+  // keep tab bar's active state honest — Trips/Admin are the only
+  // implemented tabs
+  const activeTab = top.name.startsWith("admin") ? "go-admin" : "go-home";
+  document.querySelectorAll(".tabbar__item").forEach(el => el.dataset.active = (el.dataset.action === activeTab) ? "true" : "false");
 }
 
 /* ================================================================
@@ -2016,6 +3390,404 @@ document.addEventListener("click", (e) => {
     case "back": pop(); break;
     case "go-home": resetToHome(); break;
     case "stub-tab": showToast("Not in this prototype — see PRD §8"); break;
+    case "admin-stub": showToast(el.dataset.msg || "Not built yet in this prototype"); break;
+
+    case "go-admin":
+      adminDraft = null;
+      stack = [{ name: "admin-home" }];
+      render();
+      break;
+
+    case "admin-set-role":
+      adminRole = el.dataset.role;
+      render();
+      break;
+
+    case "admin-open-destinations": push("admin-destinations"); break;
+    case "admin-open-review-queue": push("admin-review-queue"); break;
+
+    case "admin-new-destination":
+      adminDraft = {
+        id: null, countryKey: null, status: "draft", version: 1, legacy: false, changeNote: null,
+        data: {
+          name: "", capital: "",
+          colours: { primary: "#BC002D", secondary: "#FFFFFF", tertiary: "#14181F" },
+          flagPattern: "vertical-tricolor", cultureTip: ""
+        }
+      };
+      push("admin-destination", { id: null });
+      break;
+
+    case "admin-open-destination":
+      adminDraft = null; // re-primed by screenAdminDestination if this record is editable
+      push("admin-destination", { id: el.dataset.id });
+      break;
+
+    case "admin-save-draft": {
+      if (commitAdminDraft("draft")){
+        showToast("Draft saved");
+        stack[stack.length - 1].payload = { id: adminDraft.id };
+        render();
+      }
+      break;
+    }
+
+    case "admin-submit-review": {
+      if (commitAdminDraft("in_review")){
+        showToast("Submitted for review");
+        stack[stack.length - 1].payload = { id: adminDraft.id };
+        render();
+      }
+      break;
+    }
+
+    case "admin-approve": {
+      const rec = adminDestinations.find(d => d.id === stack[stack.length - 1].payload.id);
+      rec.status = "approved";
+      rec.changeNote = null;
+      showToast("Approved");
+      render();
+      break;
+    }
+
+    case "admin-request-changes": {
+      const rec = adminDestinations.find(d => d.id === stack[stack.length - 1].payload.id);
+      const note = prompt("What needs to change before this can be approved?");
+      if (note === null) break; // cancelled
+      rec.status = "changes_requested";
+      rec.changeNote = note.trim() || "Changes requested.";
+      showToast("Changes requested");
+      render();
+      break;
+    }
+
+    case "admin-publish": {
+      const rec = adminDestinations.find(d => d.id === stack[stack.length - 1].payload.id);
+      // Publishing swaps the live version immediately (no backend, matches
+      // this prototype's spirit — ADMIN-CONTENT-PLAN.md §6) by archiving
+      // whatever else for this destination was previously published.
+      adminDestinations
+        .filter(d => d.countryKey === rec.countryKey && d.status === "published" && d.id !== rec.id)
+        .forEach(d => { d.status = "archived"; });
+      rec.status = "published";
+      showToast(`${rec.data.name} is now live`);
+      render();
+      break;
+    }
+
+    case "admin-new-version": {
+      const rec = adminDestinations.find(d => d.id === stack[stack.length - 1].payload.id);
+      const copy = JSON.parse(JSON.stringify(rec));
+      copy.id = nextAdminId("dest");
+      copy.version = rec.version + 1;
+      copy.status = "draft";
+      copy.legacy = false;
+      copy.changeNote = null;
+      copy.data.flagPattern = copy.data.flagPattern || "vertical-tricolor";
+      adminDestinations.push(copy);
+      showToast("New draft version created");
+      adminDraft = null;
+      push("admin-destination", { id: copy.id });
+      break;
+    }
+
+    // ---- Module (§4) ----
+    case "admin-open-modules": push("admin-modules"); break;
+
+    case "admin-new-module":
+      adminModuleDraft = {
+        id: null, status: "draft", version: 1, changeNote: null,
+        data: { name: "", kind: "generic", tierCount: 3, countryKeys: [] }
+      };
+      push("admin-module", { id: null });
+      break;
+
+    case "admin-open-module":
+      adminModuleDraft = null;
+      push("admin-module", { id: el.dataset.id });
+      break;
+
+    case "admin-module-toggle-country": {
+      readAdminModuleForm();
+      const key = el.dataset.country;
+      const idx = adminModuleDraft.data.countryKeys.indexOf(key);
+      if (idx >= 0) adminModuleDraft.data.countryKeys.splice(idx, 1);
+      else adminModuleDraft.data.countryKeys.push(key);
+      render();
+      break;
+    }
+
+    case "admin-module-save-draft": {
+      if (commitAdminModuleDraft("draft")){
+        showToast("Draft saved");
+        stack[stack.length - 1].payload = { id: adminModuleDraft.id };
+        render();
+      }
+      break;
+    }
+
+    case "admin-module-submit-review": {
+      if (commitAdminModuleDraft("in_review")){
+        showToast("Submitted for review");
+        stack[stack.length - 1].payload = { id: adminModuleDraft.id };
+        render();
+      }
+      break;
+    }
+
+    case "admin-module-approve": {
+      const rec = adminModules.find(m => m.id === stack[stack.length - 1].payload.id);
+      rec.status = "approved";
+      rec.changeNote = null;
+      showToast("Approved");
+      render();
+      break;
+    }
+
+    case "admin-module-request-changes": {
+      const rec = adminModules.find(m => m.id === stack[stack.length - 1].payload.id);
+      const note = prompt("What needs to change before this can be approved?");
+      if (note === null) break;
+      rec.status = "changes_requested";
+      rec.changeNote = note.trim() || "Changes requested.";
+      showToast("Changes requested");
+      render();
+      break;
+    }
+
+    case "admin-module-publish": {
+      const rec = adminModules.find(m => m.id === stack[stack.length - 1].payload.id);
+      if (!moduleIsComplete(rec)){ showToast("Tier ladder isn't fully published yet"); break; }
+      rec.status = "published";
+      showToast(`${rec.data.name} is now live`);
+      render();
+      break;
+    }
+
+    case "admin-module-new-version": {
+      const rec = adminModules.find(m => m.id === stack[stack.length - 1].payload.id);
+      const copy = JSON.parse(JSON.stringify(rec));
+      copy.id = nextAdminId("mod");
+      copy.version = rec.version + 1;
+      copy.status = "draft";
+      copy.changeNote = null;
+      adminModules.push(copy);
+      showToast("New draft version created");
+      adminModuleDraft = null;
+      push("admin-module", { id: copy.id });
+      break;
+    }
+
+    // ---- Lesson (§3) ----
+    case "admin-open-lessons": push("admin-lessons"); break;
+
+    case "admin-new-lesson":
+      adminLessonDraft = {
+        id: null, status: "draft", version: 1, changeNote: null,
+        data: { title: "", type: "Phrase", moduleId: null, tier: 1, scope: "generic", countryKey: null, questions: [] }
+      };
+      adminLessonPreviewIndex = 0;
+      push("admin-lesson", { id: null });
+      break;
+
+    case "admin-new-lesson-for-module": {
+      const countryKey = el.dataset.country || null;
+      adminLessonDraft = {
+        id: null, status: "draft", version: 1, changeNote: null,
+        data: {
+          title: "", type: "Phrase", moduleId: el.dataset.moduleId, tier: Number(el.dataset.tier),
+          scope: countryKey ? "country-specific" : "generic", countryKey, questions: []
+        }
+      };
+      adminLessonPreviewIndex = 0;
+      push("admin-lesson", { id: null });
+      break;
+    }
+
+    case "admin-open-lesson":
+      adminLessonDraft = null;
+      push("admin-lesson", { id: el.dataset.id });
+      break;
+
+    case "admin-lesson-add-question": {
+      readAdminLessonForm();
+      adminLessonDraft.data.questions.push(blankAdminQuestion());
+      adminLessonPreviewIndex = adminLessonDraft.data.questions.length - 1;
+      render();
+      break;
+    }
+
+    case "admin-lesson-remove-question": {
+      readAdminLessonForm();
+      adminLessonDraft.data.questions.splice(Number(el.dataset.index), 1);
+      adminLessonPreviewIndex = Math.max(0, Math.min(adminLessonPreviewIndex, adminLessonDraft.data.questions.length - 1));
+      render();
+      break;
+    }
+
+    case "admin-lesson-preview-step": {
+      readAdminLessonForm();
+      adminLessonPreviewIndex = Math.max(0, Math.min(
+        adminLessonPreviewIndex + Number(el.dataset.dir),
+        adminLessonDraft.data.questions.length - 1
+      ));
+      render();
+      break;
+    }
+
+    case "admin-lesson-save-draft": {
+      if (commitAdminLessonDraft("draft")){
+        showToast("Draft saved");
+        stack[stack.length - 1].payload = { id: adminLessonDraft.id };
+        render();
+      }
+      break;
+    }
+
+    case "admin-lesson-submit-review": {
+      if (commitAdminLessonDraft("in_review")){
+        showToast("Submitted for review");
+        stack[stack.length - 1].payload = { id: adminLessonDraft.id };
+        render();
+      }
+      break;
+    }
+
+    case "admin-lesson-approve": {
+      const rec = adminLessons.find(l => l.id === stack[stack.length - 1].payload.id);
+      rec.status = "approved";
+      rec.changeNote = null;
+      showToast("Approved");
+      render();
+      break;
+    }
+
+    case "admin-lesson-request-changes": {
+      const rec = adminLessons.find(l => l.id === stack[stack.length - 1].payload.id);
+      const note = prompt("What needs to change before this can be approved?");
+      if (note === null) break;
+      rec.status = "changes_requested";
+      rec.changeNote = note.trim() || "Changes requested.";
+      showToast("Changes requested");
+      render();
+      break;
+    }
+
+    case "admin-lesson-publish": {
+      const rec = adminLessons.find(l => l.id === stack[stack.length - 1].payload.id);
+      rec.status = "published";
+      showToast(`${rec.data.title} is now live`);
+      render();
+      break;
+    }
+
+    case "admin-lesson-new-version": {
+      const rec = adminLessons.find(l => l.id === stack[stack.length - 1].payload.id);
+      const copy = JSON.parse(JSON.stringify(rec));
+      copy.id = nextAdminId("lsn");
+      copy.version = rec.version + 1;
+      copy.status = "draft";
+      copy.changeNote = null;
+      adminLessons.push(copy);
+      showToast("New draft version created");
+      adminLessonDraft = null;
+      adminLessonPreviewIndex = 0;
+      push("admin-lesson", { id: copy.id });
+      break;
+    }
+
+    // ---- Trip Type Blueprint (§5) ----
+    case "admin-open-blueprints": push("admin-blueprints"); break;
+
+    case "admin-new-blueprint":
+      adminBlueprintDraft = {
+        id: null, status: "draft", version: 1, changeNote: null,
+        data: { tripKey: Object.keys(TRIP_TYPES)[0], legs: [blankLeg(LEG_LADDER[0])] }
+      };
+      push("admin-blueprint", { id: null });
+      break;
+
+    case "admin-open-blueprint":
+      adminBlueprintDraft = null;
+      push("admin-blueprint", { id: el.dataset.id });
+      break;
+
+    case "admin-blueprint-add-leg": {
+      readAdminBlueprintForm();
+      if (adminBlueprintDraft.data.legs.length < LEG_LADDER.length){
+        adminBlueprintDraft.data.legs.push(blankLeg(LEG_LADDER[adminBlueprintDraft.data.legs.length]));
+      }
+      render();
+      break;
+    }
+
+    case "admin-blueprint-remove-leg": {
+      readAdminBlueprintForm();
+      adminBlueprintDraft.data.legs.splice(Number(el.dataset.index), 1);
+      render();
+      break;
+    }
+
+    case "admin-blueprint-save-draft": {
+      if (commitAdminBlueprintDraft("draft")){
+        showToast("Draft saved");
+        stack[stack.length - 1].payload = { id: adminBlueprintDraft.id };
+        render();
+      }
+      break;
+    }
+
+    case "admin-blueprint-submit-review": {
+      if (commitAdminBlueprintDraft("in_review")){
+        showToast("Submitted for review");
+        stack[stack.length - 1].payload = { id: adminBlueprintDraft.id };
+        render();
+      }
+      break;
+    }
+
+    case "admin-blueprint-approve": {
+      const rec = adminBlueprints.find(b => b.id === stack[stack.length - 1].payload.id);
+      rec.status = "approved";
+      rec.changeNote = null;
+      showToast("Approved");
+      render();
+      break;
+    }
+
+    case "admin-blueprint-request-changes": {
+      const rec = adminBlueprints.find(b => b.id === stack[stack.length - 1].payload.id);
+      const note = prompt("What needs to change before this can be approved?");
+      if (note === null) break;
+      rec.status = "changes_requested";
+      rec.changeNote = note.trim() || "Changes requested.";
+      showToast("Changes requested");
+      render();
+      break;
+    }
+
+    case "admin-blueprint-publish": {
+      const rec = adminBlueprints.find(b => b.id === stack[stack.length - 1].payload.id);
+      if (!blueprintIsPublishable(rec)){ showToast("Every gated module needs to be published first"); break; }
+      rec.status = "published";
+      showToast(`${TRIP_TYPES[rec.data.tripKey].label} blueprint is now live`);
+      render();
+      break;
+    }
+
+    case "admin-blueprint-new-version": {
+      const rec = adminBlueprints.find(b => b.id === stack[stack.length - 1].payload.id);
+      const copy = JSON.parse(JSON.stringify(rec));
+      copy.id = nextAdminId("bp");
+      copy.version = rec.version + 1;
+      copy.status = "draft";
+      copy.changeNote = null;
+      adminBlueprints.push(copy);
+      showToast("New draft version created");
+      adminBlueprintDraft = null;
+      push("admin-blueprint", { id: copy.id });
+      break;
+    }
 
     case "start-course":
       draft = { countryKey:null, tripKey:null };
@@ -2115,9 +3887,15 @@ document.addEventListener("click", (e) => {
         feedback.textContent = `Not quite — it's "${currentBeat.options[currentBeat.correctIndex]}".`;
         feedback.dataset.tone = "bad";
       }
+      // Only the real traveler lesson screen has a "continue" button — the
+      // admin Lesson editor's preview (see screenAdminLesson) reuses this
+      // same handler via its own Prev/Next stepper instead, and has no
+      // beat-continue-btn to update.
       const btn = document.getElementById("beat-continue-btn");
-      btn.disabled = false;
-      btn.textContent = btn.dataset.final === "true" ? "Mark lesson complete" : "Next question";
+      if (btn){
+        btn.disabled = false;
+        btn.textContent = btn.dataset.final === "true" ? "Mark lesson complete" : "Next question";
+      }
       break;
     }
 
@@ -2125,20 +3903,34 @@ document.addEventListener("click", (e) => {
       if (!beatResult) return; // gated: see beat-answer
       const top = stack[stack.length - 1];
       const { course, week, stepIndex } = top.payload;
-      const country = COUNTRIES[course.countryKey];
-      const trip = TRIP_TYPES[course.tripKey];
-      const total = buildLessonBeats(country, trip, week).length;
+      const total = courseLessonBeats(course, week).length;
 
       if (stepIndex + 1 < total){
         push("lesson", { course, week, stepIndex: stepIndex + 1 });
         break;
       }
+      const courseJustCompleted = course.currentWeek === week && course.currentWeek === course.weeks;
       if (course.currentWeek === week && course.currentWeek < course.weeks){
         course.currentWeek += 1;
-      } else if (course.currentWeek === week && course.currentWeek === course.weeks){
+      } else if (courseJustCompleted){
         course.status = "completed";
       }
-      showToast("Lesson complete");
+      // Leg-grouped (Blueprint-resolved) courses get a Leg-complete toast
+      // with the Leg's own blurb instead of the generic message, when the
+      // lesson that just finished was the last one in its Leg — see the
+      // TODO(admin) above screenDashboard.
+      let toastMsg = "Lesson complete";
+      if (course.legs){
+        const finishedEntry = course.syllabus[week - 1];
+        const nextEntry = course.syllabus[week];
+        if (courseJustCompleted){
+          toastMsg = "Trip-ready — every Leg complete!";
+        } else if (finishedEntry && (!nextEntry || nextEntry.legIndex !== finishedEntry.legIndex)){
+          const leg = course.legs[finishedEntry.legIndex];
+          toastMsg = `${leg.name} complete — ${leg.blurb}`;
+        }
+      }
+      showToast(toastMsg);
       // A lesson is now a stack of one-question-per-page beats — drop all
       // of them to land back on the dashboard, not just the last one.
       while (stack.length && stack[stack.length - 1].name === "lesson") stack.pop();
@@ -2152,6 +3944,52 @@ document.addEventListener("click", (e) => {
 // "click", so they need their own listener outside the delegation above.
 document.addEventListener("change", (e) => {
   if (e.target.id === "trip-start" || e.target.id === "trip-end") updateTripCta();
+
+  // Module/Lesson selects that change which fields the form should show
+  // (kind -> bespoke country picker, scope -> country picker, a
+  // question's kind -> its symbol/heard field) sync the current form
+  // into the working draft and do a full re-render, same reasoning as
+  // date-field above: these aren't free-text fields, so a re-render
+  // can't cost focus/cursor position the way it would on admin-dest-name.
+  //
+  // The render is deferred a tick rather than run inline: a real browser
+  // fires this "change" event (via the implicit blur when focus leaves
+  // the field) BEFORE it dispatches the click on whatever the user
+  // clicked next — so a synchronous render() here would tear down and
+  // replace that click's target mid-dispatch, and since a detached node
+  // has nowhere left to bubble to, the click silently never reaches the
+  // delegated listener on `document`. Deferring lets that click land
+  // first; deferredAdminRerender re-checks the field still exists in
+  // case the click navigated to a different screen in the meantime.
+  const deferredAdminRerender = (fieldId, readFn) => setTimeout(() => {
+    if (!document.getElementById(fieldId)) return;
+    readFn();
+    render();
+  }, 0);
+  if (e.target.id === "admin-module-kind" || e.target.id === "admin-module-tiercount"){
+    deferredAdminRerender(e.target.id, readAdminModuleForm);
+  }
+  if (e.target.id === "admin-lesson-module" || e.target.id === "admin-lesson-scope"){
+    deferredAdminRerender(e.target.id, readAdminLessonForm);
+  }
+  if (/^q-kind-\d+$/.test(e.target.id)){
+    deferredAdminRerender(e.target.id, readAdminLessonForm);
+  }
+  if (e.target.id === "admin-bp-preview-country"){
+    const newCountry = e.target.value;
+    deferredAdminRerender(e.target.id, () => {
+      adminBlueprintPreviewCountry = newCountry;
+      if (adminBlueprintDraft) readAdminBlueprintForm();
+    });
+  }
+});
+
+// Admin destination form fields live-patch the preview pane on every
+// keystroke/colour pick (see refreshAdminPreview) rather than going
+// through a full render(), so text fields keep focus and the native
+// colour picker doesn't get yanked shut mid-pick.
+document.addEventListener("input", (e) => {
+  if (e.target.id && e.target.id.startsWith("admin-dest-")) refreshAdminPreview();
 });
 
 render();
