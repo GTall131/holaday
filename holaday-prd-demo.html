@@ -1480,6 +1480,16 @@ let adminLanguageDraft = null; // working copy of a Language while an Author is 
 let adminRole = "author"; // "author" | "approver" — stands in for real auth, per §10
 let adminDraft = null;    // working copy of a destination while an Author is editing it
 
+// Local sub-navigation for the Destinations/Languages panes — Modules
+// and Lessons have no admin-home entry of their own; they're reached as
+// filterable tabs nested under whichever pane is relevant (Destinations
+// or Languages). Reset to the default tab whenever the pane is opened
+// fresh from admin-home so a stale "Modules" tab doesn't linger.
+let adminDestinationsTab = "countries";      // "countries" | "modules" | "lessons"
+let adminDestinationsFilterCountry = "";     // "" = all countries
+let adminLanguagesTab = "languages";         // "languages" | "modules" | "lessons"
+let adminLanguagesFilterLanguage = "";       // "" = all languages
+
 // Destinations Module/Lesson content is authored against — only published
 // ones are offered, so authoring a 7th destination (see the Destination
 // flow above) genuinely unlocks it as a target here, the same way it
@@ -1748,12 +1758,10 @@ function renderAppBar(top){
       const rec = p && p.id ? adminDestinations.find(d => d.id === p.id) : null;
       return rec ? rec.data.name : "New destination";
     },
-    "admin-modules": "Modules",
     "admin-module": (p) => {
       const rec = p && p.id ? adminModules.find(m => m.id === p.id) : null;
       return rec ? rec.data.name : "New module";
     },
-    "admin-lessons": "Lessons",
     "admin-lesson": (p) => {
       const rec = p && p.id ? adminLessons.find(l => l.id === p.id) : null;
       return rec ? rec.data.title : "New lesson";
@@ -2513,24 +2521,81 @@ function adminStatusChip(status){
   return `<span class="admin-status admin-status--${status}">${ADMIN_STATUS_LABELS[status]}</span>`;
 }
 
-function screenAdminHome(){
-  const destCounts = { draft:0, in_review:0, changes_requested:0, approved:0, published:0, archived:0 };
-  adminDestinations.forEach(d => destCounts[d.status]++);
-  const moduleCounts = { draft:0, in_review:0, changes_requested:0, approved:0, published:0, archived:0 };
-  adminModules.forEach(m => moduleCounts[m.status]++);
-  const lessonCounts = { draft:0, in_review:0, changes_requested:0, approved:0, published:0, archived:0 };
-  adminLessons.forEach(l => lessonCounts[l.status]++);
-  const bpCounts = { draft:0, in_review:0, changes_requested:0, approved:0, published:0, archived:0 };
-  adminBlueprints.forEach(b => bpCounts[b.status]++);
-  const totalInReview = destCounts.in_review + moduleCounts.in_review + lessonCounts.in_review + bpCounts.in_review;
-
+// Shared toggle+hint header for both admin-home variants (author browse
+// vs. approver task queue) so switching roles mid-screen looks like one
+// continuous control, not two unrelated headers.
+function adminRoleToggleHtml(hint){
   return `
-    <p style="font-size:13px;color:var(--slate);margin:6px 2px 4px;">Demo-phase content authoring surface (ADMIN-CONTENT-PLAN.md). The toggle below stands in for real auth — everything Approve/Publish-shaped only appears in the Approver role.</p>
     <div class="admin-role-toggle">
       <button data-action="admin-set-role" data-role="author" data-active="${adminRole === "author"}">Author</button>
       <button data-action="admin-set-role" data-role="approver" data-active="${adminRole === "approver"}">Approver</button>
     </div>
-    <div class="admin-role-hint">${adminRole === "author" ? "Create and edit content, then submit it for review." : "Review submitted content: approve, request changes, or publish."}</div>
+    <div class="admin-role-hint">${hint}</div>
+  `;
+}
+
+function adminRecordRowHtml(action, id, flagHtml, name, sub, status){
+  return `
+    <button class="admin-list-row" data-action="${action}" data-id="${id}">
+      ${flagHtml || ""}
+      <span class="admin-list-row__mid">
+        <div class="admin-list-row__name">${escapeHtml(name)}</div>
+        <div class="admin-list-row__sub">${sub}</div>
+      </span>
+      ${adminStatusChip(status)}
+    </button>
+  `;
+}
+
+// Every content type that carries the draft/review/publish lifecycle
+// (§6), flattened into one list — the Review Queue and the Approver's
+// task-based home both group by status rather than by content type, so
+// the "what needs my attention" view doesn't force an Approver to check
+// four separate screens.
+function contentTypeRecordsByStatus(status){
+  return [
+    ...adminDestinations.filter(d => d.status === status).map(d =>
+      adminRecordRowHtml("admin-open-destination", d.id, `<span class="admin-list-row__flag flag-icon">${adminFlagMarkup(d)}</span>`, d.data.name, `Destination · v${d.version}`, d.status)),
+    ...adminModules.filter(m => m.status === status).map(m =>
+      adminRecordRowHtml("admin-open-module", m.id, "", m.data.name, `Module · v${m.version}`, m.status)),
+    ...adminLessons.filter(l => l.status === status).map(l =>
+      adminRecordRowHtml("admin-open-lesson", l.id, "", l.data.title, `Lesson · v${l.version}`, l.status)),
+    ...adminBlueprints.filter(b => b.status === status).map(b =>
+      adminRecordRowHtml("admin-open-blueprint", b.id, "", TRIP_TYPES[b.data.tripKey].label, `Blueprint · v${b.version}`, b.status))
+  ].join("");
+}
+
+// Approver home is deliberately a task queue, not the Author's browse-
+// by-category view — an Approver's job is to clear two queues (review,
+// then publish), not to go looking for content the way an Author does.
+function screenAdminApproverHome(){
+  const needsReview = contentTypeRecordsByStatus("in_review");
+  const readyToPublish = contentTypeRecordsByStatus("approved");
+  return `
+    ${adminRoleToggleHtml("Clear your queue: review submitted content, then publish what's approved.")}
+
+    <div class="section-label">Needs review</div>
+    ${needsReview || `<div class="admin-empty">Nothing waiting for review.</div>`}
+
+    <div class="section-label">Ready to publish</div>
+    ${readyToPublish || `<div class="admin-empty">Nothing approved and waiting to publish.</div>`}
+  `;
+}
+
+function screenAdminHome(){
+  if (adminRole === "approver") return screenAdminApproverHome();
+
+  const destCounts = { draft:0, in_review:0, changes_requested:0, approved:0, published:0, archived:0 };
+  adminDestinations.forEach(d => destCounts[d.status]++);
+  const totalInReview =
+    adminDestinations.filter(d => d.status === "in_review").length +
+    adminModules.filter(m => m.status === "in_review").length +
+    adminLessons.filter(l => l.status === "in_review").length +
+    adminBlueprints.filter(b => b.status === "in_review").length;
+
+  return `
+    <p style="font-size:13px;color:var(--slate);margin:6px 2px 4px;">Demo-phase content authoring surface (ADMIN-CONTENT-PLAN.md). The toggle below stands in for real auth — everything Approve/Publish-shaped only appears in the Approver role.</p>
+    ${adminRoleToggleHtml("Create and edit content, then submit it for review.")}
 
     <div class="section-label">Content</div>
     <button class="admin-card" data-action="admin-open-languages">
@@ -2541,18 +2606,6 @@ function screenAdminHome(){
       <div class="admin-card__title">Destinations</div>
       <div class="admin-card__meta">${destCounts.published} published · ${destCounts.draft} draft · ${destCounts.in_review} in review</div>
     </button>
-    <button class="admin-card" data-action="admin-open-modules">
-      <div class="admin-card__title">Modules</div>
-      <div class="admin-card__meta">${moduleCounts.published} published · ${moduleCounts.draft} draft · ${moduleCounts.in_review} in review</div>
-    </button>
-    <button class="admin-card" data-action="admin-open-lessons">
-      <div class="admin-card__title">Lessons</div>
-      <div class="admin-card__meta">${lessonCounts.published} published · ${lessonCounts.draft} draft · ${lessonCounts.in_review} in review</div>
-    </button>
-    <button class="admin-card" data-action="admin-open-blueprints">
-      <div class="admin-card__title">Trip Type Blueprints</div>
-      <div class="admin-card__meta">${bpCounts.published} published · ${bpCounts.draft} draft · ${bpCounts.in_review} in review</div>
-    </button>
 
     <div class="section-label">Approvals</div>
     <button class="admin-card" data-action="admin-open-review-queue">
@@ -2562,7 +2615,33 @@ function screenAdminHome(){
   `;
 }
 
+// Destinations pane: Countries is the primary tab, with Modules/Lessons
+// nested here as filterable tabs (filter by country) rather than their
+// own admin-home entries, and Blueprints reachable here too — but only
+// here, never under Languages, because a Blueprint resolves per-country,
+// never per-language.
+function adminPaneTabBarHtml(tabs, activeTab, tabAction){
+  return `
+    <div class="admin-role-toggle">
+      ${tabs.map(t => t.action
+        ? `<button data-action="${t.action}">${t.label}</button>`
+        : `<button data-action="${tabAction}" data-tab="${t.key}" data-active="${activeTab === t.key}">${t.label}</button>`
+      ).join("")}
+    </div>
+  `;
+}
+
 function screenAdminDestinations(){
+  const tabBar = adminPaneTabBarHtml([
+    { key: "countries", label: "Countries" },
+    { key: "modules", label: "Modules" },
+    { key: "lessons", label: "Lessons" },
+    { action: "admin-open-blueprints", label: "Blueprints" }
+  ], adminDestinationsTab, "admin-destinations-tab");
+
+  if (adminDestinationsTab === "modules") return tabBar + destinationsModulesTabHtml();
+  if (adminDestinationsTab === "lessons") return tabBar + destinationsLessonsTabHtml();
+
   const rows = adminDestinations
     .slice()
     .sort((a, b) => a.data.name.localeCompare(b.data.name))
@@ -2576,10 +2655,42 @@ function screenAdminDestinations(){
         ${adminStatusChip(d.status)}
       </button>
     `).join("");
-
-  return `
-    ${adminRole === "author" ? `<button class="btn-primary" style="margin:6px 0 18px;" data-action="admin-new-destination">+ New destination</button>` : ""}
+  return tabBar + `
+    ${adminRole === "author" ? `<button class="btn-primary" style="margin:16px 0 18px;" data-action="admin-new-destination">+ New destination</button>` : ""}
     ${rows || `<div class="admin-empty">No destinations yet.</div>`}
+  `;
+}
+
+function destinationsCountryFilterHtml(){
+  return `
+    <label class="field-label" for="admin-dest-pane-filter" style="margin-top:16px;">Filter by country</label>
+    <select class="admin-select" id="admin-dest-pane-filter" style="margin-bottom:16px;">
+      <option value="">All countries</option>
+      ${adminDestinations.slice().sort((a, b) => a.data.name.localeCompare(b.data.name)).map(d => `<option value="${d.countryKey}" ${adminDestinationsFilterCountry === d.countryKey ? "selected" : ""}>${escapeHtml(d.data.name)}</option>`).join("")}
+    </select>
+  `;
+}
+
+function destinationsModulesTabHtml(){
+  const mods = adminDestinationsFilterCountry
+    ? adminModules.filter(m => moduleAppliesToCountry(m, adminDestinationsFilterCountry))
+    : adminModules;
+  return `
+    ${adminRole === "author" ? `<button class="btn-primary" style="margin:16px 0 0;" data-action="admin-new-module">+ New module</button>` : ""}
+    ${destinationsCountryFilterHtml()}
+    ${contentListRowsHtml(mods, [])}
+  `;
+}
+
+function destinationsLessonsTabHtml(){
+  const lessons = adminDestinationsFilterCountry
+    ? adminLessons.filter(l => lessonAppliesToCountry(l, adminDestinationsFilterCountry))
+    : adminLessons;
+  return `
+    ${adminRole === "author" ? `<button class="btn-primary" style="margin:16px 0 0;" data-action="admin-new-lesson" ${adminModules.length ? "" : "disabled"}>+ New lesson</button>` : ""}
+    ${adminRole === "author" && !adminModules.length ? `<p class="admin-hint">Create a Module first — every Lesson belongs to one.</p>` : ""}
+    ${destinationsCountryFilterHtml()}
+    ${contentListRowsHtml([], lessons)}
   `;
 }
 
@@ -2588,9 +2699,22 @@ function screenAdminDestinations(){
 
    Deliberately no draft/review lifecycle (unlike Country/Module/
    Lesson/Blueprint) — a Language is reference taxonomy a Country
-   points at, not itself authored/approved content per §6.
+   points at, not itself authored/approved content per §6. Modules and
+   Lessons nest here as filterable tabs too (filter by language) — the
+   Destinations-pane and Languages-pane Modules/Lessons tabs are two
+   different filtered views over the same underlying lists, not two
+   separate sets of content. No Blueprints tab here — see above.
    ================================================================ */
 function screenAdminLanguages(){
+  const tabBar = adminPaneTabBarHtml([
+    { key: "languages", label: "Languages" },
+    { key: "modules", label: "Modules" },
+    { key: "lessons", label: "Lessons" }
+  ], adminLanguagesTab, "admin-languages-tab");
+
+  if (adminLanguagesTab === "modules") return tabBar + languagesModulesTabHtml();
+  if (adminLanguagesTab === "lessons") return tabBar + languagesLessonsTabHtml();
+
   const rows = adminLanguages.slice().sort((a, b) => a.name.localeCompare(b.name)).map(l => {
     const countryCount = adminDestinations.filter(d => d.data.languageId === l.id && d.status !== "archived").length;
     return `
@@ -2602,9 +2726,42 @@ function screenAdminLanguages(){
     </button>
   `;
   }).join("");
-  return `
-    ${adminRole === "author" ? `<button class="btn-primary" style="margin:6px 0 18px;" data-action="admin-new-language">+ New language</button>` : ""}
+  return tabBar + `
+    ${adminRole === "author" ? `<button class="btn-primary" style="margin:16px 0 18px;" data-action="admin-new-language">+ New language</button>` : ""}
     ${rows || `<div class="admin-empty">No languages yet.</div>`}
+  `;
+}
+
+function languagesFilterHtml(){
+  return `
+    <label class="field-label" for="admin-lang-pane-filter" style="margin-top:16px;">Filter by language</label>
+    <select class="admin-select" id="admin-lang-pane-filter" style="margin-bottom:16px;">
+      <option value="">All languages</option>
+      ${adminLanguages.slice().sort((a, b) => a.name.localeCompare(b.name)).map(l => `<option value="${l.id}" ${adminLanguagesFilterLanguage === l.id ? "selected" : ""}>${escapeHtml(l.name)}</option>`).join("")}
+    </select>
+  `;
+}
+
+// Only bespoke Modules/Lessons that name a Language belong here — a
+// Generic one (no Country or Language tie) isn't "under" any Language,
+// so it's filtered out of this pane entirely rather than shown under
+// every Language, unlike the Destinations pane where Generic content
+// legitimately applies to every Country.
+function languagesModulesTabHtml(){
+  let mods = adminModules.filter(m => m.data.kind === "bespoke" && m.data.languageId);
+  if (adminLanguagesFilterLanguage) mods = mods.filter(m => m.data.languageId === adminLanguagesFilterLanguage);
+  return `
+    ${languagesFilterHtml()}
+    ${contentListRowsHtml(mods, [])}
+  `;
+}
+
+function languagesLessonsTabHtml(){
+  let lessons = adminLessons.filter(l => l.data.scope === "country-specific" && l.data.languageId);
+  if (adminLanguagesFilterLanguage) lessons = lessons.filter(l => l.data.languageId === adminLanguagesFilterLanguage);
+  return `
+    ${languagesFilterHtml()}
+    ${contentListRowsHtml([], lessons)}
   `;
 }
 
@@ -2684,47 +2841,9 @@ function screenAdminLanguage(payload){
 }
 
 function screenAdminReviewQueue(){
-  const destRows = adminDestinations.filter(d => d.status === "in_review").map(d => `
-    <button class="admin-list-row" data-action="admin-open-destination" data-id="${d.id}">
-      <span class="admin-list-row__flag flag-icon">${adminFlagMarkup(d)}</span>
-      <span class="admin-list-row__mid">
-        <div class="admin-list-row__name">${escapeHtml(d.data.name)}</div>
-        <div class="admin-list-row__sub">Destination · v${d.version}</div>
-      </span>
-      ${adminStatusChip(d.status)}
-    </button>
-  `).join("");
-  const moduleRows = adminModules.filter(m => m.status === "in_review").map(m => `
-    <button class="admin-list-row" data-action="admin-open-module" data-id="${m.id}">
-      <span class="admin-list-row__mid">
-        <div class="admin-list-row__name">${escapeHtml(m.data.name)}</div>
-        <div class="admin-list-row__sub">Module · v${m.version}</div>
-      </span>
-      ${adminStatusChip(m.status)}
-    </button>
-  `).join("");
-  const lessonRows = adminLessons.filter(l => l.status === "in_review").map(l => `
-    <button class="admin-list-row" data-action="admin-open-lesson" data-id="${l.id}">
-      <span class="admin-list-row__mid">
-        <div class="admin-list-row__name">${escapeHtml(l.data.title)}</div>
-        <div class="admin-list-row__sub">Lesson · v${l.version}</div>
-      </span>
-      ${adminStatusChip(l.status)}
-    </button>
-  `).join("");
-  const blueprintRows = adminBlueprints.filter(b => b.status === "in_review").map(b => `
-    <button class="admin-list-row" data-action="admin-open-blueprint" data-id="${b.id}">
-      <span class="admin-list-row__mid">
-        <div class="admin-list-row__name">${escapeHtml(TRIP_TYPES[b.data.tripKey].label)}</div>
-        <div class="admin-list-row__sub">Blueprint · v${b.version}</div>
-      </span>
-      ${adminStatusChip(b.status)}
-    </button>
-  `).join("");
-  const rows = destRows + moduleRows + lessonRows + blueprintRows;
   return `
     <p style="font-size:13px;color:var(--slate);margin:6px 2px 14px;">Everything currently submitted and waiting on an Approver, across destinations, modules, lessons, and blueprints.</p>
-    ${rows || `<div class="admin-empty">Nothing waiting for review.</div>`}
+    ${contentTypeRecordsByStatus("in_review") || `<div class="admin-empty">Nothing waiting for review.</div>`}
   `;
 }
 
@@ -2930,22 +3049,6 @@ function screenAdminDestination(payload){
 /* ================================================================
    ADMIN SCREENS — Module (§4)
    ================================================================ */
-function screenAdminModules(){
-  const rows = adminModules.slice().sort((a, b) => a.data.name.localeCompare(b.data.name)).map(m => `
-    <button class="admin-list-row" data-action="admin-open-module" data-id="${m.id}">
-      <span class="admin-list-row__mid">
-        <div class="admin-list-row__name">${escapeHtml(m.data.name)}</div>
-        <div class="admin-list-row__sub">${moduleScopeLabel(m)} · ${m.data.tierCount} tier${m.data.tierCount === 1 ? "" : "s"} · v${m.version}</div>
-      </span>
-      ${adminStatusChip(m.status)}
-    </button>
-  `).join("");
-  return `
-    ${adminRole === "author" ? `<button class="btn-primary" style="margin:6px 0 18px;" data-action="admin-new-module">+ New module</button>` : ""}
-    ${rows || `<div class="admin-empty">No modules yet.</div>`}
-  `;
-}
-
 // Mirrors readAdminDestinationForm/commitAdminDraft: read-on-submit
 // rather than live-bound, but here it's also called before every action
 // that re-renders the grid (kind/tierCount/country toggles) so a real
@@ -3124,26 +3227,6 @@ function screenAdminModule(payload){
    ================================================================ */
 function blankAdminQuestion(){
   return { kind:"produce", context:"", question:"", correctAnswer:"", distractors:[], symbol:Object.keys(SYMBOLS)[0], heard:"" };
-}
-
-function screenAdminLessons(){
-  const rows = adminLessons.slice().sort((a, b) => a.data.title.localeCompare(b.data.title)).map(l => {
-    const mod = adminModules.find(m => m.id === l.data.moduleId);
-    return `
-    <button class="admin-list-row" data-action="admin-open-lesson" data-id="${l.id}">
-      <span class="admin-list-row__mid">
-        <div class="admin-list-row__name">${escapeHtml(l.data.title)}</div>
-        <div class="admin-list-row__sub">${mod ? escapeHtml(mod.data.name) : "No module"} · ${lessonScopeLabel(l)} · Tier ${l.data.tier} · v${l.version}</div>
-      </span>
-      ${adminStatusChip(l.status)}
-    </button>
-  `;
-  }).join("");
-  return `
-    ${adminRole === "author" ? `<button class="btn-primary" style="margin:6px 0 18px;" data-action="admin-new-lesson" ${adminModules.length ? "" : "disabled"}>+ New lesson</button>` : ""}
-    ${!adminModules.length ? `<p class="admin-hint">Create a Module first — every Lesson belongs to one.</p>` : ""}
-    ${rows || `<div class="admin-empty">No lessons yet.</div>`}
-  `;
 }
 
 function readAdminLessonForm(){
@@ -3603,11 +3686,13 @@ function screenAdminBlueprint(payload){
    RENDER DISPATCH
 
    Admin screens (admin-home, admin-destinations, admin-review-queue,
-   admin-destination, admin-languages, admin-language, admin-modules,
-   admin-module, admin-lessons, admin-lesson, admin-blueprints,
-   admin-blueprint) are registered below alongside the traveler
-   screens — a demo-phase shortcut (ADMIN-CONTENT-PLAN.md §10), not
-   the intended end state.
+   admin-destination, admin-languages, admin-language, admin-module,
+   admin-lesson, admin-blueprints, admin-blueprint) are registered
+   below alongside the traveler screens — a demo-phase shortcut
+   (ADMIN-CONTENT-PLAN.md §10), not the intended end state. Modules
+   and Lessons have no standalone list screen of their own anymore —
+   they're reached via a Country/Language's own screen, or created
+   generically from admin-destinations (§10a).
    ================================================================ */
 const SCREENS = {
   home: screenHome,
@@ -3624,9 +3709,7 @@ const SCREENS = {
   "admin-destinations": screenAdminDestinations,
   "admin-review-queue": screenAdminReviewQueue,
   "admin-destination": screenAdminDestination,
-  "admin-modules": screenAdminModules,
   "admin-module": screenAdminModule,
-  "admin-lessons": screenAdminLessons,
   "admin-lesson": screenAdminLesson,
   "admin-blueprints": screenAdminBlueprints,
   "admin-blueprint": screenAdminBlueprint
@@ -3688,8 +3771,17 @@ document.addEventListener("click", (e) => {
       render();
       break;
 
-    case "admin-open-destinations": push("admin-destinations"); break;
+    case "admin-open-destinations":
+      adminDestinationsTab = "countries";
+      adminDestinationsFilterCountry = "";
+      push("admin-destinations");
+      break;
     case "admin-open-review-queue": push("admin-review-queue"); break;
+
+    case "admin-destinations-tab":
+      adminDestinationsTab = el.dataset.tab;
+      render();
+      break;
 
     case "admin-new-destination":
       adminDraft = {
@@ -3777,7 +3869,16 @@ document.addEventListener("click", (e) => {
     }
 
     // ---- Language ----
-    case "admin-open-languages": push("admin-languages"); break;
+    case "admin-open-languages":
+      adminLanguagesTab = "languages";
+      adminLanguagesFilterLanguage = "";
+      push("admin-languages");
+      break;
+
+    case "admin-languages-tab":
+      adminLanguagesTab = el.dataset.tab;
+      render();
+      break;
 
     case "admin-new-language":
       adminLanguageDraft = { id: null, name: "" };
@@ -3807,8 +3908,6 @@ document.addEventListener("click", (e) => {
     }
 
     // ---- Module (§4) ----
-    case "admin-open-modules": push("admin-modules"); break;
-
     case "admin-new-module":
       adminModuleDraft = {
         id: null, status: "draft", version: 1, changeNote: null,
@@ -3908,8 +4007,6 @@ document.addEventListener("click", (e) => {
     }
 
     // ---- Lesson (§3) ----
-    case "admin-open-lessons": push("admin-lessons"); break;
-
     case "admin-new-lesson":
       adminLessonDraft = {
         id: null, status: "draft", version: 1, changeNote: null,
@@ -4332,6 +4429,14 @@ document.addEventListener("change", (e) => {
   }
   if (/^q-kind-\d+$/.test(e.target.id)){
     deferredAdminRerender(e.target.id, readAdminLessonForm);
+  }
+  if (e.target.id === "admin-dest-pane-filter"){
+    const newFilter = e.target.value;
+    deferredAdminRerender(e.target.id, () => { adminDestinationsFilterCountry = newFilter; });
+  }
+  if (e.target.id === "admin-lang-pane-filter"){
+    const newFilter = e.target.value;
+    deferredAdminRerender(e.target.id, () => { adminLanguagesFilterLanguage = newFilter; });
   }
   if (e.target.id === "admin-bp-preview-country"){
     const newCountry = e.target.value;
