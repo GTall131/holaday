@@ -850,6 +850,11 @@ current code.
     width:100%; border:1.5px solid var(--paper-line); border-radius: var(--radius-m); padding:11px 12px;
     font-family:inherit; font-size:13.5px; background:#fff; color: var(--ink);
   }
+  .admin-checkbox-row{
+    display:flex; align-items:center; gap:10px; margin:16px 2px 6px;
+    font-size:13px; font-weight:700; color: var(--ink); cursor:pointer;
+  }
+  .admin-checkbox-row input[type="checkbox"]{ width:18px; height:18px; flex-shrink:0; }
 
   .admin-preview{ margin-top:24px; padding-top:18px; border-top:1.5px dashed var(--paper-line); }
   .admin-preview__label{ font-family: var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color: var(--slate); margin-bottom:10px; }
@@ -1429,6 +1434,30 @@ function slugify(name){
 let adminIdSeq = 1;
 function nextAdminId(prefix){ return prefix + "-" + (adminIdSeq++); }
 
+/* ----------------------------------------------------------------
+   Language — a lightweight taxonomy dimension, not approval-gated
+   content (no draft/review lifecycle like Country/Module/Lesson get).
+   Every Country names one Language it uses; Modules/Lessons authored
+   as "applies to all countries using this language" resolve against
+   whichever Countries currently carry that languageId, so adding a
+   7th country in an already-covered language picks up that content
+   automatically instead of needing it re-authored per country.
+   ---------------------------------------------------------------- */
+let adminLanguages = [];
+function ensureLanguage(name){
+  let lang = adminLanguages.find(l => l.name.toLowerCase() === name.toLowerCase());
+  if (!lang){
+    lang = { id: nextAdminId("lang"), name };
+    adminLanguages.push(lang);
+  }
+  return lang;
+}
+const COUNTRY_LANGUAGES = {
+  japan: "Japanese", italy: "Italian", greece: "Greek",
+  mexico: "Spanish", morocco: "Arabic", france: "French"
+};
+Object.values(COUNTRY_LANGUAGES).forEach(ensureLanguage);
+
 let adminDestinations = Object.entries(COUNTRIES).map(([key, c]) => ({
   id: nextAdminId("dest"),
   countryKey: key,
@@ -1441,9 +1470,12 @@ let adminDestinations = Object.entries(COUNTRIES).map(([key, c]) => ({
     capital: c.capital,
     colours: { ...c.colours },
     flagPattern: null,
-    cultureTip: c.cultureTip
+    cultureTip: c.cultureTip,
+    languageId: ensureLanguage(COUNTRY_LANGUAGES[key]).id
   }
 }));
+
+let adminLanguageDraft = null; // working copy of a Language while an Author is editing it
 
 let adminRole = "author"; // "author" | "approver" — stands in for real auth, per §10
 let adminDraft = null;    // working copy of a destination while an Author is editing it
@@ -1483,11 +1515,71 @@ let adminLessonPreviewIndex = 0; // which authored question the Lesson editor's 
 
 const ADMIN_STATUS_RANK = { missing:0, archived:0, draft:1, changes_requested:1, in_review:2, approved:3, published:4 };
 
+function countryByKey(countryKey){
+  return adminDestinations.find(d => d.countryKey === countryKey) || null;
+}
+// Countries currently published under a Language — deliberately computed
+// live rather than stored on the Language/Module/Lesson, so a Country
+// added later in an already-authored Language picks up "applies to all
+// countries using this language" content without that content needing
+// to be re-saved.
+function countriesForLanguage(languageId){
+  return publishedDestinations().filter(d => d.data.languageId === languageId);
+}
+function languageName(languageId){
+  const lang = adminLanguages.find(l => l.id === languageId);
+  return lang ? lang.name : "Unknown language";
+}
+function moduleScopeLabel(mod){
+  if (mod.data.kind === "generic") return "Generic — every country";
+  if (mod.data.languageWide) return `All countries using ${languageName(mod.data.languageId)}`;
+  const country = countryByKey(mod.data.countryKey);
+  return country ? country.data.name : "No country set";
+}
+function lessonScopeLabel(lesson){
+  if (lesson.data.scope === "generic") return "Generic — every country";
+  if (lesson.data.languageWide) return `All countries using ${languageName(lesson.data.languageId)}`;
+  const country = countryByKey(lesson.data.countryKey);
+  return country ? country.data.name : "No country set";
+}
+// A bespoke Module/Lesson "applies to" a country either because it's
+// pinned to that exact country, or because it's language-wide and the
+// country's languageId matches — this is the hook that makes browsing
+// modules/lessons for a Country also surface content authored against
+// that Country's Language.
+function moduleAppliesToCountry(mod, countryKey){
+  if (mod.data.kind === "generic") return true;
+  if (mod.data.languageWide){
+    const country = countryByKey(countryKey);
+    return !!country && !!mod.data.languageId && country.data.languageId === mod.data.languageId;
+  }
+  return mod.data.countryKey === countryKey;
+}
+function lessonAppliesToCountry(lesson, countryKey){
+  if (lesson.data.scope === "generic") return true;
+  if (lesson.data.languageWide){
+    const country = countryByKey(countryKey);
+    return !!country && !!lesson.data.languageId && country.data.languageId === lesson.data.languageId;
+  }
+  return lesson.data.countryKey === countryKey;
+}
+// Stricter match used for the tier-ladder grid/blueprint resolution: only
+// a Lesson actually scoped to a country (bespoke, not "generic") can fill
+// a bespoke Module's per-country cell — see moduleLessonCandidates below.
+function lessonMatchesGridCountry(lesson, countryKey){
+  if (lesson.data.scope !== "country-specific") return false;
+  if (lesson.data.languageWide){
+    const country = countryByKey(countryKey);
+    return !!country && !!lesson.data.languageId && country.data.languageId === lesson.data.languageId;
+  }
+  return lesson.data.countryKey === countryKey;
+}
+
 function moduleLessonCandidates(mod, tier, countryKey){
   return adminLessons.filter(l =>
     l.data.moduleId === mod.id &&
     l.data.tier === tier &&
-    (mod.data.kind === "generic" ? l.data.scope === "generic" : l.data.countryKey === countryKey)
+    (mod.data.kind === "generic" ? l.data.scope === "generic" : lessonMatchesGridCountry(l, countryKey))
   );
 }
 function moduleCellStatus(mod, tier, countryKey){
@@ -1495,8 +1587,14 @@ function moduleCellStatus(mod, tier, countryKey){
   if (!candidates.length) return "missing";
   return candidates.reduce((best, l) => ADMIN_STATUS_RANK[l.status] > ADMIN_STATUS_RANK[best] ? l.status : best, "missing");
 }
+// A language-wide bespoke Module's grid rows are every published country
+// currently using its Language (see countriesForLanguage) rather than a
+// fixed list, so the completeness grid stays accurate as new countries
+// join that language.
 function moduleGridRows(mod){
-  return mod.data.kind === "generic" ? [null] : mod.data.countryKeys;
+  if (mod.data.kind === "generic") return [null];
+  if (mod.data.languageWide) return countriesForLanguage(mod.data.languageId).map(d => d.countryKey);
+  return mod.data.countryKey ? [mod.data.countryKey] : [];
 }
 function moduleIsComplete(mod){
   const rows = moduleGridRows(mod);
@@ -1553,7 +1651,7 @@ function resolveBlueprintGateLesson(gate, countryKey){
     l.status === "published" &&
     l.data.moduleId === mod.id &&
     l.data.tier === gate.tier &&
-    (mod.data.kind === "generic" ? l.data.scope === "generic" : l.data.countryKey === countryKey)
+    (mod.data.kind === "generic" ? l.data.scope === "generic" : lessonMatchesGridCountry(l, countryKey))
   ) || null;
 }
 
@@ -1639,6 +1737,11 @@ function renderAppBar(top){
     lesson: (p)=> "Week " + p.week,
     phrasebook: (p)=> "Phrasebook",
     feedback: "Trip feedback",
+    "admin-languages": "Languages",
+    "admin-language": (p) => {
+      const rec = p && p.id ? adminLanguages.find(l => l.id === p.id) : null;
+      return rec ? rec.name : "New language";
+    },
     "admin-destinations": "Destinations",
     "admin-review-queue": "Review queue",
     "admin-destination": (p) => {
@@ -2430,6 +2533,10 @@ function screenAdminHome(){
     <div class="admin-role-hint">${adminRole === "author" ? "Create and edit content, then submit it for review." : "Review submitted content: approve, request changes, or publish."}</div>
 
     <div class="section-label">Content</div>
+    <button class="admin-card" data-action="admin-open-languages">
+      <div class="admin-card__title">Languages</div>
+      <div class="admin-card__meta">${adminLanguages.length} language${adminLanguages.length === 1 ? "" : "s"}</div>
+    </button>
     <button class="admin-card" data-action="admin-open-destinations">
       <div class="admin-card__title">Destinations</div>
       <div class="admin-card__meta">${destCounts.published} published · ${destCounts.draft} draft · ${destCounts.in_review} in review</div>
@@ -2464,7 +2571,7 @@ function screenAdminDestinations(){
         <span class="admin-list-row__flag flag-icon">${adminFlagMarkup(d)}</span>
         <span class="admin-list-row__mid">
           <div class="admin-list-row__name">${escapeHtml(d.data.name)}${d.legacy ? " (legacy)" : ""}</div>
-          <div class="admin-list-row__sub">${escapeHtml(d.data.capital)} · v${d.version}</div>
+          <div class="admin-list-row__sub">${escapeHtml(d.data.capital)} · ${languageName(d.data.languageId)} · v${d.version}</div>
         </span>
         ${adminStatusChip(d.status)}
       </button>
@@ -2473,6 +2580,106 @@ function screenAdminDestinations(){
   return `
     ${adminRole === "author" ? `<button class="btn-primary" style="margin:6px 0 18px;" data-action="admin-new-destination">+ New destination</button>` : ""}
     ${rows || `<div class="admin-empty">No destinations yet.</div>`}
+  `;
+}
+
+/* ================================================================
+   ADMIN SCREENS — Language
+
+   Deliberately no draft/review lifecycle (unlike Country/Module/
+   Lesson/Blueprint) — a Language is reference taxonomy a Country
+   points at, not itself authored/approved content per §6.
+   ================================================================ */
+function screenAdminLanguages(){
+  const rows = adminLanguages.slice().sort((a, b) => a.name.localeCompare(b.name)).map(l => {
+    const countryCount = adminDestinations.filter(d => d.data.languageId === l.id && d.status !== "archived").length;
+    return `
+    <button class="admin-list-row" data-action="admin-open-language" data-id="${l.id}">
+      <span class="admin-list-row__mid">
+        <div class="admin-list-row__name">${escapeHtml(l.name)}</div>
+        <div class="admin-list-row__sub">${countryCount} countr${countryCount === 1 ? "y" : "ies"}</div>
+      </span>
+    </button>
+  `;
+  }).join("");
+  return `
+    ${adminRole === "author" ? `<button class="btn-primary" style="margin:6px 0 18px;" data-action="admin-new-language">+ New language</button>` : ""}
+    ${rows || `<div class="admin-empty">No languages yet.</div>`}
+  `;
+}
+
+// Shared by the Country and Language detail screens — rows for whatever
+// Modules/Lessons are relevant, using the same scope-label vocabulary
+// (moduleScopeLabel/lessonScopeLabel) so "why is this listed here" reads
+// the same way in both places.
+function contentListRowsHtml(mods, lessons){
+  if (!mods.length && !lessons.length) return `<div class="admin-empty">No modules or lessons here yet.</div>`;
+  return mods.map(m => `
+    <button class="admin-list-row" data-action="admin-open-module" data-id="${m.id}">
+      <span class="admin-list-row__mid">
+        <div class="admin-list-row__name">${escapeHtml(m.data.name)}</div>
+        <div class="admin-list-row__sub">Module · ${moduleScopeLabel(m)}</div>
+      </span>
+      ${adminStatusChip(m.status)}
+    </button>
+  `).join("") + lessons.map(l => `
+    <button class="admin-list-row" data-action="admin-open-lesson" data-id="${l.id}">
+      <span class="admin-list-row__mid">
+        <div class="admin-list-row__name">${escapeHtml(l.data.title)}</div>
+        <div class="admin-list-row__sub">Lesson · ${lessonScopeLabel(l)}</div>
+      </span>
+      ${adminStatusChip(l.status)}
+    </button>
+  `).join("");
+}
+
+function screenAdminLanguage(payload){
+  const id = payload && payload.id;
+  const record = id ? adminLanguages.find(l => l.id === id) : null;
+  const canEdit = adminRole === "author";
+
+  if (canEdit && (!adminLanguageDraft || adminLanguageDraft.id !== id)){
+    adminLanguageDraft = record ? JSON.parse(JSON.stringify(record)) : adminLanguageDraft;
+  }
+  const view = canEdit ? adminLanguageDraft : record;
+  if (!view) return `<div class="admin-empty">Language not found.</div>`;
+
+  const fields = canEdit ? `
+    <label class="field-label" for="admin-language-name">Language name</label>
+    <input class="text-input" id="admin-language-name" value="${escapeHtml(view.name)}" placeholder="e.g. Portuguese">
+  ` : `
+    <div style="font-weight:800;font-size:19px;margin-top:14px;margin-bottom:16px;">${escapeHtml(view.name)}</div>
+  `;
+
+  const relatedHtml = record ? `
+    <label class="field-label" style="margin-top:24px;">Countries using ${escapeHtml(record.name)}</label>
+    ${adminDestinations.filter(d => d.data.languageId === record.id && d.status !== "archived").map(d => `
+      <button class="admin-list-row" data-action="admin-open-destination" data-id="${d.id}">
+        <span class="admin-list-row__flag flag-icon">${adminFlagMarkup(d)}</span>
+        <span class="admin-list-row__mid"><div class="admin-list-row__name">${escapeHtml(d.data.name)}</div></span>
+        ${adminStatusChip(d.status)}
+      </button>
+    `).join("") || `<div class="admin-empty">No countries use this language yet.</div>`}
+
+    <label class="field-label" style="margin-top:24px;">Modules &amp; lessons tied to ${escapeHtml(record.name)}</label>
+    ${adminRole === "author" ? `
+      <div class="admin-actions" style="margin:0 0 10px;">
+        <button class="btn-secondary" data-action="admin-new-module-for-language" data-language="${record.id}">+ New module</button>
+        <button class="btn-secondary" data-action="admin-new-lesson-for-language" data-language="${record.id}">+ New lesson</button>
+      </div>
+    ` : ""}
+    ${contentListRowsHtml(
+      adminModules.filter(m => m.data.kind === "bespoke" && m.data.languageId === record.id),
+      adminLessons.filter(l => l.data.scope === "country-specific" && l.data.languageId === record.id)
+    )}
+  ` : "";
+
+  const actionsHtml = canEdit ? `<div class="sticky-cta admin-actions"><button class="btn-primary" data-action="admin-language-save">Save</button></div>` : "";
+
+  return `
+    ${fields}
+    ${relatedHtml}
+    ${actionsHtml}
   `;
 }
 
@@ -2528,6 +2735,7 @@ function screenAdminReviewQueue(){
 function readAdminDestinationForm(){
   adminDraft.data.name = document.getElementById("admin-dest-name").value.trim();
   adminDraft.data.capital = document.getElementById("admin-dest-capital").value.trim();
+  adminDraft.data.languageId = document.getElementById("admin-dest-language").value || null;
   adminDraft.data.cultureTip = document.getElementById("admin-dest-culturetip").value.trim();
   adminDraft.data.flagPattern = document.getElementById("admin-dest-pattern").value;
   adminDraft.data.colours = {
@@ -2541,6 +2749,10 @@ function commitAdminDraft(status){
   readAdminDestinationForm();
   if (!adminDraft.data.name){
     showToast("Destination name is required");
+    return false;
+  }
+  if (!adminDraft.data.languageId){
+    showToast("Pick a language for this destination");
     return false;
   }
   if (!adminDraft.id){
@@ -2611,6 +2823,13 @@ function screenAdminDestination(payload){
     <label class="field-label" for="admin-dest-capital">Capital</label>
     <input class="text-input" id="admin-dest-capital" value="${escapeHtml(view.data.capital)}" placeholder="e.g. Lisbon">
 
+    <label class="field-label" for="admin-dest-language">Language</label>
+    <select class="admin-select" id="admin-dest-language">
+      <option value="">— pick a language —</option>
+      ${adminLanguages.map(l => `<option value="${l.id}" ${view.data.languageId === l.id ? "selected" : ""}>${escapeHtml(l.name)}</option>`).join("")}
+    </select>
+    ${!adminLanguages.length ? `<p class="admin-hint">No languages yet — create one first (see Languages in the admin home).</p>` : ""}
+
     <label class="field-label">Flag colours</label>
     <div class="admin-form-grid">
       <div class="admin-colour-field"><label for="admin-dest-primary">Primary</label><input type="color" id="admin-dest-primary" value="${view.data.colours.primary}"></div>
@@ -2627,7 +2846,7 @@ function screenAdminDestination(payload){
     <textarea class="notes" id="admin-dest-culturetip" placeholder="One or two sentences travelers see on the dashboard's culture card...">${escapeHtml(view.data.cultureTip)}</textarea>
   ` : `
     <div style="font-weight:800;font-size:19px;margin-top:14px;">${escapeHtml(view.data.name)}</div>
-    <div style="font-size:13px;color:var(--slate);margin-bottom:16px;">${escapeHtml(view.data.capital)}</div>
+    <div style="font-size:13px;color:var(--slate);margin-bottom:16px;">${escapeHtml(view.data.capital)} · ${languageName(view.data.languageId)}</div>
     <label class="field-label">"Know before you go" culture tip</label>
     <p style="font-size:13.5px;line-height:1.5;">${escapeHtml(view.data.cultureTip) || "—"}</p>
   `;
@@ -2690,6 +2909,20 @@ function screenAdminDestination(payload){
         <div class="culture-card__body" id="admin-preview-culturetip">${escapeHtml(view.data.cultureTip) || "No culture tip written yet."}</div>
       </div>
     </div>
+    ${record ? `
+      <label class="field-label" style="margin-top:24px;">Modules &amp; lessons for ${escapeHtml(view.data.name)}</label>
+      ${adminRole === "author" ? `
+        <div class="admin-actions" style="margin:0 0 10px;">
+          <button class="btn-secondary" data-action="admin-new-module-for-country" data-country="${record.countryKey}" ${record.status === "published" ? "" : "disabled"}>+ New module</button>
+          <button class="btn-secondary" data-action="admin-new-lesson-for-country" data-country="${record.countryKey}" ${record.status === "published" ? "" : "disabled"}>+ New lesson</button>
+        </div>
+        ${record.status !== "published" ? `<p class="admin-hint">Publish this destination first to author country-specific modules and lessons for it — same rule bespoke content already follows everywhere else.</p>` : ""}
+      ` : ""}
+      ${contentListRowsHtml(
+        adminModules.filter(m => moduleAppliesToCountry(m, record.countryKey)),
+        adminLessons.filter(l => lessonAppliesToCountry(l, record.countryKey))
+      )}
+    ` : ""}
     ${actionsHtml}
   `;
 }
@@ -2702,7 +2935,7 @@ function screenAdminModules(){
     <button class="admin-list-row" data-action="admin-open-module" data-id="${m.id}">
       <span class="admin-list-row__mid">
         <div class="admin-list-row__name">${escapeHtml(m.data.name)}</div>
-        <div class="admin-list-row__sub">${m.data.kind === "generic" ? "Generic" : "Country-bespoke"} · ${m.data.tierCount} tier${m.data.tierCount === 1 ? "" : "s"} · v${m.version}</div>
+        <div class="admin-list-row__sub">${moduleScopeLabel(m)} · ${m.data.tierCount} tier${m.data.tierCount === 1 ? "" : "s"} · v${m.version}</div>
       </span>
       ${adminStatusChip(m.status)}
     </button>
@@ -2718,20 +2951,35 @@ function screenAdminModules(){
 // that re-renders the grid (kind/tierCount/country toggles) so a real
 // re-render never clobbers whatever's currently in the Name field.
 function readAdminModuleForm(){
-  adminModuleDraft.data.name = document.getElementById("admin-module-name").value.trim();
-  adminModuleDraft.data.kind = document.getElementById("admin-module-kind").value;
-  adminModuleDraft.data.tierCount = Math.max(1, Math.min(6, Number(document.getElementById("admin-module-tiercount").value) || 1));
+  const d = adminModuleDraft.data;
+  d.name = document.getElementById("admin-module-name").value.trim();
+  d.kind = document.getElementById("admin-module-kind").value;
+  d.tierCount = Math.max(1, Math.min(6, Number(document.getElementById("admin-module-tiercount").value) || 1));
+
+  const languageEl = document.getElementById("admin-module-language");
+  d.languageId = (d.kind === "bespoke" && languageEl) ? (languageEl.value || null) : null;
+  const wideEl = document.getElementById("admin-module-languagewide");
+  d.languageWide = (d.kind === "bespoke" && wideEl) ? wideEl.checked : false;
+  const countryEl = document.getElementById("admin-module-country");
+  d.countryKey = (d.kind === "bespoke" && !d.languageWide && countryEl) ? (countryEl.value || null) : null;
 }
 
 function commitAdminModuleDraft(status){
   readAdminModuleForm();
-  if (!adminModuleDraft.data.name){
+  const d = adminModuleDraft.data;
+  if (!d.name){
     showToast("Module name is required");
     return false;
   }
-  if (adminModuleDraft.data.kind === "bespoke" && !adminModuleDraft.data.countryKeys.length){
-    showToast("Pick at least one country for a bespoke module");
-    return false;
+  if (d.kind === "bespoke"){
+    if (!d.languageId){
+      showToast("Pick a language for a bespoke module");
+      return false;
+    }
+    if (!d.languageWide && !d.countryKey){
+      showToast("Pick a country, or tick 'applies to all countries using this language'");
+      return false;
+    }
   }
   if (!adminModuleDraft.id){
     adminModuleDraft.id = nextAdminId("mod");
@@ -2758,6 +3006,7 @@ function screenAdminModule(payload){
   if (!view) return `<div class="admin-empty">Module not found.</div>`;
 
   const dests = publishedDestinations();
+  const moduleLangCountries = view.data.languageId ? countriesForLanguage(view.data.languageId) : [];
   const fields = canEdit ? `
     <label class="field-label" for="admin-module-name">Module name</label>
     <input class="text-input" id="admin-module-name" value="${escapeHtml(view.data.name)}" placeholder="e.g. Ordering Food">
@@ -2765,25 +3014,36 @@ function screenAdminModule(payload){
     <label class="field-label" for="admin-module-kind">Ladder type</label>
     <select class="admin-select" id="admin-module-kind">
       <option value="generic" ${view.data.kind === "generic" ? "selected" : ""}>Generic — one Lesson per Tier, shared across every country</option>
-      <option value="bespoke" ${view.data.kind === "bespoke" ? "selected" : ""}>Country-bespoke — one Lesson per Tier, per country</option>
+      <option value="bespoke" ${view.data.kind === "bespoke" ? "selected" : ""}>Country-bespoke — one Lesson per Tier, per country or per language</option>
     </select>
 
     <label class="field-label" for="admin-module-tiercount">Number of tiers</label>
     <input class="text-input" type="number" min="1" max="6" id="admin-module-tiercount" value="${view.data.tierCount}">
 
     ${view.data.kind === "bespoke" ? `
-      <label class="field-label">Countries this module supports</label>
-      <div class="chip-grid">
-        ${dests.length ? dests.map(d => `
-          <button type="button" class="chip" data-action="admin-module-toggle-country" data-country="${d.countryKey}" data-selected="${view.data.countryKeys.includes(d.countryKey)}">
-            <span class="chip__label">${escapeHtml(d.data.name)}</span>
-          </button>
-        `).join("") : `<div class="admin-empty">No published destinations yet — publish one first (see Destinations).</div>`}
-      </div>
+      <label class="field-label" for="admin-module-language">Language</label>
+      <select class="admin-select" id="admin-module-language">
+        <option value="">— pick a language —</option>
+        ${adminLanguages.map(l => `<option value="${l.id}" ${view.data.languageId === l.id ? "selected" : ""}>${escapeHtml(l.name)}</option>`).join("")}
+      </select>
+
+      <label class="admin-checkbox-row" for="admin-module-languagewide">
+        <input type="checkbox" id="admin-module-languagewide" ${view.data.languageWide ? "checked" : ""}>
+        This content applies to all countries using this language
+      </label>
+
+      ${!view.data.languageWide ? `
+        <label class="field-label" for="admin-module-country">Country</label>
+        <select class="admin-select" id="admin-module-country">
+          <option value="">— pick a country —</option>
+          ${moduleLangCountries.map(d => `<option value="${d.countryKey}" ${view.data.countryKey === d.countryKey ? "selected" : ""}>${escapeHtml(d.data.name)}</option>`).join("")}
+        </select>
+        ${!moduleLangCountries.length ? `<p class="admin-hint">${view.data.languageId ? "No published countries use this language yet." : "Pick a language first."}</p>` : ""}
+      ` : ""}
     ` : ""}
   ` : `
     <div style="font-weight:800;font-size:19px;margin-top:14px;">${escapeHtml(view.data.name)}</div>
-    <div style="font-size:13px;color:var(--slate);margin-bottom:10px;">${view.data.kind === "generic" ? "Generic" : "Country-bespoke"} · ${view.data.tierCount} tier${view.data.tierCount === 1 ? "" : "s"}</div>
+    <div style="font-size:13px;color:var(--slate);margin-bottom:10px;">${moduleScopeLabel(view)} · ${view.data.tierCount} tier${view.data.tierCount === 1 ? "" : "s"}</div>
   `;
 
   const changeNoteHtml = (record && record.status === "changes_requested" && record.changeNote)
@@ -2873,7 +3133,7 @@ function screenAdminLessons(){
     <button class="admin-list-row" data-action="admin-open-lesson" data-id="${l.id}">
       <span class="admin-list-row__mid">
         <div class="admin-list-row__name">${escapeHtml(l.data.title)}</div>
-        <div class="admin-list-row__sub">${mod ? escapeHtml(mod.data.name) : "No module"} · Tier ${l.data.tier} · v${l.version}</div>
+        <div class="admin-list-row__sub">${mod ? escapeHtml(mod.data.name) : "No module"} · ${lessonScopeLabel(l)} · Tier ${l.data.tier} · v${l.version}</div>
       </span>
       ${adminStatusChip(l.status)}
     </button>
@@ -2893,8 +3153,12 @@ function readAdminLessonForm(){
   d.moduleId = document.getElementById("admin-lesson-module").value || null;
   d.tier = Math.max(1, Number(document.getElementById("admin-lesson-tier").value) || 1);
   d.scope = document.getElementById("admin-lesson-scope").value;
+  const languageEl = document.getElementById("admin-lesson-language");
+  d.languageId = (d.scope === "country-specific" && languageEl) ? (languageEl.value || null) : null;
+  const wideEl = document.getElementById("admin-lesson-languagewide");
+  d.languageWide = (d.scope === "country-specific" && wideEl) ? wideEl.checked : false;
   const countryEl = document.getElementById("admin-lesson-country");
-  d.countryKey = d.scope === "country-specific" && countryEl ? countryEl.value : null;
+  d.countryKey = (d.scope === "country-specific" && !d.languageWide && countryEl) ? (countryEl.value || null) : null;
 
   d.questions.forEach((q, i) => {
     const kindEl = document.getElementById(`q-kind-${i}`);
@@ -2923,7 +3187,10 @@ function commitAdminLessonDraft(status){
   if (!d.moduleId){ showToast("Pick a module for this lesson"); return false; }
   const mod = adminModules.find(m => m.id === d.moduleId);
   if (mod && d.tier > mod.data.tierCount){ showToast(`${mod.data.name} only goes up to Tier ${mod.data.tierCount}`); return false; }
-  if (d.scope === "country-specific" && !d.countryKey){ showToast("Pick a country for a country-specific lesson"); return false; }
+  if (d.scope === "country-specific"){
+    if (!d.languageId){ showToast("Pick a language for this lesson"); return false; }
+    if (!d.languageWide && !d.countryKey){ showToast("Pick a country, or tick 'applies to all countries using this language'"); return false; }
+  }
 
   if (status === "in_review"){
     if (d.questions.length < 5){ showToast("Needs at least 5 questions before it can be submitted"); return false; }
@@ -2959,7 +3226,7 @@ function screenAdminLesson(payload){
   const view = canEdit ? adminLessonDraft : record;
   if (!view) return `<div class="admin-empty">Lesson not found.</div>`;
 
-  const dests = publishedDestinations();
+  const lessonLangCountries = view.data.languageId ? countriesForLanguage(view.data.languageId) : [];
   const questions = view.data.questions;
   if (canEdit) adminLessonPreviewIndex = Math.min(adminLessonPreviewIndex, Math.max(0, questions.length - 1));
 
@@ -2989,10 +3256,25 @@ function screenAdminLesson(payload){
     </select>
 
     ${view.data.scope === "country-specific" ? `
-      <label class="field-label" for="admin-lesson-country">Country</label>
-      <select class="admin-select" id="admin-lesson-country">
-        ${dests.length ? dests.map(d => `<option value="${d.countryKey}" ${view.data.countryKey === d.countryKey ? "selected" : ""}>${escapeHtml(d.data.name)}</option>`).join("") : `<option value="">No published destinations yet</option>`}
+      <label class="field-label" for="admin-lesson-language">Language</label>
+      <select class="admin-select" id="admin-lesson-language">
+        <option value="">— pick a language —</option>
+        ${adminLanguages.map(l => `<option value="${l.id}" ${view.data.languageId === l.id ? "selected" : ""}>${escapeHtml(l.name)}</option>`).join("")}
       </select>
+
+      <label class="admin-checkbox-row" for="admin-lesson-languagewide">
+        <input type="checkbox" id="admin-lesson-languagewide" ${view.data.languageWide ? "checked" : ""}>
+        This content applies to all countries using this language
+      </label>
+
+      ${!view.data.languageWide ? `
+        <label class="field-label" for="admin-lesson-country">Country</label>
+        <select class="admin-select" id="admin-lesson-country">
+          <option value="">— pick a country —</option>
+          ${lessonLangCountries.map(d => `<option value="${d.countryKey}" ${view.data.countryKey === d.countryKey ? "selected" : ""}>${escapeHtml(d.data.name)}</option>`).join("")}
+        </select>
+        ${!lessonLangCountries.length ? `<p class="admin-hint">${view.data.languageId ? "No published countries use this language yet." : "Pick a language first."}</p>` : ""}
+      ` : ""}
     ` : ""}
 
     <label class="field-label" style="margin-top:24px;">Questions (${questions.length}${questions.length < 5 ? " — needs 5+ to submit" : ""})</label>
@@ -3000,7 +3282,7 @@ function screenAdminLesson(payload){
     <button type="button" class="btn-secondary" data-action="admin-lesson-add-question">+ Add question</button>
   ` : `
     <div style="font-weight:800;font-size:19px;margin-top:14px;">${escapeHtml(view.data.title)}</div>
-    <div style="font-size:13px;color:var(--slate);margin-bottom:10px;">${escapeHtml(view.data.type)} · Tier ${view.data.tier} · ${questions.length} questions</div>
+    <div style="font-size:13px;color:var(--slate);margin-bottom:10px;">${escapeHtml(view.data.type)} · ${lessonScopeLabel(view)} · Tier ${view.data.tier} · ${questions.length} questions</div>
   `;
 
   const changeNoteHtml = (record && record.status === "changes_requested" && record.changeNote)
@@ -3195,7 +3477,7 @@ function adminLegCardHtml(leg, li){
             <input type="checkbox" id="bp-gate-${li}-${mod.id}" ${gate ? "checked" : ""} style="width:18px;height:18px;flex-shrink:0;">
             <span class="admin-list-row__mid">
               <div class="admin-list-row__name">${escapeHtml(mod.data.name)}</div>
-              <div class="admin-list-row__sub">${mod.data.kind === "generic" ? "Generic" : "Bespoke"} · up to Tier ${mod.data.tierCount}${mod.status !== "published" ? " · not yet published" : ""}</div>
+              <div class="admin-list-row__sub">${moduleScopeLabel(mod)} · up to Tier ${mod.data.tierCount}${mod.status !== "published" ? " · not yet published" : ""}</div>
             </span>
             <input class="text-input" type="number" min="1" max="${mod.data.tierCount}" id="bp-gate-tier-${li}-${mod.id}" value="${gate ? gate.tier : 1}" style="width:52px;text-align:center;flex-shrink:0;">
           </div>
@@ -3321,10 +3603,11 @@ function screenAdminBlueprint(payload){
    RENDER DISPATCH
 
    Admin screens (admin-home, admin-destinations, admin-review-queue,
-   admin-destination, admin-modules, admin-module, admin-lessons,
-   admin-lesson, admin-blueprints, admin-blueprint) are registered
-   below alongside the traveler screens — a demo-phase shortcut
-   (ADMIN-CONTENT-PLAN.md §10), not the intended end state.
+   admin-destination, admin-languages, admin-language, admin-modules,
+   admin-module, admin-lessons, admin-lesson, admin-blueprints,
+   admin-blueprint) are registered below alongside the traveler
+   screens — a demo-phase shortcut (ADMIN-CONTENT-PLAN.md §10), not
+   the intended end state.
    ================================================================ */
 const SCREENS = {
   home: screenHome,
@@ -3336,6 +3619,8 @@ const SCREENS = {
   phrasebook: screenPhrasebook,
   feedback: screenFeedback,
   "admin-home": screenAdminHome,
+  "admin-languages": screenAdminLanguages,
+  "admin-language": screenAdminLanguage,
   "admin-destinations": screenAdminDestinations,
   "admin-review-queue": screenAdminReviewQueue,
   "admin-destination": screenAdminDestination,
@@ -3410,7 +3695,7 @@ document.addEventListener("click", (e) => {
       adminDraft = {
         id: null, countryKey: null, status: "draft", version: 1, legacy: false, changeNote: null,
         data: {
-          name: "", capital: "",
+          name: "", capital: "", languageId: null,
           colours: { primary: "#BC002D", secondary: "#FFFFFF", tertiary: "#14181F" },
           flagPattern: "vertical-tricolor", cultureTip: ""
         }
@@ -3491,13 +3776,43 @@ document.addEventListener("click", (e) => {
       break;
     }
 
+    // ---- Language ----
+    case "admin-open-languages": push("admin-languages"); break;
+
+    case "admin-new-language":
+      adminLanguageDraft = { id: null, name: "" };
+      push("admin-language", { id: null });
+      break;
+
+    case "admin-open-language":
+      adminLanguageDraft = null; // re-primed by screenAdminLanguage if editable
+      push("admin-language", { id: el.dataset.id });
+      break;
+
+    case "admin-language-save": {
+      const name = document.getElementById("admin-language-name").value.trim();
+      if (!name){ showToast("Language name is required"); break; }
+      adminLanguageDraft.name = name;
+      if (!adminLanguageDraft.id){
+        adminLanguageDraft.id = nextAdminId("lang");
+        adminLanguages.push(adminLanguageDraft);
+      } else {
+        const idx = adminLanguages.findIndex(l => l.id === adminLanguageDraft.id);
+        if (idx >= 0) adminLanguages[idx] = adminLanguageDraft;
+      }
+      showToast("Language saved");
+      stack[stack.length - 1].payload = { id: adminLanguageDraft.id };
+      render();
+      break;
+    }
+
     // ---- Module (§4) ----
     case "admin-open-modules": push("admin-modules"); break;
 
     case "admin-new-module":
       adminModuleDraft = {
         id: null, status: "draft", version: 1, changeNote: null,
-        data: { name: "", kind: "generic", tierCount: 3, countryKeys: [] }
+        data: { name: "", kind: "generic", tierCount: 3, languageId: null, languageWide: false, countryKey: null }
       };
       push("admin-module", { id: null });
       break;
@@ -3507,13 +3822,27 @@ document.addEventListener("click", (e) => {
       push("admin-module", { id: el.dataset.id });
       break;
 
-    case "admin-module-toggle-country": {
-      readAdminModuleForm();
-      const key = el.dataset.country;
-      const idx = adminModuleDraft.data.countryKeys.indexOf(key);
-      if (idx >= 0) adminModuleDraft.data.countryKeys.splice(idx, 1);
-      else adminModuleDraft.data.countryKeys.push(key);
-      render();
+    // Pressing "Create Module" from a Country screen inherits that
+    // Country's Language, defaulting to country-only (unticked) —
+    // pressing it from a Language screen instead defaults to
+    // language-wide (ticked). Two entry points, two defaults.
+    case "admin-new-module-for-country": {
+      const countryKey = el.dataset.country;
+      const country = countryByKey(countryKey);
+      adminModuleDraft = {
+        id: null, status: "draft", version: 1, changeNote: null,
+        data: { name: "", kind: "bespoke", tierCount: 3, languageId: country ? country.data.languageId : null, languageWide: false, countryKey }
+      };
+      push("admin-module", { id: null });
+      break;
+    }
+
+    case "admin-new-module-for-language": {
+      adminModuleDraft = {
+        id: null, status: "draft", version: 1, changeNote: null,
+        data: { name: "", kind: "bespoke", tierCount: 3, languageId: el.dataset.language, languageWide: true, countryKey: null }
+      };
+      push("admin-module", { id: null });
       break;
     }
 
@@ -3584,7 +3913,7 @@ document.addEventListener("click", (e) => {
     case "admin-new-lesson":
       adminLessonDraft = {
         id: null, status: "draft", version: 1, changeNote: null,
-        data: { title: "", type: "Phrase", moduleId: null, tier: 1, scope: "generic", countryKey: null, questions: [] }
+        data: { title: "", type: "Phrase", moduleId: null, tier: 1, scope: "generic", languageId: null, languageWide: false, countryKey: null, questions: [] }
       };
       adminLessonPreviewIndex = 0;
       push("admin-lesson", { id: null });
@@ -3592,12 +3921,39 @@ document.addEventListener("click", (e) => {
 
     case "admin-new-lesson-for-module": {
       const countryKey = el.dataset.country || null;
+      const country = countryKey ? countryByKey(countryKey) : null;
       adminLessonDraft = {
         id: null, status: "draft", version: 1, changeNote: null,
         data: {
           title: "", type: "Phrase", moduleId: el.dataset.moduleId, tier: Number(el.dataset.tier),
-          scope: countryKey ? "country-specific" : "generic", countryKey, questions: []
+          scope: countryKey ? "country-specific" : "generic",
+          languageId: country ? country.data.languageId : null, languageWide: false,
+          countryKey, questions: []
         }
+      };
+      adminLessonPreviewIndex = 0;
+      push("admin-lesson", { id: null });
+      break;
+    }
+
+    // Same inherited-language logic as admin-new-module-for-country/
+    // -for-language above, applied to Lessons.
+    case "admin-new-lesson-for-country": {
+      const countryKey = el.dataset.country;
+      const country = countryByKey(countryKey);
+      adminLessonDraft = {
+        id: null, status: "draft", version: 1, changeNote: null,
+        data: { title: "", type: "Phrase", moduleId: null, tier: 1, scope: "country-specific", languageId: country ? country.data.languageId : null, languageWide: false, countryKey, questions: [] }
+      };
+      adminLessonPreviewIndex = 0;
+      push("admin-lesson", { id: null });
+      break;
+    }
+
+    case "admin-new-lesson-for-language": {
+      adminLessonDraft = {
+        id: null, status: "draft", version: 1, changeNote: null,
+        data: { title: "", type: "Phrase", moduleId: null, tier: 1, scope: "country-specific", languageId: el.dataset.language, languageWide: true, countryKey: null, questions: [] }
       };
       adminLessonPreviewIndex = 0;
       push("admin-lesson", { id: null });
@@ -3966,10 +4322,12 @@ document.addEventListener("change", (e) => {
     readFn();
     render();
   }, 0);
-  if (e.target.id === "admin-module-kind" || e.target.id === "admin-module-tiercount"){
+  if (e.target.id === "admin-module-kind" || e.target.id === "admin-module-tiercount" ||
+      e.target.id === "admin-module-language" || e.target.id === "admin-module-languagewide"){
     deferredAdminRerender(e.target.id, readAdminModuleForm);
   }
-  if (e.target.id === "admin-lesson-module" || e.target.id === "admin-lesson-scope"){
+  if (e.target.id === "admin-lesson-module" || e.target.id === "admin-lesson-scope" ||
+      e.target.id === "admin-lesson-language" || e.target.id === "admin-lesson-languagewide"){
     deferredAdminRerender(e.target.id, readAdminLessonForm);
   }
   if (/^q-kind-\d+$/.test(e.target.id)){

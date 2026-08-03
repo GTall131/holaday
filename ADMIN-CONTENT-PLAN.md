@@ -89,6 +89,36 @@ them — today's 6 countries are hardcoded `COUNTRIES` entries; adding a
 6. Save Draft → Submit for Review. Same lifecycle as everything else (§6)
    — a Country profile is approval-gated content too, not exempt because
    it looks like static metadata.
+7. Author picks the Country's **Language** (§2b) as part of the shell
+   profile — required before the Country can be saved. This is what lets
+   Module/Lesson authoring (§3/§4) offer "applies to all countries using
+   this language" instead of forcing every piece of bespoke content to
+   be re-authored per country.
+
+## 2b. Language
+
+A Language is reference taxonomy, not itself approval-gated content like
+the rest of this hierarchy — it has no draft/review lifecycle, just a
+name. Every Country names exactly one Language (§2a step 7); a Module or
+Lesson authored as country-bespoke either targets one specific Country
+or is marked **language-wide**, in which case it resolves against
+*every* published Country currently using that Language — computed live,
+so a Country added later in an already-authored Language picks up that
+content automatically rather than needing it re-authored per country.
+
+Two entry points set the default for the language-wide toggle:
+- Pressing "Create Module"/"Create Lesson" from a **Country** screen
+  inherits that Country's Language, toggle off by default (scoped to
+  just that Country — the narrower, safer default).
+- Pressing "Create Module"/"Create Lesson" from a **Language** screen
+  has no single Country to default to, so the toggle defaults on
+  (language-wide) instead.
+
+Browsing a Country's screen lists every Module/Lesson that applies to
+it — generic, pinned to that Country, or language-wide under its
+Language — so authoring against an already-covered Language (a 7th
+country added in an existing Language) immediately surfaces what's
+already there instead of looking empty.
 
 ## 3. Flow: Lesson creation (Author)
 
@@ -104,15 +134,22 @@ them — today's 6 countries are hardcoded `COUNTRIES` entries; adding a
    included.
 4. Save Draft → validation (≥5 questions, mixed kinds per PRD §11a, phrase
    bank deep enough for the distractor count) → Submit for Review.
+5. If scoped to a Country rather than marked generic, the author also
+   picks a Language and, per §2b, either a specific Country or the
+   "applies to all countries using this language" toggle.
 
 ## 4. Flow: Module creation (Author)
 
 1. Define the theme/name and whether it's generic or country-bespoke.
+   A bespoke Module names a Language and either one specific Country or
+   "applies to all countries using this language" (§2b).
 2. Build the tier ladder — attach or author a Lesson at each Tier.
 3. Track per-country ladder completeness: a completeness grid (rows =
    countries, columns = Tiers) shows Missing/Draft/Approved/Published per
-   cell. A Module can't be submitted until every Tier it claims to offer
-   has a published Lesson for every country it needs to support.
+   cell. For a language-wide Module the rows are every published Country
+   currently using its Language, not a fixed list. A Module can't be
+   submitted until every Tier it claims to offer has a published Lesson
+   for every country it needs to support.
 
 ## 5. Flow: Blueprint creation (Author)
 
