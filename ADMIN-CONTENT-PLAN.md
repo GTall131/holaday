@@ -94,7 +94,12 @@ offline Phrasebook (§9) shows an empty state rather than crashing.
    §4) — a brand-new Country starts with an empty content bank, so it
    won't be sufficient for any Blueprint to resolve against until enough
    of that follow-on content is published (see the Module/Blueprint
-   readiness gating in §4/§6).
+   readiness gating in §4/§6). Authoring that content does *not* wait on
+   the Country's own review status — a Country only needs to exist (past
+   its first Save Draft, which is what assigns its stable `countryKey`),
+   not be Approved or Published, before Modules/Lessons can target it.
+   Only *publishing* a Module/Lesson still requires the Countries it
+   claims to actually be Published (§4) — that's a separate, later gate.
 5. Preview reuses the existing `country-card` (picker) and `ticket`
    (dashboard) rendering so the author sees exactly how the destination
    will look before it's real.

@@ -1360,6 +1360,16 @@ function countryByKey(countryKey){
 function countriesForLanguage(languageId){
   return publishedDestinations().filter(d => d.data.languageId === languageId);
 }
+// Every Country an author can target with new content against this
+// Language, regardless of the Country's own review status — a Module or
+// Lesson shouldn't have to wait on a Country's approval before work on
+// it can start. Only Published countries count toward a Module's
+// completeness/publishability though (see countriesForLanguage/
+// moduleGridRows above) — that's a stricter, separate question about
+// what's actually live for travelers.
+function activeCountriesForLanguage(languageId){
+  return adminDestinations.filter(d => d.status !== "archived" && d.data.languageId === languageId);
+}
 function languageName(languageId){
   const lang = adminLanguages.find(l => l.id === languageId);
   return lang ? lang.name : "Unknown language";
@@ -2898,10 +2908,9 @@ function screenAdminDestination(payload){
       <label class="field-label" style="margin-top:24px;">Modules &amp; lessons for ${escapeHtml(view.data.name)}</label>
       ${adminRole === "author" ? `
         <div class="admin-actions" style="margin:0 0 10px;">
-          <button class="btn-secondary" data-action="admin-new-module-for-country" data-country="${record.countryKey}" ${record.status === "published" ? "" : "disabled"}>+ New module</button>
-          <button class="btn-secondary" data-action="admin-new-lesson-for-country" data-country="${record.countryKey}" ${record.status === "published" ? "" : "disabled"}>+ New lesson</button>
+          <button class="btn-secondary" data-action="admin-new-module-for-country" data-country="${record.countryKey}">+ New module</button>
+          <button class="btn-secondary" data-action="admin-new-lesson-for-country" data-country="${record.countryKey}">+ New lesson</button>
         </div>
-        ${record.status !== "published" ? `<p class="admin-hint">Publish this destination first to author country-specific modules and lessons for it — same rule bespoke content already follows everywhere else.</p>` : ""}
       ` : ""}
       ${contentListRowsHtml(
         adminModules.filter(m => moduleAppliesToCountry(m, record.countryKey)),
@@ -2974,8 +2983,8 @@ function screenAdminModule(payload){
   const view = canEdit ? adminModuleDraft : record;
   if (!view) return `<div class="admin-empty">Module not found.</div>`;
 
-  const dests = publishedDestinations();
-  const moduleLangCountries = view.data.languageId ? countriesForLanguage(view.data.languageId) : [];
+  const dests = adminDestinations; // grid row labels — any status, so a draft country's row still shows its name
+  const moduleLangCountries = view.data.languageId ? activeCountriesForLanguage(view.data.languageId) : [];
   const fields = canEdit ? `
     <label class="field-label" for="admin-module-name">Module name</label>
     <input class="text-input" id="admin-module-name" value="${escapeHtml(view.data.name)}" placeholder="e.g. Ordering Food">
@@ -3007,7 +3016,7 @@ function screenAdminModule(payload){
           <option value="">— pick a country —</option>
           ${moduleLangCountries.map(d => `<option value="${d.countryKey}" ${view.data.countryKey === d.countryKey ? "selected" : ""}>${escapeHtml(d.data.name)}</option>`).join("")}
         </select>
-        ${!moduleLangCountries.length ? `<p class="admin-hint">${view.data.languageId ? "No published countries use this language yet." : "Pick a language first."}</p>` : ""}
+        ${!moduleLangCountries.length ? `<p class="admin-hint">${view.data.languageId ? "No countries use this language yet." : "Pick a language first."}</p>` : ""}
       ` : ""}
     ` : ""}
   ` : `
@@ -3175,7 +3184,7 @@ function screenAdminLesson(payload){
   const view = canEdit ? adminLessonDraft : record;
   if (!view) return `<div class="admin-empty">Lesson not found.</div>`;
 
-  const lessonLangCountries = view.data.languageId ? countriesForLanguage(view.data.languageId) : [];
+  const lessonLangCountries = view.data.languageId ? activeCountriesForLanguage(view.data.languageId) : [];
   const questions = view.data.questions;
   if (canEdit) adminLessonPreviewIndex = Math.min(adminLessonPreviewIndex, Math.max(0, questions.length - 1));
 
@@ -3222,7 +3231,7 @@ function screenAdminLesson(payload){
           <option value="">— pick a country —</option>
           ${lessonLangCountries.map(d => `<option value="${d.countryKey}" ${view.data.countryKey === d.countryKey ? "selected" : ""}>${escapeHtml(d.data.name)}</option>`).join("")}
         </select>
-        ${!lessonLangCountries.length ? `<p class="admin-hint">${view.data.languageId ? "No published countries use this language yet." : "Pick a language first."}</p>` : ""}
+        ${!lessonLangCountries.length ? `<p class="admin-hint">${view.data.languageId ? "No countries use this language yet." : "Pick a language first."}</p>` : ""}
       ` : ""}
     ` : ""}
 
