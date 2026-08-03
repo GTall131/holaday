@@ -2700,7 +2700,15 @@ function screenAdminReviewQueue(){
 function readAdminDestinationForm(){
   adminDraft.data.name = document.getElementById("admin-dest-name").value.trim();
   adminDraft.data.capital = document.getElementById("admin-dest-capital").value.trim();
-  adminDraft.data.languageId = document.getElementById("admin-dest-language").value || null;
+  const languageSelectValue = document.getElementById("admin-dest-language").value;
+  const newLanguageEl = document.getElementById("admin-dest-language-new");
+  if (languageSelectValue === "__new__"){
+    adminDraft.data.languageId = "__new__";
+    adminDraft.data.newLanguageName = newLanguageEl ? newLanguageEl.value : "";
+  } else {
+    adminDraft.data.languageId = languageSelectValue || null;
+    adminDraft.data.newLanguageName = "";
+  }
   adminDraft.data.cultureTip = document.getElementById("admin-dest-culturetip").value.trim();
   adminDraft.data.flagPattern = document.getElementById("admin-dest-pattern").value;
   adminDraft.data.colours = {
@@ -2715,6 +2723,15 @@ function commitAdminDraft(status){
   if (!adminDraft.data.name){
     showToast("Destination name is required");
     return false;
+  }
+  if (adminDraft.data.languageId === "__new__"){
+    const newName = (adminDraft.data.newLanguageName || "").trim();
+    if (!newName){
+      showToast("Type a name for the new language");
+      return false;
+    }
+    adminDraft.data.languageId = ensureLanguage(newName).id;
+    adminDraft.data.newLanguageName = "";
   }
   if (!adminDraft.data.languageId){
     showToast("Pick a language for this destination");
@@ -2792,8 +2809,11 @@ function screenAdminDestination(payload){
     <select class="admin-select" id="admin-dest-language">
       <option value="">— pick a language —</option>
       ${adminLanguages.map(l => `<option value="${l.id}" ${view.data.languageId === l.id ? "selected" : ""}>${escapeHtml(l.name)}</option>`).join("")}
+      <option value="__new__" ${view.data.languageId === "__new__" ? "selected" : ""}>+ Add a new language</option>
     </select>
-    ${!adminLanguages.length ? `<p class="admin-hint">No languages yet — create one first (see Languages in the admin home).</p>` : ""}
+    ${view.data.languageId === "__new__" ? `
+      <input class="text-input" id="admin-dest-language-new" style="margin-top:8px;" value="${escapeHtml(view.data.newLanguageName || "")}" placeholder="e.g. Portuguese" autofocus>
+    ` : ""}
 
     <label class="field-label">Flag colours</label>
     <div class="admin-form-grid">
@@ -3633,7 +3653,7 @@ document.addEventListener("click", (e) => {
       adminDraft = {
         id: null, countryKey: null, status: "draft", version: 1, legacy: false, changeNote: null,
         data: {
-          name: "", capital: "", languageId: null,
+          name: "", capital: "", languageId: null, newLanguageName: "",
           colours: { primary: "#BC002D", secondary: "#FFFFFF", tertiary: "#14181F" },
           flagPattern: "vertical-tricolor", cultureTip: ""
         }
@@ -4283,6 +4303,9 @@ document.addEventListener("change", (e) => {
   if (e.target.id === "admin-lang-pane-filter"){
     const newFilter = e.target.value;
     deferredAdminRerender(e.target.id, () => { adminLanguagesFilterLanguage = newFilter; });
+  }
+  if (e.target.id === "admin-dest-language"){
+    deferredAdminRerender(e.target.id, readAdminDestinationForm);
   }
   if (e.target.id === "admin-bp-preview-country"){
     const newCountry = e.target.value;
