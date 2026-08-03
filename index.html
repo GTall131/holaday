@@ -953,12 +953,7 @@ current code.
    flag regardless of OS/font support.
    ================================================================ */
 const FLAGS = {
-  japan: `<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#BC002D"/></svg>`,
-  italy: `<svg viewBox="0 0 30 20"><rect width="10" height="20" fill="#008C45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#CD212A"/></svg>`,
-  greece: `<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#0D5EAF"/><rect y="2.2" width="30" height="2.2" fill="#fff"/><rect y="6.6" width="30" height="2.2" fill="#fff"/><rect y="11" width="30" height="2.2" fill="#fff"/><rect y="15.4" width="30" height="2.2" fill="#fff"/><rect width="12" height="11" fill="#0D5EAF"/><rect x="4.8" width="2.4" height="11" fill="#fff"/><rect y="4.3" width="12" height="2.4" fill="#fff"/></svg>`,
-  mexico: `<svg viewBox="0 0 30 20"><rect width="10" height="20" fill="#006341"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#CE1126"/><circle cx="15" cy="10" r="3" fill="none" stroke="#8a6d3b" stroke-width="1.2"/></svg>`,
-  morocco: `<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#C1272D"/><path d="M15,4 L16.35,8.14 L20.71,8.15 L17.19,10.71 L18.53,14.85 L15,12.3 L11.47,14.85 L12.81,10.71 L9.29,8.15 L13.65,8.14 Z" fill="none" stroke="#006233" stroke-width="1.1"/></svg>`,
-  france: `<svg viewBox="0 0 30 20"><rect width="10" height="20" fill="#0055A4"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#EF4135"/></svg>`
+  japan: `<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#BC002D"/></svg>`
 };
 
 /* ================================================================
@@ -1013,206 +1008,6 @@ const COUNTRIES = {
         { kind:"comprehend", phraseIndex:2, context:"At the ticket machine, the attendant nods and repeats back what you asked for:", question:"What did they just confirm?" },
         { kind:"symbol", symbol:"quiet", context:"You settle into your seat and notice this sign overhead.", question:"What does it mean?", correct:"Keep phone calls off, and keep your voice down", distractors:["No eating or drinking", "This carriage is reserved seating only"] },
         { kind:"situational", context:"Mid-journey, a new situation comes up." }
-      ]
-    }
-  },
-  italy: {
-    name: "Italy", capital: "Rome",
-    colours: { primary:"#008C45", secondary:"#CD212A", tertiary:"#FFFFFF" },
-    cultureTip: "Meals are unhurried social events. The bill won't be brought unasked — request \"il conto\" when you're ready, rushing it is considered rude.",
-    phrases: [
-      { en:"Hello", local:"Buongiorno", translit:"bwon-JOR-no" },
-      { en:"Thank you", local:"Grazie", translit:"GRAT-tsee-eh" },
-      { en:"Please", local:"Per favore", translit:"per fa-VO-reh" },
-      { en:"Excuse me / Sorry", local:"Scusi", translit:"SKOO-zee" },
-      { en:"Where is the bathroom?", local:"Dov'è il bagno?", translit:"do-VEH eel BAHN-yo" },
-      { en:"How much is this?", local:"Quanto costa?", translit:"KWAN-to KOS-ta" },
-      { en:"I don't understand", local:"Non capisco", translit:"non ka-PEES-ko" },
-      { en:"Cheers!", local:"Salute!", translit:"sa-LOO-teh" }
-    ],
-    transport: {
-      intro: "City buses and trains run reliably, but \"validate before you ride\" is the rule that trips up almost every visitor: paper tickets must be stamped in a small machine on board or at the platform before travel.",
-      phrases: [
-        { en:"Where do I validate the ticket?", local:"Dove si convalida il biglietto?", translit:"DOH-veh see kon-va-LEE-da eel bee-LYET-to" },
-        { en:"Does this bus go to the station?", local:"Questo autobus va alla stazione?", translit:"KWES-to OW-to-boos va AL-la sta-tsee-OH-neh" },
-        { en:"A ticket to Rome, please", local:"Un biglietto per Roma, per favore", translit:"oon bee-LYET-to per RO-ma" }
-      ],
-      etiquette: [
-        "Stamp paper tickets in the yellow or green machine every ride — inspectors fine unstamped tickets even if you bought one.",
-        "Board buses from the rear or middle doors, and exit from the front.",
-        "Offer your seat to elderly passengers — it's a strong social norm, not just politeness."
-      ],
-      scenario: {
-        q: "You bought a paper bus ticket in Rome before boarding. What must you do with it?",
-        options: ["Nothing, it's valid on purchase", "Stamp it in the onboard machine", "Show it to the driver only"],
-        correctIndex: 1
-      },
-      beatPlan: [
-        { kind:"produce", phraseIndex:2, context:"Buses run on the honesty system, but you still need a ticket." },
-        { kind:"produce", phraseIndex:0, context:"Once you're holding it, here's the step almost everyone forgets." },
-        { kind:"comprehend", phraseIndex:1, context:"You ask if this is the right bus. The driver repeats back to confirm:", question:"What are they confirming?" },
-        { kind:"symbol", symbol:"stamp", context:"You spot this machine bolted near the door as you board.", question:"What's it for?", correct:"Stamping (validating) your paper ticket before you ride", distractors:["Buying a new ticket", "Charging your phone"] },
-        { kind:"situational", context:"You're holding a ticket you bought before boarding." }
-      ]
-    }
-  },
-  greece: {
-    name: "Greece", capital: "Athens",
-    colours: { primary:"#0D5EAF", secondary:"#FFFFFF", tertiary:"#14181F" },
-    cultureTip: "Meal times run later than much of Europe — dinner rarely starts before 9pm, and cafes double as all-afternoon social hubs.",
-    phrases: [
-      { en:"Hello", local:"Yassas", translit:"Γεια σας" },
-      { en:"Thank you", local:"Efharisto", translit:"Ευχαριστώ" },
-      { en:"Please", local:"Parakalo", translit:"Παρακαλώ" },
-      { en:"Excuse me / Sorry", local:"Signomi", translit:"Συγγνώμη" },
-      { en:"Where is the bathroom?", local:"Pou einai i toualeta?", translit:"Πού είναι η τουαλέτα;" },
-      { en:"How much is this?", local:"Poso kani?", translit:"Πόσο κάνει;" },
-      { en:"I don't understand", local:"Den katalaveno", translit:"Δεν καταλαβαίνω" },
-      { en:"Cheers!", local:"Yamas!", translit:"Γειά μας!" }
-    ],
-    transport: {
-      intro: "Athens has a clean, simple metro alongside buses and trams, with a single ticket usually covering transfers within a set window. Islands and rural areas run on ferry and bus timetables that are looser than they look.",
-      phrases: [
-        { en:"Does this bus go to the port?", local:"Pigainei sto limani afto to leoforio?", translit:"Πηγαίνει στο λιμάνι αυτό το λεωφορείο;" },
-        { en:"One ticket please", local:"Ena isitirio parakalo", translit:"Ένα εισιτήριο παρακαλώ" },
-        { en:"What time does the ferry leave?", local:"Ti ora fevgei to feribot?", translit:"Τι ώρα φεύγει το φέρι μποτ;" }
-      ],
-      etiquette: [
-        "Validate your ticket at the machine when boarding the metro or bus, even if you bought it in advance.",
-        "Ferry departure times can slip — arrive earlier than the printed time, especially in high season.",
-        "Priority seating near the front is for elderly and pregnant passengers — give it up without being asked."
-      ],
-      scenario: {
-        q: "Your ferry is scheduled to leave at 10:00. When should you plan to arrive at the port?",
-        options: ["At 9:55 — tickets are checked fast", "At least 30-45 minutes early", "Any time before 11:00 is fine"],
-        correctIndex: 1
-      },
-      beatPlan: [
-        { kind:"produce", phraseIndex:1, context:"Grab your ticket first." },
-        { kind:"produce", phraseIndex:0, context:"Heading somewhere by bus? Confirm the route before you get on." },
-        { kind:"comprehend", phraseIndex:2, context:"At the port kiosk, the clerk repeats your question back to you:", question:"What are they telling you?" },
-        { kind:"symbol", symbol:"priority", context:"You notice this symbol on a seat near the front of the metro carriage.", question:"Who is that seat reserved for?", correct:"Elderly and pregnant passengers", distractors:["Ticket inspectors only", "Anyone travelling with luggage"] },
-        { kind:"situational", context:"Your ferry has a scheduled departure time." }
-      ]
-    }
-  },
-  mexico: {
-    name: "Mexico", capital: "Mexico City",
-    colours: { primary:"#006341", secondary:"#CE1126", tertiary:"#FFFFFF" },
-    cultureTip: "Social plans run on relaxed timing (\"la hora mexicana\") — arriving a little late is normal. Keep firm punctuality for tours and business meetings though.",
-    phrases: [
-      { en:"Hello", local:"Hola", translit:"OH-la" },
-      { en:"Thank you", local:"Gracias", translit:"GRA-syas" },
-      { en:"Please", local:"Por favor", translit:"por fa-VOR" },
-      { en:"Excuse me / Sorry", local:"Disculpe", translit:"dees-KOOL-peh" },
-      { en:"Where is the bathroom?", local:"¿Dónde está el baño?", translit:"DON-deh es-TA el BAN-yo" },
-      { en:"How much is this?", local:"¿Cuánto cuesta?", translit:"KWAN-to KWES-ta" },
-      { en:"I don't understand", local:"No entiendo", translit:"no en-tee-EN-do" },
-      { en:"Cheers!", local:"¡Salud!", translit:"sa-LOOD" }
-    ],
-    transport: {
-      intro: "Mexico City's Metro is fast and inexpensive, with separate train cars reserved for women and children during peak hours. Outside big cities, colectivos (shared minivans) are the everyday way to cover short distances.",
-      phrases: [
-        { en:"Does this colectivo go to the centre?", local:"¿Este colectivo va al centro?", translit:"ES-teh ko-lek-TEE-vo va al SEN-tro" },
-        { en:"How much is the fare?", local:"¿Cuánto es el pasaje?", translit:"KWAN-to es el pa-SA-heh" },
-        { en:"Please stop here", local:"Aquí, por favor", translit:"a-KEE por fa-VOR" }
-      ],
-      etiquette: [
-        "Look for the pink-marked cars reserved for women and children during rush hour on the Metro.",
-        "Have small bills or coins ready for colectivos — drivers rarely break large notes.",
-        "Call out your stop in advance on a colectivo; it doesn't stop unless asked."
-      ],
-      scenario: {
-        q: "You want a colectivo to stop at your destination. What should you do?",
-        options: ["Wait — it stops at every corner automatically", "Call out \"aquí, por favor\" before your stop", "Pull a cord like a city bus"],
-        correctIndex: 1
-      },
-      beatPlan: [
-        { kind:"produce", phraseIndex:0, context:"Flag down a colectivo and confirm it's headed your way." },
-        { kind:"produce", phraseIndex:1, context:"Ask what it'll cost before you commit to the ride." },
-        { kind:"comprehend", phraseIndex:2, context:"As your stop comes up, you call out, and the driver repeats it back:", question:"What did they just confirm?" },
-        { kind:"symbol", symbol:"reserved", context:"You notice this marking on a Metro car door.", question:"What does it mean?", correct:"Reserved for women and children during rush hour", distractors:["First class only", "Exit only — do not board here"] },
-        { kind:"situational", context:"You're riding a colectivo toward your stop." }
-      ]
-    }
-  },
-  morocco: {
-    name: "Morocco", capital: "Rabat",
-    colours: { primary:"#C1272D", secondary:"#006233", tertiary:"#FFFFFF" },
-    cultureTip: "Bargaining in souks is expected and part of the social exchange, not a confrontation — starting around half the asking price is a normal opening.",
-    phrases: [
-      { en:"Hello", local:"As-salamu alaykum", translit:"السلام عليكم" },
-      { en:"Thank you", local:"Shukran", translit:"شكرا" },
-      { en:"Please", local:"Min fadlik", translit:"من فضلك" },
-      { en:"Excuse me / Sorry", local:"Smehli", translit:"سمحلي" },
-      { en:"Where is the bathroom?", local:"Fin kayn twalet?", translit:"فين كاين تواليت؟" },
-      { en:"How much is this?", local:"Bshhal hada?", translit:"بشحال هادا؟" },
-      { en:"I don't understand", local:"Ma fhemtch", translit:"ما فهمتش" },
-      { en:"Cheers!", local:"Saha!", translit:"صحة" }
-    ],
-    transport: {
-      intro: "Petit taxis handle most in-city trips and are metered — ask the driver to use it. Grand taxis and buses cover longer routes between cities and typically leave once full rather than on a fixed schedule.",
-      phrases: [
-        { en:"Please use the meter", local:"Al-'addad min fadlik", translit:"العداد من فضلك" },
-        { en:"Take me to the medina", local:"Wddini l-lmdina", translit:"ودّيني للمدينة" },
-        { en:"How much to the airport?", local:"Bshhal l-lmatar?", translit:"بشحال للمطار؟" }
-      ],
-      etiquette: [
-        "Agree the fare or insist on the meter before the petit taxi pulls away, not after you arrive.",
-        "Grand taxis and intercity buses often depart when full, not at a set time — build in slack.",
-        "It's normal to share a petit taxi with strangers heading the same direction — don't be surprised if the driver picks up another rider."
-      ],
-      scenario: {
-        q: "You get into a petit taxi in Marrakech and the driver hasn't mentioned a price. What should you do?",
-        options: ["Wait until arrival to negotiate", "Ask for the meter or agree a fare before setting off", "Assume it's a flat fee everywhere"],
-        correctIndex: 1
-      },
-      beatPlan: [
-        { kind:"produce", phraseIndex:0, context:"Hop in a petit taxi and settle this before you go anywhere." },
-        { kind:"produce", phraseIndex:1, context:"Tell the driver where you're actually headed." },
-        { kind:"comprehend", phraseIndex:2, context:"You ask about a longer trip, and the driver repeats the question back while thinking it over:", question:"What are they considering?" },
-        { kind:"symbol", symbol:"meter", context:"You get in and glance at the dashboard.", question:"What should you check for?", correct:"That the driver has switched the meter on", distractors:["The taxi's license number", "The fuel gauge"] },
-        { kind:"situational", context:"The driver hasn't mentioned a price yet." }
-      ]
-    }
-  },
-  france: {
-    name: "France", capital: "Paris",
-    colours: { primary:"#0055A4", secondary:"#EF4135", tertiary:"#FFFFFF" },
-    cultureTip: "Always open with \"Bonjour\" before asking a shopkeeper anything, even a quick question — skipping the greeting reads as rude, not efficient.",
-    phrases: [
-      { en:"Hello", local:"Bonjour", translit:"bon-ZHOOR" },
-      { en:"Thank you", local:"Merci", translit:"mer-SEE" },
-      { en:"Please", local:"S'il vous plaît", translit:"seel voo PLEH" },
-      { en:"Excuse me / Sorry", local:"Excusez-moi", translit:"ex-koo-zay MWA" },
-      { en:"Where is the bathroom?", local:"Où sont les toilettes?", translit:"oo son lay twa-LET" },
-      { en:"How much is this?", local:"Combien ça coûte?", translit:"kom-bee-AN sa KOOT" },
-      { en:"I don't understand", local:"Je ne comprends pas", translit:"zhuh nuh kom-PRAHN pa" },
-      { en:"Cheers!", local:"Santé!", translit:"san-TAY" }
-    ],
-    transport: {
-      intro: "The Paris Métro and regional RER are extensive and easy once you know the rule: validate your ticket every time, even on connecting regional trains, and keep it until you exit.",
-      phrases: [
-        { en:"A ticket to..., please", local:"Un billet pour..., s'il vous plaît", translit:"oon bee-YEH poor... seel voo pleh" },
-        { en:"Which line goes to...?", local:"Quelle ligne va à...?", translit:"kel LEEN-yuh va ah" },
-        { en:"Is this seat free?", local:"Cette place est libre?", translit:"set plas eh LEE-bruh" }
-      ],
-      etiquette: [
-        "Validate (\"composter\") train tickets before boarding regional and intercity trains — the Métro turnstile does this automatically.",
-        "Keep your ticket until you've exited the station; random checks happen and fines are steep.",
-        "Move down inside the carriage rather than clustering by the doors at rush hour."
-      ],
-      scenario: {
-        q: "You've just tapped through the Métro turnstile with your ticket. What should you do with it?",
-        options: ["Throw it away, it's no longer needed", "Keep it until you exit the system", "Give it to the next passenger"],
-        correctIndex: 1
-      },
-      beatPlan: [
-        { kind:"produce", phraseIndex:0, context:"Buy your ticket before you head down to the platform." },
-        { kind:"produce", phraseIndex:1, context:"Work out which line you actually need." },
-        { kind:"comprehend", phraseIndex:2, context:"You ask if the seat is free. The passenger repeats it back, faintly amused:", question:"What did they just repeat?" },
-        { kind:"symbol", symbol:"stamp", context:"Before boarding a regional train, you see this machine on the platform.", question:"What's it for?", correct:"Validating (\"composting\") your ticket before you board", distractors:["Buying a ticket", "Checking train times"] },
-        { kind:"situational", context:"You've just tapped through the Métro turnstile." }
       ]
     }
   }
@@ -1384,13 +1179,17 @@ let beatResult = null;
                  ^              |
                  └─ changes_requested (author edits, resubmits)
 
-   Seeded with the six existing hardcoded COUNTRIES as read-only-by-
-   default "published" legacy rows so the review queue/state machine
-   has real content on day one, and a 7th destination can be authored
-   right alongside them — the exact motivating example from
-   ADMIN-CONTENT-PLAN.md §1/§2a. A legacy row can still be revised via
-   "Create new draft version," which produces a normal (non-legacy)
-   draft that, once published, archives the legacy row.
+   Seeded with the one remaining hardcoded COUNTRIES entry (Japan) as a
+   read-only-by-default "published" legacy row — kept only so the
+   traveler-facing flow has something to generate a course against out
+   of the box; every other destination is meant to be authored through
+   this flow from a genuinely empty bank, the exact motivating example
+   from ADMIN-CONTENT-PLAN.md §1/§2a. A legacy row can still be revised
+   via "Create new draft version," which produces a normal (non-legacy)
+   draft that, once published, archives the legacy row. See
+   travelerCountry() below for how a newly published destination
+   becomes selectable in the traveler app immediately, without needing
+   a matching COUNTRIES entry.
    ================================================================ */
 const FLAG_PATTERNS = {
   "vertical-tricolor": "Vertical tricolor",
@@ -1453,8 +1252,7 @@ function ensureLanguage(name){
   return lang;
 }
 const COUNTRY_LANGUAGES = {
-  japan: "Japanese", italy: "Italian", greece: "Greek",
-  mexico: "Spanish", morocco: "Arabic", france: "French"
+  japan: "Japanese"
 };
 Object.values(COUNTRY_LANGUAGES).forEach(ensureLanguage);
 
@@ -1496,6 +1294,32 @@ let adminLanguagesFilterLanguage = "";       // "" = all languages
 // would gate a real Blueprint's country coverage (§4/§6).
 function publishedDestinations(){
   return adminDestinations.filter(d => d.status === "published");
+}
+
+// Unified country lookup for every traveler-facing screen: prefers the
+// published Admin Destination record (§2a) so a country authored and
+// published through the admin surface "pulls through" into the
+// traveler app immediately, without needing a matching COUNTRIES
+// entry. `phrases`/`transport` (the raw phrase-bank content behind the
+// legacy weeks-1-3 beat plans and the offline Phrasebook) only exist on
+// the one remaining hardcoded COUNTRIES entry — an Admin-authored
+// country instead relies entirely on published Modules/Lessons via a
+// Blueprint (see finalizeCourse/resolveBlueprintSyllabus), so callers
+// that need a real phrase bank must treat a null phrases/transport as
+// "not available" rather than assume every country has one.
+function travelerCountry(countryKey){
+  const dest = adminDestinations.find(d => d.countryKey === countryKey && d.status === "published");
+  const legacy = COUNTRIES[countryKey];
+  if (!dest && !legacy) return null;
+  return {
+    name: dest ? dest.data.name : legacy.name,
+    capital: dest ? dest.data.capital : legacy.capital,
+    colours: dest ? dest.data.colours : legacy.colours,
+    cultureTip: dest ? dest.data.cultureTip : legacy.cultureTip,
+    flag: dest ? adminFlagMarkup(dest) : FLAGS[countryKey],
+    phrases: legacy ? legacy.phrases : null,
+    transport: legacy ? legacy.transport : null
+  };
 }
 
 /* ================================================================
@@ -1743,7 +1567,7 @@ function renderAppBar(top){
     country: "Choose a country",
     trip: "Describe the trip",
     generating: "",
-    dashboard: (p)=> COUNTRIES[p.course.countryKey].name + " — " + TRIP_TYPES[p.course.tripKey].label,
+    dashboard: (p)=> travelerCountry(p.course.countryKey).name + " — " + TRIP_TYPES[p.course.tripKey].label,
     lesson: (p)=> "Week " + p.week,
     phrasebook: (p)=> "Phrasebook",
     feedback: "Trip feedback",
@@ -1837,12 +1661,12 @@ function screenHome(){
   // legible at a glance, not just inside the dashboard. See
   // ADMIN-CONTENT-PLAN.md §9.
   function rowHtml(c){
-    const country = COUNTRIES[c.countryKey];
+    const country = travelerCountry(c.countryKey);
     const statusClass = c.status === "completed" ? "status--landed" : (c.currentWeek <= 1 ? "status--boarding" : "status--progress");
     const statusText = c.status === "completed" ? "Landed" : (c.currentWeek <= 1 ? "Boarding" : "In progress");
     return `
       <button class="board-row" data-action="open-course" data-course="${c.id}">
-        <span class="board-row__flag flag-icon">${FLAGS[c.countryKey]}</span>
+        <span class="board-row__flag flag-icon">${country.flag}</span>
         <span class="board-row__mid">
           <div class="board-row__dest">${country.name.toUpperCase()} · ${TRIP_TYPES[c.tripKey].label}</div>
           <div class="board-row__sub">${c.status === "completed" ? "Completed · " + c.weeks + " wks" : "Week " + c.currentWeek + " of " + c.weeks}${needsFeedback(c) ? " · Feedback requested" : ""}</div>
@@ -1876,12 +1700,12 @@ function screenCountry(){
   return `
     <p style="font-size:13px;color:var(--slate);margin:6px 2px 14px;">Step 1 of 2 — where are you headed? Your course will be themed around that destination.</p>
     <div class="country-grid">
-      ${Object.entries(COUNTRIES).map(([key, c]) => `
-        <button class="country-card" data-action="select-country" data-country="${key}">
-          <span class="country-card__flag flag-icon">${FLAGS[key]}</span>
+      ${publishedDestinations().map(d => `
+        <button class="country-card" data-action="select-country" data-country="${d.countryKey}">
+          <span class="country-card__flag flag-icon">${adminFlagMarkup(d)}</span>
           <span class="country-card__body">
-            <div class="country-card__name">${c.name}</div>
-            <div class="country-card__capital">${c.capital}</div>
+            <div class="country-card__name">${escapeHtml(d.data.name)}</div>
+            <div class="country-card__capital">${escapeHtml(d.data.capital)}</div>
           </span>
         </button>
       `).join("")}
@@ -1912,7 +1736,7 @@ function screenCountry(){
    feel right, so they're compensating in free text").
    ================================================================ */
 function screenTrip(){
-  const country = COUNTRIES[draft.countryKey];
+  const country = travelerCountry(draft.countryKey);
   return `
     <p style="font-size:13px;color:var(--slate);margin:6px 2px 14px;">Step 2 of 2 — what's the ${country.name} trip actually like? This shapes which lessons come first.</p>
     <div class="chip-grid" id="chip-grid">
@@ -2118,18 +1942,24 @@ function applyFlagVars(container, colours){
 
 function screenDashboard(payload){
   const c = payload.course;
-  const country = COUNTRIES[c.countryKey];
+  const country = travelerCountry(c.countryKey);
   const trip = TRIP_TYPES[c.tripKey];
   const weeks = c.syllabus;
   const doneCount = c.status === "completed" ? c.weeks : Math.max(0, c.currentWeek - 1);
   const pct = Math.round((doneCount / c.weeks) * 100);
+  // Legacy (non-authored) weeks 1-3 only have real lesson content for a
+  // country that carries the hardcoded phrase/transport bank — an
+  // Admin-authored country without one falls back to legacy weeks only
+  // if it also has no published Blueprint, in which case there's no
+  // beat content to open at all (see courseLessonBeats/buildLessonBeats).
+  const hasLegacyContent = !!country.phrases;
 
   const weekRowHtml = (week, idx) => {
     const num = idx + 1;
-    // Legacy weeks 1-3 have real lesson content in this prototype; every
-    // authored (Blueprint-resolved) week does, since Module publish
-    // already requires a real Lesson behind every tier/country cell.
-    const built = week.source === "authored" || num <= 3;
+    // Every authored (Blueprint-resolved) week has real content, since
+    // Module publish already requires a real Lesson behind every
+    // tier/country cell it claims.
+    const built = week.source === "authored" || (num <= 3 && hasLegacyContent);
     const done = c.status === "completed" || num < c.currentWeek;
     const locked = !built || (c.status !== "completed" && num > c.currentWeek);
     const statusTag = locked ? (built ? "Upcoming" : "Preview only") : (done ? "Review" : "Start");
@@ -2176,7 +2006,7 @@ function screenDashboard(payload){
         <span style="background:${country.colours.tertiary}"></span>
       </div>
       <div class="ticket__eyebrow">${trip.label} · ${country.capital}</div>
-      <div class="ticket__title"><span class="flag-icon ticket__flag">${FLAGS[c.countryKey]}</span>${country.name}</div>
+      <div class="ticket__title"><span class="flag-icon ticket__flag">${country.flag}</span>${country.name}</div>
       <div class="ticket__meta">
         ${legStatHtml}
         <div><b>${c.weeks}</b><small>Weeks total</small></div>
@@ -2231,23 +2061,15 @@ function screenDashboard(payload){
    ================================================================ */
 function screenPhrasebook(payload){
   const c = payload.course;
-  const country = COUNTRIES[c.countryKey];
+  const country = travelerCountry(c.countryKey);
   const trip = TRIP_TYPES[c.tripKey];
 
-  return `
-    <div class="ticket" id="ticket">
-      <div class="ticket__stripe">
-        <span style="background:${country.colours.primary}"></span>
-        <span style="background:${country.colours.secondary}"></span>
-        <span style="background:${country.colours.tertiary}"></span>
-      </div>
-      <div class="ticket__eyebrow">Offline phrasebook · ${country.capital}</div>
-      <div class="ticket__title"><span class="flag-icon ticket__flag">${FLAGS[c.countryKey]}</span>${country.name}</div>
-      <button class="ticket__cta" data-action="download-phrasebook">Download for offline use</button>
-    </div>
-
-    <p class="lesson-intro">Every phrase and etiquette tip from your ${trip.label.toLowerCase()} course, in one place — no signal needed once it's downloaded.</p>
-
+  // An Admin-authored country (no legacy phrase/transport bank) can
+  // still complete a course entirely through published Lessons (see
+  // courseLessonBeats), but has no raw phrase-pair data to compile into
+  // this offline reference yet — Phrase authoring (ADMIN-CONTENT-PLAN.md
+  // §2/§7) is what would eventually fill this in.
+  const phrasesHtml = country.phrases ? `
     <div class="section-label">Essentials</div>
     <div class="vocab-grid">
       ${country.phrases.map(vocabCardHtml).join("")}
@@ -2265,6 +2087,29 @@ function screenPhrasebook(payload){
         ${country.transport.etiquette.map(item => `<li>${item}</li>`).join("")}
       </ul>
     </div>
+  ` : `
+    <div class="culture-card" style="margin-top:20px;">
+      <div class="culture-card__label">Good to know</div>
+      <div class="culture-card__body">${country.cultureTip}</div>
+    </div>
+    <div class="admin-empty" style="margin-top:20px;">No offline phrasebook has been authored for ${escapeHtml(country.name)} yet.</div>
+  `;
+
+  return `
+    <div class="ticket" id="ticket">
+      <div class="ticket__stripe">
+        <span style="background:${country.colours.primary}"></span>
+        <span style="background:${country.colours.secondary}"></span>
+        <span style="background:${country.colours.tertiary}"></span>
+      </div>
+      <div class="ticket__eyebrow">Offline phrasebook · ${country.capital}</div>
+      <div class="ticket__title"><span class="flag-icon ticket__flag">${country.flag}</span>${country.name}</div>
+      <button class="ticket__cta" data-action="download-phrasebook">Download for offline use</button>
+    </div>
+
+    <p class="lesson-intro">Every phrase and etiquette tip from your ${trip.label.toLowerCase()} course, in one place — no signal needed once it's downloaded.</p>
+
+    ${phrasesHtml}
   `;
 }
 
@@ -2291,7 +2136,7 @@ function screenPhrasebook(payload){
 function screenFeedback(payload){
   feedbackDraft = { score:null, cultureHelped:null };
   const c = payload.course;
-  const country = COUNTRIES[c.countryKey];
+  const country = travelerCountry(c.countryKey);
 
   return `
     <p style="font-size:13px;color:var(--slate);margin:6px 2px 14px;">Your ${country.name} trip has wrapped up — a couple of quick questions while it's fresh.</p>
@@ -2438,7 +2283,8 @@ function adminLessonBeats(lessonId){
 function courseLessonBeats(course, week){
   const entry = course.syllabus[week - 1];
   if (entry && entry.source === "authored") return adminLessonBeats(entry.lessonId);
-  const country = COUNTRIES[course.countryKey];
+  const country = travelerCountry(course.countryKey);
+  if (!country.phrases) return []; // no legacy phrase bank — screenDashboard's built-gate should keep this unreachable
   const trip = TRIP_TYPES[course.tripKey];
   return buildLessonBeats(country, trip, week);
 }
@@ -2462,7 +2308,7 @@ function renderBeat(beat){
 
 function screenLesson(payload){
   const c = payload.course;
-  const country = COUNTRIES[c.countryKey];
+  const country = travelerCountry(c.countryKey);
   const trip = TRIP_TYPES[c.tripKey];
   const week = payload.week;
   const stepIndex = payload.stepIndex || 0;
@@ -3726,7 +3572,7 @@ function render(){
   // screen) rather than on a single card, so every descendant that reads
   // var(--flag-*) — ticket, week rows, culture card, vocab cards, quiz —
   // picks up the same theme via normal CSS inheritance.
-  if (top.name === "dashboard" || top.name === "lesson" || top.name === "phrasebook") applyFlagVars(app, COUNTRIES[top.payload.course.countryKey].colours);
+  if (top.name === "dashboard" || top.name === "lesson" || top.name === "phrasebook") applyFlagVars(app, travelerCountry(top.payload.course.countryKey).colours);
   if (top.name === "admin-blueprint" && adminBlueprintPreviewCountry){
     const previewDest = adminDestinations.find(d => d.countryKey === adminBlueprintPreviewCountry);
     if (previewDest) applyFlagVars(app, previewDest.data.colours);

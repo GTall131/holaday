@@ -62,8 +62,20 @@ content. See §2a.
 ## 2a. Flow: Destination (Country) creation (Author)
 
 Not one of the original four flows, but a prerequisite underneath all of
-them — today's 6 countries are hardcoded `COUNTRIES` entries; adding a
-7th destination needs its own flow rather than a manual JS edit.
+them. `COUNTRIES` is down to a single hardcoded entry (Japan, kept only
+so the traveler flow has something to generate a course against out of
+the box); every other destination is meant to be authored through this
+flow. Publishing a Destination here is now what makes it selectable in
+the traveler-facing country picker — `screenCountry` reads from
+`publishedDestinations()`, not `COUNTRIES` (see `travelerCountry()`) —
+so authoring and publishing a new Country genuinely "pulls it through"
+into the traveler app immediately. What it does *not* get for free is a
+phrase/transport bank (`country.phrases`/`country.transport` — see §7):
+those only exist on the one legacy `COUNTRIES` entry. A new Country can
+still support a fully working course end-to-end, but only through
+authored Lessons resolved via a published Blueprint (§5/§8) — see the
+Module/Blueprint readiness gating in §4/§6. Until that's authored, its
+offline Phrasebook (§9) shows an empty state rather than crashing.
 
 1. Author sets the destination's shell profile: `name`, `capital`, and the
    three flag `colours` (primary/secondary/tertiary) that theme every
