@@ -2,7 +2,7 @@
 
 Status: **design only, nothing in this doc is built yet.** This captures the
 plan for the destination-creation, lesson-creation, course-creation,
-approval/publishing, and content-reuse ("indexing") flows on the
+staging/publishing, and content-reuse ("indexing") flows on the
 administration side of the app, worked out against the existing
 traveler-facing prototype in `index.html` / `holaday-prd-demo.html`.
 Section numbers below are stable anchors — the HTML file's TODO comments
@@ -95,17 +95,17 @@ offline Phrasebook (§9) shows an empty state rather than crashing.
    won't be sufficient for any Blueprint to resolve against until enough
    of that follow-on content is published (see the Module/Blueprint
    readiness gating in §4/§6). Authoring that content does *not* wait on
-   the Country's own review status — a Country only needs to exist (past
-   its first Save Draft, which is what assigns its stable `countryKey`),
-   not be Approved or Published, before Modules/Lessons can target it.
-   Only *publishing* a Module/Lesson still requires the Countries it
-   claims to actually be Published (§4) — that's a separate, later gate.
+   the Country's own status — a Country only needs to exist (past its
+   first Save Draft, which is what assigns its stable `countryKey`), not
+   be Staged or Published, before Modules/Lessons can target it. Only
+   *publishing* a Module/Lesson still requires the Countries it claims to
+   actually be Published (§4) — that's a separate, later gate.
 5. Preview reuses the existing `country-card` (picker) and `ticket`
    (dashboard) rendering so the author sees exactly how the destination
    will look before it's real.
-6. Save Draft → Submit for Review. Same lifecycle as everything else (§6)
-   — a Country profile is approval-gated content too, not exempt because
-   it looks like static metadata.
+6. Save Draft → Stage → Publish. Same lifecycle as everything else (§6)
+   — a Country profile goes through the same staging gate as everything
+   else, not exempt because it looks like static metadata.
 7. Author picks the Country's **Language** (§2b) as part of the shell
    profile — required before the Country can be saved. This is what lets
    Module/Lesson authoring (§3/§4) offer "applies to all countries using
@@ -114,8 +114,8 @@ offline Phrasebook (§9) shows an empty state rather than crashing.
 
 ## 2b. Language
 
-A Language is reference taxonomy, not itself approval-gated content like
-the rest of this hierarchy — it has no draft/review lifecycle, just a
+A Language is reference taxonomy, not itself staged/published content like
+the rest of this hierarchy — it has no draft/staged lifecycle, just a
 name. Every Country names exactly one Language (§2a step 7); a Module or
 Lesson authored as country-bespoke either targets one specific Country
 or is marked **language-wide**, in which case it resolves against
@@ -150,7 +150,7 @@ already there instead of looking empty.
    author sees is the literal traveler-facing beat sequence, distractors
    included.
 4. Save Draft → validation (≥5 questions, mixed kinds per PRD §11a, phrase
-   bank deep enough for the distractor count) → Submit for Review.
+   bank deep enough for the distractor count) → Stage.
 5. If scoped to a Country rather than marked generic, the author also
    picks a Language and, per §2b, either a specific Country or the
    "applies to all countries using this language" toggle.
@@ -162,10 +162,10 @@ already there instead of looking empty.
    "applies to all countries using this language" (§2b).
 2. Build the tier ladder — attach or author a Lesson at each Tier.
 3. Track per-country ladder completeness: a completeness grid (rows =
-   countries, columns = Tiers) shows Missing/Draft/Approved/Published per
+   countries, columns = Tiers) shows Missing/Draft/Staged/Published per
    cell. For a language-wide Module the rows are every published Country
    currently using its Language, not a fixed list. A Module can't be
-   submitted until every Tier it claims to offer has a published Lesson
+   published until every Tier it claims to offer has a published Lesson
    for every country it needs to support.
 
 ## 5. Flow: Blueprint creation (Author)
@@ -177,13 +177,13 @@ already there instead of looking empty.
    content for a chosen country and render the resulting Leg-by-Leg
    syllabus — reusing `screenDashboard`'s ticket/week-list rendering,
    grouped by Leg (§9).
-4. Save Draft → Submit for Review.
+4. Save Draft → Stage.
 
-## 6. Flow: Approvals & publishing
+## 6. Flow: Staging & publishing
 
-A Course can't be the approval target — it doesn't exist until the
+A Course can't be a staging target — it doesn't exist until the
 generator resolves a Blueprint for a specific traveler at a specific
-moment, so there's nothing stable to review. **The approval surface is
+moment, so there's nothing stable to stage. **The staging surface is
 the content bank itself**: Country profile (§2a), Phrase, Question,
 Lesson, Module, Blueprint, and the Leg naming/copy (Confidence Ladder —
 see §8).
@@ -191,15 +191,20 @@ see §8).
 State machine (same for every item type above):
 
 ```
-Draft → In Review → Changes Requested → (back to Draft)
-              └────→ Approved → Published → Archived (superseded by new version)
+Draft → Staged → Published → Archived (superseded by new version)
+   ^       |
+   └───────┘  (Staged can drop back to Draft for further edits)
 ```
 
-- **Author**: creates/edits Drafts, submits, resolves change requests.
-- **Approver**: works a review queue, sees a diff against the currently
-  published version (same preview renderer, before/after), Approves /
-  Requests Changes / Publishes.
-- Gating cascades: a Lesson needs Approved+ Questions; a Module needs a
+- **Author**: creates/edits Drafts, then Stages when it's ready — Staged
+  is a self-checkpoint ("I'm done with this, it's ready to go live"), not
+  a handoff to a separate reviewer. There's no Approver role and no
+  request-changes step: the same person drafts and publishes, so a
+  distinct review/approval stage would just add friction without adding
+  safety. If a Staged item needs more work, "Back to Draft" reopens it
+  for editing — no note or reason required. Status tracking still applies
+  regardless of who's doing the work.
+- Gating cascades: a Lesson needs Staged+ Questions; a Module needs a
   published Lesson at every Tier/country it claims; a Blueprint needs
   every Module it references to have enough published Tiers for every
   country the Trip Type targets, before the Blueprint itself is
@@ -210,8 +215,8 @@ Draft → In Review → Changes Requested → (back to Draft)
   `templateVersion` at `finalizeCourse()` time so publishing a new
   Blueprint mid-trip doesn't retroactively rewrite someone's in-progress
   course.
-- The Leg `blurb` (§8) goes through the same review — copy quality is a
-  real review criterion, not a nice-to-have (see §8).
+- The Leg `blurb` (§8) goes through the same staging gate — copy quality
+  is a real bar to clear before staging, not a nice-to-have (see §8).
 
 ## 7. "Indexing" — two separate concerns, only one is in scope now
 
@@ -246,9 +251,8 @@ authored per Blueprint (seeded from a default ladder, fully editable):
   the **holiday** angle, not the **lesson** angle. This is the field most
   likely to get skipped under deadline pressure since it isn't load-bearing
   for the generator — which is exactly why it's a required author field
-  and a real Approver review criterion ("does this feel like progress
-  toward the trip, not just progress through content"), not optional
-  polish.
+  and a real review criterion ("does this feel like progress toward the
+  trip, not just progress through content"), not optional polish.
 - `moduleGate` — the functional half: which Modules are included at this
   Leg and at what Tier. This is what the generation automation actually
   reads to know which parts of the content bank it's allowed to draw from
@@ -289,11 +293,11 @@ prototype — new stack screens (e.g. `admin-lessons`, `admin-modules`,
 patterns. The existing 400px phone-frame constraint (see the `@media
 (min-width: 640px)` rule) is a poor fit for review-queue tables and diffs,
 so admin screens should render full-width outside that frame — same ink/
-paper/amber tokens, different chrome. A simple Author/Approver role
-toggle in the admin header stands in for real auth, consistent with how
-the rest of this prototype fakes state rather than building a backend.
-This is deliberately a shortcut to let us nail down the feature set
-quickly in one file, not the intended end state.
+paper/amber tokens, different chrome. There's a single admin surface, no
+role toggle — real auth (whoever's allowed into `/admin`) stands in for
+now, consistent with how the rest of this prototype fakes state rather
+than building a backend. This is deliberately a shortcut to let us nail
+down the feature set quickly in one file, not the intended end state.
 
 **Real build (later): a genuinely separate app**, not a mode/tab bolted
 onto the traveler app. Content authoring and review is a desktop/laptop
