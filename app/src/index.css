@@ -197,18 +197,40 @@ main#app{
 .status--landed{ background: rgba(255,255,255,.1); color:#9aa3b5; }
 
 .board-empty{
-  border: 1.5px dashed var(--paper-line);
+  background: var(--ink);
   border-radius: var(--radius-m);
-  padding: 20px 16px;
+  box-shadow: var(--shadow-card);
+  padding: 26px 18px 22px;
   text-align:center;
   margin-bottom: 10px;
 }
 .board-empty__flap{
-  font-family: var(--font-mono); font-size:12.5px; letter-spacing:0.12em;
-  color: var(--slate); margin-bottom:12px;
+  font-family: var(--font-mono); font-weight:700; font-size:13px; letter-spacing:0.16em;
+  color: var(--amber); margin-bottom:16px;
 }
-.board-empty__flap::before, .board-empty__flap::after{ content:"— "; }
+.board-empty__flap::before, .board-empty__flap::after{ content:"— "; color: rgba(255,255,255,.35); }
 .board-empty__flap::after{ content:" —"; }
+
+/* ============================================================
+   EXPLORE DESTINATIONS — horizontal teaser row on Home, using each
+   destination's own flag colour so the "theme pulled from your flag"
+   idea shows up before a course even exists, not just on the
+   dashboard/lesson screens once you're deep into one country.
+   ============================================================ */
+.dest-teaser-row{
+  display:flex; gap:10px; overflow-x:auto; padding: 2px 2px 8px; margin-top:8px;
+  -webkit-overflow-scrolling:touch;
+}
+.dest-teaser{
+  flex:0 0 auto; display:flex; align-items:center; gap:9px;
+  appearance:none; cursor:pointer; border:none; text-align:left;
+  padding:11px 16px 11px 12px; border-radius: 999px; white-space:nowrap;
+  color:#fff; font-weight:700; font-size:13.5px;
+  background: linear-gradient(135deg, var(--flag-primary), color-mix(in srgb, var(--flag-primary) 55%, black));
+  box-shadow: var(--shadow-card);
+}
+.dest-teaser:active{ transform: scale(0.97); }
+.dest-teaser__flag{ width:22px; height:15px; flex-shrink:0; }
 
 .btn-primary{
   appearance:none; border:none; cursor:pointer;

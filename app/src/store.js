@@ -516,6 +516,15 @@ export function selectCountry(countryKey){
   state.draft.countryKey = countryKey;
   push("trip");
 }
+// Same two-push stack (country, then trip) startCourse+selectCountry
+// would produce — used by the Home screen's destination teaser row so
+// tapping a specific country jumps straight to trip details, while
+// back-navigation still lands on the country picker as normal.
+export function quickStartCourse(countryKey){
+  state.draft = { countryKey, tripKey: null };
+  push("country");
+  push("trip");
+}
 export function selectTrip(tripKey){
   state.draft.tripKey = tripKey;
   notify();

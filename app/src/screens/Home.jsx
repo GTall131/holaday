@@ -1,5 +1,6 @@
 import BoardRow from "../components/BoardRow";
-import { state, startCourse } from "../store";
+import FlagIcon from "../components/FlagIcon";
+import { state, startCourse, quickStartCourse, publishedDestinations, adminFlagMarkup } from "../store";
 
 /* ================================================================
    SCREEN: HOME — "MY TRIPS" DEPARTURE BOARD
@@ -39,6 +40,7 @@ import { state, startCourse } from "../store";
 export default function Home(){
   const current = state.courses.filter(c => c.status === "active");
   const previous = state.courses.filter(c => c.status === "completed");
+  const destinations = publishedDestinations();
 
   return (
     <>
@@ -54,6 +56,25 @@ export default function Home(){
       {previous.length
         ? previous.map(c => <BoardRow key={c.id} course={c} />)
         : <p style={{ fontSize: "12.5px", color: "var(--slate)", padding: "4px 2px" }}>Completed courses will land here.</p>}
+
+      {destinations.length > 0 && (
+        <>
+          <div className="section-label">Explore destinations</div>
+          <div className="dest-teaser-row">
+            {destinations.map(d => (
+              <button
+                key={d.countryKey}
+                className="dest-teaser"
+                style={{ ["--flag-primary"]: d.data.colours.primary }}
+                onClick={() => quickStartCourse(d.countryKey)}
+              >
+                <FlagIcon markup={adminFlagMarkup(d)} className="dest-teaser__flag" />
+                {d.data.name}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </>
   );
 }
