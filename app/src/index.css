@@ -515,6 +515,20 @@ textarea.notes:focus{ outline:none; border-color:var(--ink); }
   padding: 20px 16px; text-align:center; color: var(--slate); font-size:13px; margin-top:6px;
 }
 
+/* Module -> Lesson -> Phrase generation tree (AdminPersonaGeneratedContent) —
+   indentation + a connecting rule so the three content types read as a
+   nested hierarchy, not a flat list of same-weight rows. */
+.admin-hierarchy-group{ margin-bottom:26px; }
+.admin-hierarchy-kicker{
+  font-family: var(--font-mono); font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color: var(--slate); margin: 0 2px 6px;
+}
+.admin-hierarchy-nest{
+  margin: 10px 0 0 18px; padding-left:16px; border-left:2px solid var(--paper-line);
+}
+.admin-hierarchy-nest .admin-list-row{ background: var(--paper-dim); }
+.admin-hierarchy-nest .admin-hierarchy-nest .admin-list-row{ background:#fff; }
+
 .text-input{
   width:100%; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
   padding:12px; font-family:inherit; font-size:13.5px; background:#fff; color: var(--ink);

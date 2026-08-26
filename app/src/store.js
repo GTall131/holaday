@@ -1395,6 +1395,14 @@ export function finalizePersonaGeneration(id){
 // also why the lesson only gets 3 questions here: staging still
 // requires 5+ of mixed kinds (see commitAdminLessonDraft), so a human
 // has to open and finish it before it can go live.
+//
+// FEATURE NOTE (not built — see ADMIN-CONTENT-PLAN.md §12): the real
+// version of this generator should be an LLM-as-Judge pipeline, not a
+// single generate-and-accept pass — a separate model call should score
+// each generated Module/Lesson/Phrase against the persona (relevance,
+// tone, factual plausibility) and reject/retry low-scoring output
+// before it's written to the content bank, rather than relying on the
+// human Draft-review step below to be the only quality gate.
 // ------------------------------------------------------------------
 export function generateContentFromPersona({ personaId, countryKey, tripKey }){
   const persona = state.adminPersonas.find(p => p.id === personaId);
@@ -1448,10 +1456,15 @@ export function generateContentFromPersona({ personaId, countryKey, tripKey }){
 }
 // Called by the generating-animation screen once its fake steps
 // finish — pops both the animation screen and the country/trip-type
-// form underneath it, landing back on the Persona detail screen where
-// the newly generated rows now show up (see AdminPersonaDetail.jsx).
+// form underneath it, then pushes a dedicated results screen rather
+// than landing back on the Persona detail screen. Keeping these on
+// separate screens (rather than showing the generated content inline
+// under the persona's own fields) means reviewing what got generated
+// never happens while the persona's outline/profile fields are also
+// on screen — the two concerns don't compete for attention.
 export function finalizeContentGeneration(payload){
   generateContentFromPersona(payload);
   pop();
   pop();
+  push("admin-persona-generated-content", { personaId: payload.personaId });
 }

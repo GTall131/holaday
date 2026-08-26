@@ -317,3 +317,39 @@ foundation the production admin app gets built on top of.
 - Are Leg numbers ever shown to travelers ("Leg 2 of 3"), or is the Leg
   *name* the only traveler-facing label, with the numeric count staying
   an internal/authoring detail?
+
+## 12. Persona-driven content generation (stub)
+
+Two flows, currently stubbed (`app/src/store.js`'s "ADMIN — Persona"
+section), for going from a traveler archetype straight to draft content:
+
+1. **Persona creation.** Author writes a rough outline (a few sentences).
+   A (stubbed) call fleshes it out into a full profile — name, summary,
+   age range, travel style, motivations, pain points, vocab focus — which
+   the author then reviews and edits in place. Persona is reference
+   material for authoring, not traveler-facing content, so — like
+   Language (§2b) — it has no draft/staged/published lifecycle; it's
+   just always-editable.
+2. **Generate lesson content.** From a fleshed-out Persona, the author
+   picks a Country + Trip Type and generates a starter Module, one
+   Lesson under it, and the Phrases that Lesson's questions reference —
+   all tagged `generatedFromPersonaId` for traceability. These land as
+   ordinary Drafts in the real content-bank tables, so they go through
+   the *same* review/staging/publish gate as hand-authored content (§6)
+   — generation doesn't get to skip review just because a machine
+   produced it. The result is shown as its own screen, structured as an
+   actual Module -> Lesson -> Phrase tree (not a flat list), specifically
+   *not* shown inline alongside the Persona's own outline/profile fields
+   — reviewing "what got generated" and editing "who is this persona"
+   are different tasks and shouldn't compete for the same screen.
+
+**Feature note (not built yet):** the generation step in (2) should be
+an **LLM-as-Judge** pipeline, not single-pass generate-and-accept. A
+second model call should score each candidate Module/Lesson/Phrase
+against the source Persona — relevance to that persona's stated
+motivations/pain points, tone, factual plausibility of any translated
+phrase content — and reject/retry anything that scores poorly *before*
+it's written to the content bank. Right now the human Draft-review step
+(§6) is the only quality gate; an LLM-as-Judge pass in front of that
+would catch low-relevance or generic-sounding output earlier, before it
+ever reaches an author's queue.

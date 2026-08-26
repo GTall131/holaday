@@ -85,6 +85,7 @@ import AdminPersonaDetail from "./screens/admin/AdminPersonaDetail";
 import AdminPersonaGenerating from "./screens/admin/AdminPersonaGenerating";
 import AdminPersonaGenerateContent from "./screens/admin/AdminPersonaGenerateContent";
 import AdminPersonaGeneratingContent from "./screens/admin/AdminPersonaGeneratingContent";
+import AdminPersonaGeneratedContent from "./screens/admin/AdminPersonaGeneratedContent";
 
 // Mirrors the original's SCREENS map + render() dispatch. Traveler
 // screens that ride flag theming get a `key` derived from whatever
@@ -119,6 +120,7 @@ function Screen({ top: t }){
     case "admin-persona-generating": return <AdminPersonaGenerating payload={t.payload} />;
     case "admin-persona-generate-content": return <AdminPersonaGenerateContent payload={t.payload} />;
     case "admin-persona-generating-content": return <AdminPersonaGeneratingContent payload={t.payload} />;
+    case "admin-persona-generated-content": return <AdminPersonaGeneratedContent payload={t.payload} />;
     default: return null;
   }
 }

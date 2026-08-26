@@ -46,6 +46,7 @@ function titleFor(top){
   if (name === "admin-persona-generating") return "Generating persona…";
   if (name === "admin-persona-generate-content") return "Generate lesson content";
   if (name === "admin-persona-generating-content") return "Generating content…";
+  if (name === "admin-persona-generated-content") return "Generated content";
   return "";
 }
 

@@ -1,4 +1,3 @@
-import ContentListRows from "../../components/ContentListRows";
 import { state, primeAdminPersonaDraft, patchAdminPersonaDraft, saveAdminPersona, startPersonaGeneration, push } from "../../store";
 
 export default function AdminPersonaDetail({ payload }){
@@ -6,10 +5,11 @@ export default function AdminPersonaDetail({ payload }){
   const { record, view } = primeAdminPersonaDraft(id);
   if (!view) return <div className="admin-empty">Persona not found.</div>;
 
-  const generatedModules = record ? state.adminModules.filter(m => m.data.generatedFromPersonaId === record.id) : [];
-  const generatedLessons = record ? state.adminLessons.filter(l => l.data.generatedFromPersonaId === record.id) : [];
-  const generatedPhrases = record ? state.adminPhrases.filter(p => p.data.generatedFromPersonaId === record.id) : [];
-  const hasGeneratedContent = generatedModules.length || generatedLessons.length || generatedPhrases.length;
+  const generatedCount = record
+    ? state.adminModules.filter(m => m.data.generatedFromPersonaId === record.id).length
+    + state.adminLessons.filter(l => l.data.generatedFromPersonaId === record.id).length
+    + state.adminPhrases.filter(p => p.data.generatedFromPersonaId === record.id).length
+    : 0;
 
   return (
     <>
@@ -75,11 +75,17 @@ export default function AdminPersonaDetail({ payload }){
         </>
       ) : null}
 
-      {hasGeneratedContent ? (
-        <>
-          <label className="field-label" style={{ marginTop: "24px" }}>Content generated from this persona</label>
-          <ContentListRows modules={generatedModules} lessons={generatedLessons} phrases={generatedPhrases} />
-        </>
+      {generatedCount ? (
+        <button
+          className="admin-list-row"
+          style={{ marginTop: "16px" }}
+          onClick={() => push("admin-persona-generated-content", { personaId: record.id })}
+        >
+          <span className="admin-list-row__mid">
+            <div className="admin-list-row__name">View generated content</div>
+            <div className="admin-list-row__sub">{generatedCount} item{generatedCount === 1 ? "" : "s"} generated from this persona</div>
+          </span>
+        </button>
       ) : null}
     </>
   );
