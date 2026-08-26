@@ -60,6 +60,12 @@ import AppBar from "./components/AppBar";
 import TabBar from "./components/TabBar";
 import Toast from "./components/Toast";
 
+import Welcome from "./screens/Welcome";
+import Login from "./screens/Login";
+import Signup from "./screens/Signup";
+import OnboardingCountries from "./screens/OnboardingCountries";
+import OnboardingTripTypes from "./screens/OnboardingTripTypes";
+import OnboardingTripBooked from "./screens/OnboardingTripBooked";
 import Home from "./screens/Home";
 import CountryPicker from "./screens/CountryPicker";
 import TripDetails from "./screens/TripDetails";
@@ -96,6 +102,12 @@ import AdminPersonaGeneratedContent from "./screens/admin/AdminPersonaGeneratedC
 // always re-rendering from scratch.
 function Screen({ top: t }){
   switch (t.name){
+    case "welcome": return <Welcome />;
+    case "login": return <Login />;
+    case "signup": return <Signup />;
+    case "onboarding-countries": return <OnboardingCountries />;
+    case "onboarding-trip-types": return <OnboardingTripTypes />;
+    case "onboarding-trip-booked": return <OnboardingTripBooked />;
     case "home": return <Home />;
     case "country": return <CountryPicker />;
     case "trip": return <TripDetails />;
@@ -141,13 +153,19 @@ function flagStyle(t){
   };
 }
 
+const PRE_AUTH_SCREENS = new Set([
+  "welcome", "login", "signup",
+  "onboarding-countries", "onboarding-trip-types", "onboarding-trip-booked"
+]);
+
 export default function App(){
   useStoreVersion();
   const t = top();
   const activeTab = t.name.startsWith("admin") ? "go-admin" : "go-home";
+  const preAuth = PRE_AUTH_SCREENS.has(t.name);
 
   return (
-    <div className={`app-shell${t.name.startsWith("admin") ? " is-admin" : ""}`}>
+    <div className={`app-shell${t.name.startsWith("admin") ? " is-admin" : ""}${preAuth ? " no-tabbar" : ""}`}>
       <div className="statusbar">
         <span>9:41</span>
         <span className="statusbar__icons">
@@ -162,7 +180,7 @@ export default function App(){
         <Screen top={t} />
       </main>
 
-      <TabBar activeTab={activeTab} />
+      {preAuth ? null : <TabBar activeTab={activeTab} />}
       <Toast />
     </div>
   );

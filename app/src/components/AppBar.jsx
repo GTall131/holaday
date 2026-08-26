@@ -3,6 +3,11 @@ import { TRIP_TYPES } from "../data/tripTypes";
 
 function titleFor(top){
   const { name, payload } = top;
+  if (name === "login") return "Log in";
+  if (name === "signup") return "Create your account";
+  if (name === "onboarding-countries") return "Where you've been";
+  if (name === "onboarding-trip-types") return "What you're into";
+  if (name === "onboarding-trip-booked") return "Almost there";
   if (name === "country") return "Choose a country";
   if (name === "trip") return "Describe the trip";
   if (name === "generating") return "";
@@ -51,7 +56,7 @@ function titleFor(top){
 }
 
 export default function AppBar({ top }){
-  if (top.name === "home"){
+  if (top.name === "welcome" || top.name === "home"){
     return (
       <header className="appbar appbar--home">
         <div>

@@ -52,10 +52,19 @@ function notify(){ version++; listeners.forEach(fn => fn()); }
 // components/BoardRow.jsx.
 // ----------------------------------------------------------------
 export const state = {
+  // auth / onboarding — account.milestone tracks the two milestones
+  // named in the product brief ("Account Created" -> "Account
+  // Onboarded"), a one-way progression like every other status field
+  // in this store (draft->staged->published, etc).
+  account: null,
+  signupDraft: { firstName: "", email: "", password: "" },
+  loginDraft: { email: "", password: "" },
+  onboardingDraft: { countriesVisited: [], tripTypes: [] },
+
   // traveler
   courses: [],
   draft: { countryKey: null, tripKey: null },
-  stack: [{ name: "home" }],
+  stack: [{ name: "welcome" }],
   feedbackDraft: { score: null, cultureHelped: null },
   toastMsg: "",
   toastVisible: false,
@@ -503,6 +512,92 @@ export function showToast(msg){
   notify();
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { state.toastVisible = false; notify(); }, 1600);
+}
+
+// ----------------------------------------------------------------
+// AUTH + ONBOARDING
+//
+// Two milestones: 'Account Created' (submitSignup, below) then
+// 'Account Onboarded' (finishOnboarding). Onboarding always runs
+// country -> trip types -> "got a trip booked?" in that order; the
+// last answer branches into the existing trip-creation flow
+// (startCourse) or straight to Home, per the product brief.
+//
+// There's no backend/persisted user store in this prototype (see the
+// STORE header) — an account only exists in memory for the current
+// session — so submitLogin can only mean "resume the account created
+// earlier this session," not a real credential check.
+// ----------------------------------------------------------------
+export function goWelcome(){ state.stack = [{ name: "welcome" }]; notify(); }
+export function goLogin(){ state.loginDraft = { email: "", password: "" }; push("login"); }
+export function goSignup(){ state.signupDraft = { firstName: "", email: "", password: "" }; push("signup"); }
+export function patchSignupDraft(patch){ Object.assign(state.signupDraft, patch); notify(); }
+export function patchLoginDraft(patch){ Object.assign(state.loginDraft, patch); notify(); }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function submitSignup(){
+  const d = state.signupDraft;
+  const firstName = d.firstName.trim();
+  const email = d.email.trim();
+  if (!firstName){ showToast("Enter your first name"); return; }
+  if (!EMAIL_RE.test(email)){ showToast("Enter a valid email address"); return; }
+  if (d.password.length < 6){ showToast("Password needs at least 6 characters"); return; }
+  state.account = {
+    firstName, email, password: d.password,
+    milestone: "created",
+    countriesVisited: [], tripTypes: [], hasBookedTrip: null
+  };
+  state.onboardingDraft = { countriesVisited: [], tripTypes: [] };
+  push("onboarding-countries");
+}
+
+export function submitLogin(){
+  const d = state.loginDraft;
+  const email = d.email.trim();
+  if (!email || !d.password){ showToast("Enter your email and password"); return; }
+  if (!state.account || state.account.email.toLowerCase() !== email.toLowerCase()){
+    showToast("No account found for that email in this demo — try signing up");
+    return;
+  }
+  if (state.account.milestone !== "onboarded"){
+    push("onboarding-countries");
+    return;
+  }
+  resetToHome();
+}
+
+export function toggleOnboardingCountry(countryKey){
+  const list = state.onboardingDraft.countriesVisited;
+  const idx = list.indexOf(countryKey);
+  if (idx >= 0) list.splice(idx, 1); else list.push(countryKey);
+  notify();
+}
+export function continueOnboardingCountries(){ push("onboarding-trip-types"); }
+
+export function toggleOnboardingTripType(tripKey){
+  const list = state.onboardingDraft.tripTypes;
+  const idx = list.indexOf(tripKey);
+  if (idx >= 0) list.splice(idx, 1); else list.push(tripKey);
+  notify();
+}
+export function continueOnboardingTripTypes(){ push("onboarding-trip-booked"); }
+
+// The graduation moment: collapses the whole auth/onboarding stack
+// down to Home (same "fresh root" move resetToHome/goAdmin use for
+// every other mode transition), then — only for a traveler with a
+// trip already booked — immediately starts the existing trip-creation
+// flow on top of it, so back-navigation from the country picker lands
+// on Home rather than back into onboarding.
+export function finishOnboarding(hasBookedTrip){
+  const account = state.account;
+  account.countriesVisited = state.onboardingDraft.countriesVisited;
+  account.tripTypes = state.onboardingDraft.tripTypes;
+  account.hasBookedTrip = hasBookedTrip;
+  account.milestone = "onboarded";
+  state.stack = [{ name: "home" }];
+  if (hasBookedTrip) startCourse();
+  else notify();
 }
 
 // ----------------------------------------------------------------

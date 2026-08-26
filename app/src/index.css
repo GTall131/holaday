@@ -159,6 +159,37 @@ main#app{
   }
 }
 
+.app-shell.no-tabbar main#app{ padding-bottom: 20px; }
+
+/* ============================================================
+   WELCOME — first screen, pre-account
+   ============================================================ */
+.welcome{
+  display:flex; flex-direction:column; justify-content:center;
+  min-height:60vh; gap:28px; padding: 0 4px;
+}
+.welcome__blurb{ font-size:15px; line-height:1.5; color: var(--ink-soft); }
+.welcome__actions{ display:flex; flex-direction:column; gap:10px; }
+
+/* ============================================================
+   LOGIN / SIGNUP — plain text fields, styled to match the date/notes
+   inputs already used on TripDetails.jsx
+   ============================================================ */
+.field-input{
+  width:100%; border:1.5px solid var(--paper-line); border-radius: var(--radius-s);
+  box-shadow: var(--shadow-card);
+  padding:12px; font-family:inherit; font-size:13.5px; background:#fff; color: var(--ink);
+}
+.field-input:focus{ outline:none; border-color:var(--ink); }
+.auth-switch{ margin-top:10px; }
+
+/* Onboarding reuses .country-card (CountryPicker) and .chip
+   (TripDetails) but as multi-select toggles rather than
+   navigate-on-tap/single-select — same selected-state visual language
+   as .chip[data-selected]. */
+.country-card[data-selected="true"]{ border-color: var(--ink); background: var(--paper-dim); }
+.onboarding-yn button{ font-weight:800; }
+
 /* ============================================================
    HOME — "MY TRIPS" DEPARTURE BOARD
    ============================================================ */
