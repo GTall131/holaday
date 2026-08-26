@@ -23,6 +23,7 @@
   --red-alert: #d8402b;
   --radius-s: 6px;
   --radius-m: 12px;
+  --shadow-card: 0 1px 2px rgba(20,24,31,.05), 0 6px 16px -6px rgba(20,24,31,.14);
   --font-display: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
 }
@@ -180,7 +181,7 @@ main#app{
 .board-row:active{ transform: scale(0.98); }
 @keyframes rowIn{ from{ opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
 
-.flag-icon{ display:inline-block; border-radius:3px; overflow:hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); flex-shrink:0; }
+.flag-icon{ display:inline-block; border-radius:3px; overflow:hidden; box-shadow: inset 0 0 0 1px rgba(20,24,31,.16), 0 1px 2px rgba(20,24,31,.15); flex-shrink:0; }
 .flag-icon svg{ display:block; width:100%; height:100%; }
 .board-row__flag{ width:32px; height:21px; }
 .board-row__mid{ flex:1; min-width:0; }
@@ -228,6 +229,17 @@ main#app{
 }
 
 /* ============================================================
+   STEP PROGRESS — shared by the two onboarding screens
+   (CountryPicker, TripDetails). Uses amber rather than a
+   flag color since no destination-specific theme exists yet
+   at this point in the flow.
+   ============================================================ */
+.step-progress{ margin: 8px 2px 16px; }
+.step-progress__track{ height:4px; border-radius:4px; background: var(--paper-dim); overflow:hidden; }
+.step-progress__fill{ height:100%; background: var(--amber); border-radius:4px; transition: width .25s ease; }
+.step-progress__label{ font-size:13px; color: var(--slate); margin-top:10px; }
+
+/* ============================================================
    COUNTRY PICKER
    Each card doubles as a small explainer of the theming concept:
    the three dots are literally the colours that will be pulled
@@ -237,6 +249,7 @@ main#app{
 .country-card{
   display:flex; align-items:center; gap:14px;
   background:#fff; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+  box-shadow: var(--shadow-card);
   padding: 14px; cursor:pointer; width:100%; text-align:left;
 }
 .country-card:active{ transform: scale(0.98); }
@@ -252,6 +265,7 @@ main#app{
 .chip{
   display:flex; align-items:center; gap:12px;
   background:#fff; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+  box-shadow: var(--shadow-card);
   padding: 12px 14px; cursor:pointer; width:100%; text-align:left;
 }
 .chip__label{ font-weight:700; font-size:14px; flex:1; }
@@ -262,6 +276,7 @@ main#app{
 .field-label{ font-size:12.5px; font-weight:700; color: var(--ink); margin: 20px 2px 8px; display:block; }
 textarea.notes{
   width:100%; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+  box-shadow: var(--shadow-card);
   padding:12px; font-family:inherit; font-size:13.5px; resize:vertical; min-height:70px;
   background:#fff;
 }
@@ -272,6 +287,7 @@ textarea.notes:focus{ outline:none; border-color:var(--ink); }
 .date-field label{ font-size:11.5px; font-weight:700; color: var(--slate); }
 .date-field input[type="date"]{
   border:1.5px solid var(--paper-line); border-radius: var(--radius-s);
+  box-shadow: var(--shadow-card);
   padding:10px; font-family:inherit; font-size:13px; background:#fff; color: var(--ink);
 }
 .date-field input[type="date"]:focus{ outline:none; border-color:var(--ink); }
@@ -357,6 +373,7 @@ textarea.notes:focus{ outline:none; border-color:var(--ink); }
 .week-row{
   display:flex; align-items:center; gap:12px;
   background:#fff; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+  box-shadow: var(--shadow-card);
   padding:13px 14px; width:100%; text-align:left; cursor:pointer;
 }
 .week-row[data-locked="true"]{ opacity:.5; cursor:default; }
@@ -398,6 +415,7 @@ textarea.notes:focus{ outline:none; border-color:var(--ink); }
 .vocab-grid{ margin-top:16px; display:flex; flex-direction:column; gap:8px; }
 .vocab-card{
   background:#fff; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+  box-shadow: var(--shadow-card);
   padding:12px 14px;
 }
 .vocab-card__en{ font-size:13.5px; color: var(--slate); }
@@ -422,6 +440,7 @@ textarea.notes:focus{ outline:none; border-color:var(--ink); }
 
 .beat-card{
   margin-top:16px; background:#fff; border:1.5px solid var(--paper-line);
+  box-shadow: var(--shadow-card);
   border-radius: var(--radius-m); padding:16px;
 }
 .beat-card__context{ font-size:13.5px; font-style:italic; color: var(--slate); line-height:1.45; margin-bottom:14px; }
@@ -483,6 +502,7 @@ textarea.notes:focus{ outline:none; border-color:var(--ink); }
 
 .admin-card{
   display:block; width:100%; text-align:left; background:#fff; border:1.5px solid var(--paper-line);
+  box-shadow: var(--shadow-card);
   border-radius: var(--radius-m); padding:16px; margin-bottom:10px; cursor:pointer;
 }
 .admin-card:active{ transform: scale(0.99); }
@@ -502,6 +522,7 @@ textarea.notes:focus{ outline:none; border-color:var(--ink); }
 
 .admin-list-row{
   display:flex; align-items:center; gap:12px; background:#fff; border:1.5px solid var(--paper-line);
+  box-shadow: var(--shadow-card);
   border-radius: var(--radius-m); padding:12px 14px; margin-bottom:8px; cursor:pointer; width:100%; text-align:left;
 }
 .admin-list-row:active{ transform: scale(0.99); }
@@ -531,6 +552,7 @@ textarea.notes:focus{ outline:none; border-color:var(--ink); }
 
 .text-input{
   width:100%; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+  box-shadow: var(--shadow-card);
   padding:12px; font-family:inherit; font-size:13.5px; background:#fff; color: var(--ink);
 }
 .text-input:focus{ outline:none; border-color:var(--ink); }
@@ -543,6 +565,7 @@ textarea.notes:focus{ outline:none; border-color:var(--ink); }
 }
 select.admin-select{
   width:100%; border:1.5px solid var(--paper-line); border-radius: var(--radius-m); padding:11px 12px;
+  box-shadow: var(--shadow-card);
   font-family:inherit; font-size:13.5px; background:#fff; color: var(--ink);
 }
 .admin-checkbox-row{
@@ -576,7 +599,7 @@ select.admin-select{
   cursor:pointer; border:none; background:none; width:100%; padding:6px 4px; font:inherit;
   display:flex; flex-direction:column; align-items:center; gap:2px;
 }
-.admin-grid-cell:hover{ background: rgba(0,0,0,.04); }
+.admin-grid-cell:hover{ background: color-mix(in srgb, var(--amber) 12%, white); }
 .admin-grid-cell__title{
   font-size:9.5px; color:var(--slate); max-width:100%; overflow:hidden;
   text-overflow:ellipsis; white-space:nowrap;
@@ -585,10 +608,11 @@ select.admin-select{
   cursor:pointer; border:1px dashed var(--paper-line); background:none; border-radius:4px;
   font:inherit; font-size:11px; color:var(--slate); padding:3px; width:100%;
 }
-.admin-grid-cell-add:hover{ background: rgba(0,0,0,.04); border-color: var(--slate); }
+.admin-grid-cell-add:hover{ background: color-mix(in srgb, var(--amber) 12%, white); border-color: var(--amber-deep); }
 
 .admin-question-card{
   border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+  box-shadow: var(--shadow-card);
   padding:14px; margin-bottom:12px; background:#fff;
 }
 .admin-question-card__head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }

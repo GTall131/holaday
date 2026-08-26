@@ -1,4 +1,5 @@
 import FlagIcon from "../components/FlagIcon";
+import StepProgress from "../components/StepProgress";
 import { publishedDestinations, adminFlagMarkup, selectCountry } from "../store";
 
 /* ================================================================
@@ -24,9 +25,11 @@ import { publishedDestinations, adminFlagMarkup, selectCountry } from "../store"
 export default function CountryPicker(){
   return (
     <>
-      <p style={{ fontSize: "13px", color: "var(--slate)", margin: "6px 2px 14px" }}>
-        Step 1 of 2 — where are you headed? Your course will be themed around that destination.
-      </p>
+      <StepProgress
+        step={1}
+        total={2}
+        label="Step 1 of 2 — where are you headed? Your course will be themed around that destination."
+      />
       <div className="country-grid">
         {publishedDestinations().map(d => (
           <button key={d.countryKey} className="country-card" onClick={() => selectCountry(d.countryKey)}>

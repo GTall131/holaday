@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { state, travelerCountry, selectTrip, confirmTrip } from "../store";
 import { TRIP_TYPES } from "../data/tripTypes";
+import StepProgress from "../components/StepProgress";
 
 /* ================================================================
    SCREEN: TRIP DETAILS
@@ -47,9 +48,11 @@ export default function TripDetails(){
 
   return (
     <>
-      <p style={{ fontSize: "13px", color: "var(--slate)", margin: "6px 2px 14px" }}>
-        Step 2 of 2 — what's the {country.name} trip actually like? This shapes which lessons come first.
-      </p>
+      <StepProgress
+        step={2}
+        total={2}
+        label={`Step 2 of 2 — what's the ${country.name} trip actually like? This shapes which lessons come first.`}
+      />
       <div className="chip-grid">
         {Object.entries(TRIP_TYPES).map(([key, t]) => (
           <button key={key} className="chip" data-selected={tripKey === key} onClick={() => selectTrip(key)}>
