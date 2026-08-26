@@ -1,6 +1,7 @@
 import BoardRow from "../components/BoardRow";
+import NoTripRow from "../components/NoTripRow";
 import FlagIcon from "../components/FlagIcon";
-import { state, startCourse, quickStartCourse, publishedDestinations, adminFlagMarkup } from "../store";
+import { state, quickStartCourse, publishedDestinations, adminFlagMarkup } from "../store";
 
 /* ================================================================
    SCREEN: HOME — "MY TRIPS" DEPARTURE BOARD
@@ -45,12 +46,7 @@ export default function Home(){
   return (
     <>
       <div className="section-label">Current</div>
-      {current.length ? current.map(c => <BoardRow key={c.id} course={c} />) : (
-        <div className="board-empty">
-          <div className="board-empty__flap">NO ACTIVE TRIP</div>
-          <button className="btn-primary" onClick={startCourse}>Book a course</button>
-        </div>
-      )}
+      {current.length ? current.map(c => <BoardRow key={c.id} course={c} />) : <NoTripRow />}
 
       <div className="section-label">Previous</div>
       {previous.length

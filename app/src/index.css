@@ -195,21 +195,9 @@ main#app{
 .status--boarding{ background: rgba(255,179,0,.18); color: var(--amber); }
 .status--progress{ background: rgba(30,143,95,.22); color: #4fd8a2; }
 .status--landed{ background: rgba(255,255,255,.1); color:#9aa3b5; }
+.status--start{ background: var(--amber); color: var(--ink); }
 
-.board-empty{
-  background: var(--ink);
-  border-radius: var(--radius-m);
-  box-shadow: var(--shadow-card);
-  padding: 26px 18px 22px;
-  text-align:center;
-  margin-bottom: 10px;
-}
-.board-empty__flap{
-  font-family: var(--font-mono); font-weight:700; font-size:13px; letter-spacing:0.16em;
-  color: var(--amber); margin-bottom:16px;
-}
-.board-empty__flap::before, .board-empty__flap::after{ content:"— "; color: rgba(255,255,255,.35); }
-.board-empty__flap::after{ content:" —"; }
+.board-row__flag--empty{ background: var(--ink-soft); display:flex; align-items:center; justify-content:center; }
 
 /* ============================================================
    EXPLORE DESTINATIONS — horizontal teaser row on Home, using each
