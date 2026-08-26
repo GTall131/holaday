@@ -811,6 +811,7 @@ current code.
     font-family: var(--font-mono); font-size:10.5px; font-weight:700; letter-spacing:.06em;
     text-transform:uppercase; padding:3px 8px; border-radius:4px; display:inline-block; white-space:nowrap;
   }
+  .admin-status--missing{ background: var(--paper-dim); color: var(--slate); }
   .admin-status--draft{ background: var(--paper-dim); color: var(--slate); }
   .admin-status--staged{ background: rgba(30,143,95,.15); color: var(--green-ok); }
   .admin-status--published{ background: var(--ink); color: var(--amber); }
@@ -873,11 +874,21 @@ current code.
   .admin-grid-table td.admin-grid-row-label{
     text-align:left; font-weight:700; background: var(--paper-dim); padding:8px 10px; white-space:nowrap;
   }
+  .admin-grid-cell-stack{ display:flex; flex-direction:column; gap:2px; padding:4px; align-items:stretch; }
   .admin-grid-cell{
-    cursor:pointer; border:none; background:none; width:100%; padding:10px 6px; font:inherit;
-    display:flex; flex-direction:column; align-items:center; gap:4px;
+    cursor:pointer; border:none; background:none; width:100%; padding:6px 4px; font:inherit;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
   }
   .admin-grid-cell:hover{ background: rgba(0,0,0,.04); }
+  .admin-grid-cell__title{
+    font-size:9.5px; color:var(--slate); max-width:100%; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap;
+  }
+  .admin-grid-cell-add{
+    cursor:pointer; border:1px dashed var(--paper-line); background:none; border-radius:4px;
+    font:inherit; font-size:11px; color:var(--slate); padding:3px; width:100%;
+  }
+  .admin-grid-cell-add:hover{ background: rgba(0,0,0,.04); border-color: var(--slate); }
 
   .admin-question-card{
     border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
@@ -1115,7 +1126,7 @@ const SYMBOLS = {
 // author, I need a "dry-run" preview (reusing screenDashboard's rendering,
 // see that TODO below) that runs this same resolution against my Draft
 // Blueprint for a chosen country, so I can see the real Leg-by-Leg
-// syllabus before submitting for review. See ADMIN-CONTENT-PLAN.md §5.
+// syllabus before staging it. See ADMIN-CONTENT-PLAN.md §5.
 function syllabus(tripKey){
   const t = TRIP_TYPES[tripKey];
   const all = [
@@ -1161,10 +1172,8 @@ let beatResult = null;
 
 /* ================================================================
    ADMIN CONTENT BANK (demo-phase, in-memory) — ADMIN-CONTENT-PLAN.md
-   §2a/§6. This pass implements the Destination-creation flow plus the
-   shared approval state machine; Phrase/Question/Lesson/Module/
-   Blueprint authoring (§3-5) follow the same record/status shape as a
-   later pass and are stubbed as "coming soon" in screenAdminHome.
+   §2a/§6. Destination/Language/Module/Lesson/Phrase/Blueprint authoring
+   (§2-5, §7) all share the same status lifecycle below.
 
    State machine (identical for every content type per §6):
      draft -> staged -> published -> archived
@@ -1226,8 +1235,8 @@ let adminIdSeq = 1;
 function nextAdminId(prefix){ return prefix + "-" + (adminIdSeq++); }
 
 /* ----------------------------------------------------------------
-   Language — a lightweight taxonomy dimension, not approval-gated
-   content (no draft/review lifecycle like Country/Module/Lesson get).
+   Language — a lightweight taxonomy dimension, not staged/published
+   content (no draft/staged lifecycle like Country/Module/Lesson get).
    Every Country names one Language it uses; Modules/Lessons authored
    as "applies to all countries using this language" resolve against
    whichever Countries currently carry that languageId, so adding a
@@ -1273,9 +1282,9 @@ let adminDraft = null;    // working copy of a destination while an admin is edi
 // filterable tabs nested under whichever pane is relevant (Destinations
 // or Languages). Reset to the default tab whenever the pane is opened
 // fresh from admin-home so a stale "Modules" tab doesn't linger.
-let adminDestinationsTab = "countries";      // "countries" | "modules" | "lessons"
+let adminDestinationsTab = "countries";      // "countries" | "modules" | "lessons" | "phrases"
 let adminDestinationsFilterCountry = "";     // "" = all countries
-let adminLanguagesTab = "languages";         // "languages" | "modules" | "lessons"
+let adminLanguagesTab = "languages";         // "languages" | "modules" | "lessons" | "phrases"
 let adminLanguagesFilterLanguage = "";       // "" = all languages
 
 // Destinations Module/Lesson content is authored against — only published
@@ -1290,13 +1299,16 @@ function publishedDestinations(){
 // published Admin Destination record (§2a) so a country authored and
 // published through the admin surface "pulls through" into the
 // traveler app immediately, without needing a matching COUNTRIES
-// entry. `phrases`/`transport` (the raw phrase-bank content behind the
-// legacy weeks-1-3 beat plans and the offline Phrasebook) only exist on
-// the one remaining hardcoded COUNTRIES entry — an Admin-authored
+// entry. `transport` (the raw weeks-1-3 beat-plan phrase bank + the
+// offline Phrasebook's "Getting around"/etiquette content) only exists
+// on the one remaining hardcoded COUNTRIES entry — an Admin-authored
 // country instead relies entirely on published Modules/Lessons via a
 // Blueprint (see finalizeCourse/resolveBlueprintSyllabus), so callers
-// that need a real phrase bank must treat a null phrases/transport as
-// "not available" rather than assume every country has one.
+// must treat a null transport as "not available" rather than assume
+// every country has one. `phrases` (the offline Phrasebook's
+// "Essentials" section) falls back to any published admin-authored
+// Phrases (§7) scoped to this country when there's no legacy bank —
+// see travelerPhraseBank below.
 function travelerCountry(countryKey){
   const dest = adminDestinations.find(d => d.countryKey === countryKey && d.status === "published");
   const legacy = COUNTRIES[countryKey];
@@ -1307,9 +1319,19 @@ function travelerCountry(countryKey){
     colours: dest ? dest.data.colours : legacy.colours,
     cultureTip: dest ? dest.data.cultureTip : legacy.cultureTip,
     flag: dest ? adminFlagMarkup(dest) : FLAGS[countryKey],
-    phrases: legacy ? legacy.phrases : null,
+    phrases: legacy ? legacy.phrases : travelerPhraseBank(countryKey),
     transport: legacy ? legacy.transport : null
   };
+}
+
+// Published admin-authored Phrases (§7) scoped to this country, in the
+// {en, local, translit} shape vocabCardHtml/the offline Phrasebook
+// already expect — null (not []) when there are none, so callers that
+// check truthiness to decide "any phrasebook content at all" still work.
+function travelerPhraseBank(countryKey){
+  const matches = adminPhrases.filter(p => p.status === "published" && phraseAppliesToCountry(p, countryKey));
+  if (!matches.length) return null;
+  return matches.map(p => ({ en: p.data.en, local: p.data.local, translit: p.data.translit }));
 }
 
 /* ================================================================
@@ -1322,20 +1344,22 @@ function travelerCountry(countryKey){
    Module is blocked until every cell it claims is itself Published
    (moduleIsComplete below) — the gating cascade from §6.
 
-   Question authoring here is a deliberate simplification of §3 step 2:
-   the plan calls for a searchable, reusable Phrase/Question library
-   ("attach by reference, only create new if nothing fits" — see §7).
-   This pass authors each Question inline on the Lesson instead of
-   against a separate library, so content isn't actually reused across
-   Lessons yet — the record shape (kind/context/prompt/answer/
-   distractors) is what a future library-backed picker would slot into
-   without a rewrite.
+   Question authoring is a partial simplification of §3 step 2: the plan
+   calls for a searchable, reusable Phrase/Question library ("attach by
+   reference, only create new if nothing fits" — see §7). A produce/
+   comprehend Question can now attach to a Phrase by reference (§7,
+   Phrase content type below) instead of hand-typing prompt/answer/
+   distractors — but symbol/situational Questions, and any produce/
+   comprehend Question an author chooses not to phrase-link, still author
+   their content inline on the Lesson, not against a shared library.
    ================================================================ */
 let adminModules = [];
 let adminModuleDraft = null;
 let adminLessons = [];
 let adminLessonDraft = null;
 let adminLessonPreviewIndex = 0; // which authored question the Lesson editor's live preview is showing
+let adminPhrases = [];
+let adminPhraseDraft = null;
 
 const ADMIN_STATUS_RANK = { missing:0, archived:0, draft:1, staged:2, published:3 };
 
@@ -1351,9 +1375,9 @@ function countriesForLanguage(languageId){
   return publishedDestinations().filter(d => d.data.languageId === languageId);
 }
 // Every Country an author can target with new content against this
-// Language, regardless of the Country's own review status — a Module or
-// Lesson shouldn't have to wait on a Country's approval before work on
-// it can start. Only Published countries count toward a Module's
+// Language, regardless of the Country's own status — a Module or
+// Lesson shouldn't have to wait on a Country being Published before
+// work on it can start. Only Published countries count toward a Module's
 // completeness/publishability though (see countriesForLanguage/
 // moduleGridRows above) — that's a stricter, separate question about
 // what's actually live for travelers.
@@ -1408,6 +1432,21 @@ function lessonMatchesGridCountry(lesson, countryKey){
   }
   return lesson.data.countryKey === countryKey;
 }
+// A Phrase has no "generic" scope (unlike Module/Lesson) — it's always
+// text in one specific local language, so it's always either pinned to
+// one Country or language-wide across every Country using that Language.
+function phraseAppliesToCountry(phrase, countryKey){
+  if (phrase.data.languageWide){
+    const country = countryByKey(countryKey);
+    return !!country && !!phrase.data.languageId && country.data.languageId === phrase.data.languageId;
+  }
+  return phrase.data.countryKey === countryKey;
+}
+function phraseScopeLabel(phrase){
+  if (phrase.data.languageWide) return `All countries using ${languageName(phrase.data.languageId)}`;
+  const country = countryByKey(phrase.data.countryKey);
+  return country ? country.data.name : "No country set";
+}
 
 function moduleLessonCandidates(mod, tier, countryKey){
   return adminLessons.filter(l =>
@@ -1445,8 +1484,28 @@ function moduleIsComplete(mod){
 // renderBeat()/makeQuestion() already produce for the traveler-facing
 // lesson screen (see buildBeat below), so the Lesson editor's live
 // preview is the literal traveler beat renderer, not a lookalike copy —
-// ADMIN-CONTENT-PLAN.md §3 step 3.
-function adminQuestionToBeat(q){
+// ADMIN-CONTENT-PLAN.md §3 step 3. A phrase-sourced produce/comprehend
+// Question (§7) is built the same way produceBeat/comprehendBeat build
+// one from the legacy hardcoded phrase bank (see below) — distractors
+// sampled from sibling published Phrases in the Lesson's own scope,
+// not hand-typed. Returns null if a phrase-sourced Question's Phrase
+// reference no longer resolves to a published record (deleted, or
+// archived by a newer version after this Lesson itself published) —
+// callers filter nulls out, mirroring resolveBlueprintSyllabus's
+// "skip what doesn't resolve" handling of broken references.
+function adminQuestionToBeat(q, lessonData){
+  if ((q.kind === "produce" || q.kind === "comprehend") && q.source === "phrase"){
+    const phrase = q.phraseId ? adminPhrases.find(p => p.id === q.phraseId) : null;
+    if (!phrase || phrase.status !== "published") return null;
+    const pool = phrasesForLesson(lessonData).filter(p => p.status === "published" && p.id !== phrase.id);
+    const distractorPhrases = shuffle(pool).slice(0, 3);
+    if (q.kind === "comprehend"){
+      const mq = makeQuestion(q.question, phrase.data.en, distractorPhrases.map(p => p.data.en));
+      return { kind:"comprehend", context:q.context, heard:phrase.data.local, ...mq };
+    }
+    const mq = makeQuestion(`How do you say "${phrase.data.en}"?`, phrase.data.local, distractorPhrases.map(p => p.data.local));
+    return { kind:"produce", context:q.context, ...mq };
+  }
   const mq = makeQuestion(q.question, q.correctAnswer, (q.distractors || []).filter(Boolean));
   if (q.kind === "symbol") return { kind:"symbol", context:q.context, symbol:q.symbol, ...mq };
   if (q.kind === "comprehend") return { kind:"comprehend", context:q.context, heard:q.heard, ...mq };
@@ -1478,15 +1537,18 @@ function blankLeg(name){
   return { name: name || "", blurb: "", moduleGates: [] };
 }
 
-function resolveBlueprintGateLesson(gate, countryKey){
+// Returns every published Lesson gated into this (moduleId, tier) cell
+// for this country — a Tier can carry more than one Lesson (§4), and a
+// traveler's syllabus includes all of them, not just one (§6).
+function resolveBlueprintGateLessons(gate, countryKey){
   const mod = adminModules.find(m => m.id === gate.moduleId);
-  if (!mod) return null;
-  return adminLessons.find(l =>
+  if (!mod) return [];
+  return adminLessons.filter(l =>
     l.status === "published" &&
     l.data.moduleId === mod.id &&
     l.data.tier === gate.tier &&
     (mod.data.kind === "generic" ? l.data.scope === "generic" : lessonMatchesGridCountry(l, countryKey))
-  ) || null;
+  );
 }
 
 function blueprintIsPublishable(bp){
@@ -1518,10 +1580,12 @@ function resolveBlueprintSyllabus(countryKey, tripKey){
     const legIndex = legs.length;
     let legUsed = false;
     leg.moduleGates.forEach(gate => {
-      const lesson = resolveBlueprintGateLesson(gate, countryKey);
-      if (!lesson) return;
+      const lessons = resolveBlueprintGateLessons(gate, countryKey);
+      if (!lessons.length) return;
       if (!legUsed){ legs.push({ name: leg.name, blurb: leg.blurb }); legUsed = true; }
-      weeks.push({ title: lesson.data.title, type: lesson.data.type, source: "authored", legIndex, lessonId: lesson.id });
+      lessons.forEach(lesson => {
+        weeks.push({ title: lesson.data.title, type: lesson.data.type, source: "authored", legIndex, lessonId: lesson.id });
+      });
     });
   });
   if (!weeks.length) return null;
@@ -1589,6 +1653,10 @@ function renderAppBar(top){
     "admin-lesson": (p) => {
       const rec = p && p.id ? adminLessons.find(l => l.id === p.id) : null;
       return rec ? rec.data.title : "New lesson";
+    },
+    "admin-phrase": (p) => {
+      const rec = p && p.id ? adminPhrases.find(ph => ph.id === p.id) : null;
+      return rec ? rec.data.en : "New phrase";
     },
     "admin-blueprints": "Trip Type Blueprints",
     "admin-blueprint": (p) => {
@@ -2064,28 +2132,32 @@ function screenPhrasebook(payload){
   const country = travelerCountry(c.countryKey);
   const trip = TRIP_TYPES[c.tripKey];
 
-  // An Admin-authored country (no legacy phrase/transport bank) can
-  // still complete a course entirely through published Lessons (see
-  // courseLessonBeats), but has no raw phrase-pair data to compile into
-  // this offline reference yet — Phrase authoring (ADMIN-CONTENT-PLAN.md
-  // §2/§7) is what would eventually fill this in.
+  // An Admin-authored country falls back to published Phrases (§7) for
+  // "Essentials" (see travelerPhraseBank) — but has no "Getting around"
+  // bank or etiquette list yet, since neither has an admin-authored
+  // equivalent, so those stay gated on the legacy transport bank
+  // specifically rather than on country.phrases being present at all.
   const phrasesHtml = country.phrases ? `
     <div class="section-label">Essentials</div>
     <div class="vocab-grid">
       ${country.phrases.map(vocabCardHtml).join("")}
     </div>
 
-    <div class="section-label" style="margin-top:20px;">Getting around</div>
-    <div class="vocab-grid">
-      ${country.transport.phrases.map(vocabCardHtml).join("")}
-    </div>
+    ${country.transport ? `
+      <div class="section-label" style="margin-top:20px;">Getting around</div>
+      <div class="vocab-grid">
+        ${country.transport.phrases.map(vocabCardHtml).join("")}
+      </div>
+    ` : ""}
 
     <div class="culture-card" style="margin-top:20px;">
       <div class="culture-card__label">Good to know</div>
       <div class="culture-card__body">${country.cultureTip}</div>
-      <ul class="etiquette-list" style="margin-top:10px;">
-        ${country.transport.etiquette.map(item => `<li>${item}</li>`).join("")}
-      </ul>
+      ${country.transport ? `
+        <ul class="etiquette-list" style="margin-top:10px;">
+          ${country.transport.etiquette.map(item => `<li>${item}</li>`).join("")}
+        </ul>
+      ` : ""}
     </div>
   ` : `
     <div class="culture-card" style="margin-top:20px;">
@@ -2274,7 +2346,7 @@ function buildLessonBeats(country, trip, week){
 // the same rendering path an author checked before publishing.
 function adminLessonBeats(lessonId){
   const lesson = adminLessons.find(l => l.id === lessonId);
-  return lesson ? lesson.data.questions.map(adminQuestionToBeat) : [];
+  return lesson ? lesson.data.questions.map(q => adminQuestionToBeat(q, lesson.data)).filter(Boolean) : [];
 }
 
 // Picks legacy hardcoded beats or authored-Lesson beats for a given
@@ -2353,14 +2425,11 @@ function shuffle(arr){
 /* ================================================================
    ADMIN SCREENS (demo-phase — ADMIN-CONTENT-PLAN.md §10)
 
-   Only the Destination-creation flow (§2a) and the shared approval
-   state machine (§6) are implemented here. Module/Lesson/Blueprint
-   authoring (§3-5) follow this same record/status shape and are left
-   as "coming soon" cards in screenAdminHome for a later pass — see the
-   dispatch table below for where they'd register.
+   Destination/Language/Module/Lesson/Phrase/Blueprint authoring (§2-5,
+   §7) all share the status lifecycle below.
    ================================================================ */
 const ADMIN_STATUS_LABELS = {
-  draft: "Draft", staged: "Staged", published: "Published", archived: "Archived"
+  missing: "Missing", draft: "Draft", staged: "Staged", published: "Published", archived: "Archived"
 };
 function adminStatusChip(status){
   return `<span class="admin-status admin-status--${status}">${ADMIN_STATUS_LABELS[status]}</span>`;
@@ -2392,7 +2461,9 @@ function contentTypeRecordsByStatus(status){
     ...adminLessons.filter(l => l.status === status).map(l =>
       adminRecordRowHtml("admin-open-lesson", l.id, "", l.data.title, `Lesson · v${l.version}`, l.status)),
     ...adminBlueprints.filter(b => b.status === status).map(b =>
-      adminRecordRowHtml("admin-open-blueprint", b.id, "", TRIP_TYPES[b.data.tripKey].label, `Blueprint · v${b.version}`, b.status))
+      adminRecordRowHtml("admin-open-blueprint", b.id, "", TRIP_TYPES[b.data.tripKey].label, `Blueprint · v${b.version}`, b.status)),
+    ...adminPhrases.filter(p => p.status === status).map(p =>
+      adminRecordRowHtml("admin-open-phrase", p.id, "", p.data.en, `Phrase · v${p.version}`, p.status))
   ].join("");
 }
 
@@ -2403,7 +2474,8 @@ function screenAdminHome(){
     adminDestinations.filter(d => d.status === "staged").length +
     adminModules.filter(m => m.status === "staged").length +
     adminLessons.filter(l => l.status === "staged").length +
-    adminBlueprints.filter(b => b.status === "staged").length;
+    adminBlueprints.filter(b => b.status === "staged").length +
+    adminPhrases.filter(p => p.status === "staged").length;
 
   return `
     <p style="font-size:13px;color:var(--slate);margin:6px 2px 20px;">Demo-phase content authoring surface (ADMIN-CONTENT-PLAN.md).</p>
@@ -2447,11 +2519,13 @@ function screenAdminDestinations(){
     { key: "countries", label: "Countries" },
     { key: "modules", label: "Modules" },
     { key: "lessons", label: "Lessons" },
+    { key: "phrases", label: "Phrases" },
     { action: "admin-open-blueprints", label: "Blueprints" }
   ], adminDestinationsTab, "admin-destinations-tab");
 
   if (adminDestinationsTab === "modules") return tabBar + destinationsModulesTabHtml();
   if (adminDestinationsTab === "lessons") return tabBar + destinationsLessonsTabHtml();
+  if (adminDestinationsTab === "phrases") return tabBar + destinationsPhrasesTabHtml();
 
   const rows = adminDestinations
     .slice()
@@ -2493,15 +2567,26 @@ function destinationsModulesTabHtml(){
   `;
 }
 
+// Lessons are only created from inside a Module's tier grid (§4) — this
+// tab is browse/filter only, no "+ New lesson" here.
 function destinationsLessonsTabHtml(){
   const lessons = adminDestinationsFilterCountry
     ? adminLessons.filter(l => lessonAppliesToCountry(l, adminDestinationsFilterCountry))
     : adminLessons;
   return `
-    <button class="btn-primary" style="margin:16px 0 0;" data-action="admin-new-lesson" ${adminModules.length ? "" : "disabled"}>+ New lesson</button>
-    ${!adminModules.length ? `<p class="admin-hint">Create a Module first — every Lesson belongs to one.</p>` : ""}
     ${destinationsCountryFilterHtml()}
     ${contentListRowsHtml([], lessons)}
+  `;
+}
+
+function destinationsPhrasesTabHtml(){
+  const phrases = adminDestinationsFilterCountry
+    ? adminPhrases.filter(p => phraseAppliesToCountry(p, adminDestinationsFilterCountry))
+    : adminPhrases;
+  return `
+    <button class="btn-primary" style="margin:16px 0 0;" data-action="admin-new-phrase">+ New phrase</button>
+    ${destinationsCountryFilterHtml()}
+    ${contentListRowsHtml([], [], phrases)}
   `;
 }
 
@@ -2520,11 +2605,13 @@ function screenAdminLanguages(){
   const tabBar = adminPaneTabBarHtml([
     { key: "languages", label: "Languages" },
     { key: "modules", label: "Modules" },
-    { key: "lessons", label: "Lessons" }
+    { key: "lessons", label: "Lessons" },
+    { key: "phrases", label: "Phrases" }
   ], adminLanguagesTab, "admin-languages-tab");
 
   if (adminLanguagesTab === "modules") return tabBar + languagesModulesTabHtml();
   if (adminLanguagesTab === "lessons") return tabBar + languagesLessonsTabHtml();
+  if (adminLanguagesTab === "phrases") return tabBar + languagesPhrasesTabHtml();
 
   const rows = adminLanguages.slice().sort((a, b) => a.name.localeCompare(b.name)).map(l => {
     const countryCount = adminDestinations.filter(d => d.data.languageId === l.id && d.status !== "archived").length;
@@ -2576,12 +2663,22 @@ function languagesLessonsTabHtml(){
   `;
 }
 
+function languagesPhrasesTabHtml(){
+  let phrases = adminPhrases;
+  if (adminLanguagesFilterLanguage) phrases = phrases.filter(p => p.data.languageId === adminLanguagesFilterLanguage);
+  return `
+    ${languagesFilterHtml()}
+    ${contentListRowsHtml([], [], phrases)}
+  `;
+}
+
 // Shared by the Country and Language detail screens — rows for whatever
-// Modules/Lessons are relevant, using the same scope-label vocabulary
-// (moduleScopeLabel/lessonScopeLabel) so "why is this listed here" reads
-// the same way in both places.
-function contentListRowsHtml(mods, lessons){
-  if (!mods.length && !lessons.length) return `<div class="admin-empty">No modules or lessons here yet.</div>`;
+// Modules/Lessons/Phrases are relevant, using the same scope-label
+// vocabulary (moduleScopeLabel/lessonScopeLabel/phraseScopeLabel) so
+// "why is this listed here" reads the same way in both places.
+function contentListRowsHtml(mods, lessons, phrases){
+  phrases = phrases || [];
+  if (!mods.length && !lessons.length && !phrases.length) return `<div class="admin-empty">No modules, lessons, or phrases here yet.</div>`;
   return mods.map(m => `
     <button class="admin-list-row" data-action="admin-open-module" data-id="${m.id}">
       <span class="admin-list-row__mid">
@@ -2597,6 +2694,14 @@ function contentListRowsHtml(mods, lessons){
         <div class="admin-list-row__sub">Lesson · ${lessonScopeLabel(l)}</div>
       </span>
       ${adminStatusChip(l.status)}
+    </button>
+  `).join("") + phrases.map(p => `
+    <button class="admin-list-row" data-action="admin-open-phrase" data-id="${p.id}">
+      <span class="admin-list-row__mid">
+        <div class="admin-list-row__name">${escapeHtml(p.data.en)}</div>
+        <div class="admin-list-row__sub">Phrase · ${phraseScopeLabel(p)}</div>
+      </span>
+      ${adminStatusChip(p.status)}
     </button>
   `).join("");
 }
@@ -2632,12 +2737,17 @@ function screenAdminLanguage(payload){
     <label class="field-label" style="margin-top:24px;">Modules &amp; lessons tied to ${escapeHtml(record.name)}</label>
     <div class="admin-actions" style="margin:0 0 10px;">
       <button class="btn-secondary" data-action="admin-new-module-for-language" data-language="${record.id}">+ New module</button>
-      <button class="btn-secondary" data-action="admin-new-lesson-for-language" data-language="${record.id}">+ New lesson</button>
     </div>
     ${contentListRowsHtml(
       adminModules.filter(m => m.data.kind === "bespoke" && m.data.languageId === record.id),
       adminLessons.filter(l => l.data.scope === "country-specific" && l.data.languageId === record.id)
     )}
+
+    <label class="field-label" style="margin-top:24px;">Phrases tied to ${escapeHtml(record.name)}</label>
+    <div class="admin-actions" style="margin:0 0 10px;">
+      <button class="btn-secondary" data-action="admin-new-phrase-for-language" data-language="${record.id}">+ New phrase</button>
+    </div>
+    ${contentListRowsHtml([], [], adminPhrases.filter(p => p.data.languageWide && p.data.languageId === record.id))}
   ` : "";
 
   const actionsHtml = canEdit ? `<div class="sticky-cta admin-actions"><button class="btn-primary" data-action="admin-language-save">Save</button></div>` : "";
@@ -2851,12 +2961,17 @@ function screenAdminDestination(payload){
       <label class="field-label" style="margin-top:24px;">Modules &amp; lessons for ${escapeHtml(view.data.name)}</label>
       <div class="admin-actions" style="margin:0 0 10px;">
         <button class="btn-secondary" data-action="admin-new-module-for-country" data-country="${record.countryKey}">+ New module</button>
-        <button class="btn-secondary" data-action="admin-new-lesson-for-country" data-country="${record.countryKey}">+ New lesson</button>
       </div>
       ${contentListRowsHtml(
         adminModules.filter(m => moduleAppliesToCountry(m, record.countryKey)),
         adminLessons.filter(l => lessonAppliesToCountry(l, record.countryKey))
       )}
+
+      <label class="field-label" style="margin-top:24px;">Phrases for ${escapeHtml(view.data.name)}</label>
+      <div class="admin-actions" style="margin:0 0 10px;">
+        <button class="btn-secondary" data-action="admin-new-phrase-for-country" data-country="${record.countryKey}">+ New phrase</button>
+      </div>
+      ${contentListRowsHtml([], [], adminPhrases.filter(p => phraseAppliesToCountry(p, record.countryKey)))}
     ` : ""}
     ${actionsHtml}
   `;
@@ -2978,14 +3093,18 @@ function screenAdminModule(payload){
             return `<tr>
               <td class="admin-grid-row-label">${escapeHtml(rowLabel)}</td>
               ${tiers.map(t => {
-                const cellStatus = moduleCellStatus(view, t, countryKey);
                 const candidates = moduleLessonCandidates(view, t, countryKey);
-                const lesson = candidates.find(l => l.status === "published") || candidates[0];
                 return `<td>
-                  <button class="admin-grid-cell" data-action="${lesson ? "admin-open-lesson" : "admin-new-lesson-for-module"}"
-                    data-id="${lesson ? lesson.id : ""}" data-module-id="${view.id}" data-tier="${t}" data-country="${countryKey || ""}">
-                    ${adminStatusChip(cellStatus)}
-                  </button>
+                  <div class="admin-grid-cell-stack">
+                    ${candidates.length ? candidates.map(lesson => `
+                      <button class="admin-grid-cell" data-action="admin-open-lesson" data-id="${lesson.id}">
+                        ${adminStatusChip(lesson.status)}
+                        <span class="admin-grid-cell__title">${escapeHtml(lesson.data.title || "Untitled")}</span>
+                      </button>
+                    `).join("") : adminStatusChip("missing")}
+                    <button class="admin-grid-cell-add" data-action="admin-new-lesson-for-module"
+                      data-module-id="${view.id}" data-tier="${t}" data-country="${countryKey || ""}">+ Add lesson</button>
+                  </div>
                 </td>`;
               }).join("")}
             </tr>`;
@@ -3031,9 +3150,31 @@ function screenAdminModule(payload){
    ADMIN SCREENS — Lesson (§3)
    ================================================================ */
 function blankAdminQuestion(){
-  return { kind:"produce", context:"", question:"", correctAnswer:"", distractors:[], symbol:Object.keys(SYMBOLS)[0], heard:"" };
+  return {
+    kind:"produce", context:"", question:"", correctAnswer:"", distractors:[],
+    symbol:Object.keys(SYMBOLS)[0], heard:"", source:"custom", phraseId:null
+  };
 }
 
+// Phrase pool a Lesson's produce/comprehend Questions can draw from
+// (§7) — only offered for a country-specific Lesson, since a Phrase is
+// always text in one specific local language and a "generic" Lesson has
+// no definite language to draw from.
+function phrasesForLesson(lessonData){
+  if (lessonData.scope !== "country-specific" || !lessonData.languageId) return [];
+  if (lessonData.languageWide){
+    return adminPhrases.filter(p => p.data.languageWide && p.data.languageId === lessonData.languageId);
+  }
+  return adminPhrases.filter(p => phraseAppliesToCountry(p, lessonData.countryKey));
+}
+
+// Known gap: the Module and Scope selects below are independently
+// editable with no cross-validation, so a Lesson can still be hand-
+// edited into a Module/Scope combination that no longer matches any
+// grid cell in that Module (moduleLessonCandidates filters generic-
+// Module cells to scope:"generic" lessons and bespoke-Module cells to
+// lessonMatchesGridCountry matches only). Pre-existing, orthogonal to
+// lesson creation now being Module-only — not fixed here.
 function readAdminLessonForm(){
   const d = adminLessonDraft.data;
   d.title = document.getElementById("admin-lesson-title").value.trim();
@@ -3052,15 +3193,28 @@ function readAdminLessonForm(){
     const kindEl = document.getElementById(`q-kind-${i}`);
     if (!kindEl) return; // row was removed from the DOM already
     q.kind = kindEl.value;
-    q.context = document.getElementById(`q-context-${i}`).value.trim();
-    q.question = document.getElementById(`q-question-${i}`).value.trim();
-    q.correctAnswer = document.getElementById(`q-answer-${i}`).value.trim();
-    q.distractors = document.getElementById(`q-distractors-${i}`).value.split(",").map(s => s.trim()).filter(Boolean);
-    // The symbol/heard fields only exist in the DOM when the row's kind
-    // already was symbol/comprehend at last render — if this read was
-    // triggered by the kind select itself just switching TO one of those
-    // kinds, the field hasn't been rendered yet, so keep whatever value
-    // was already on the draft (blankAdminQuestion seeds a sane default).
+    const sourceEl = document.getElementById(`q-source-${i}`);
+    if (sourceEl) q.source = sourceEl.value;
+    const phraseEl = document.getElementById(`q-phrase-${i}`);
+    if (phraseEl) q.phraseId = phraseEl.value || null;
+
+    // Every field below is guarded on the element actually existing, not
+    // just symbol/heard (the original two exceptions) — since a
+    // phrase-sourced question (§7) hides question/correctAnswer/
+    // distractors/heard in favour of the phrase picker, and the symbol/
+    // heard fields only exist in the DOM when the row's kind already was
+    // symbol/comprehend at last render. Either way, if a read was
+    // triggered by a select switching TO a state whose fields haven't
+    // rendered yet, keep whatever value was already on the draft
+    // (blankAdminQuestion seeds a sane default).
+    const contextEl = document.getElementById(`q-context-${i}`);
+    if (contextEl) q.context = contextEl.value.trim();
+    const questionEl = document.getElementById(`q-question-${i}`);
+    if (questionEl) q.question = questionEl.value.trim();
+    const answerEl = document.getElementById(`q-answer-${i}`);
+    if (answerEl) q.correctAnswer = answerEl.value.trim();
+    const distractorsEl = document.getElementById(`q-distractors-${i}`);
+    if (distractorsEl) q.distractors = distractorsEl.value.split(",").map(s => s.trim()).filter(Boolean);
     const symbolEl = document.getElementById(`q-symbol-${i}`);
     if (q.kind === "symbol" && symbolEl) q.symbol = symbolEl.value;
     const heardEl = document.getElementById(`q-heard-${i}`);
@@ -3083,9 +3237,21 @@ function commitAdminLessonDraft(status){
   if (status === "staged"){
     if (d.questions.length < 5){ showToast("Needs at least 5 questions before it can be staged"); return false; }
     if (new Set(d.questions.map(q => q.kind)).size < 2){ showToast("Mix at least 2 question kinds before staging (per PRD §11a)"); return false; }
-    if (d.questions.some(q => !q.question.trim() || !q.correctAnswer.trim() || q.distractors.length < 1)){
-      showToast("Every question needs prompt text, a correct answer, and at least one distractor");
-      return false;
+    for (const q of d.questions){
+      if (q.source === "phrase"){
+        const phrase = q.phraseId ? adminPhrases.find(p => p.id === q.phraseId) : null;
+        if (!phrase || phrase.status !== "published"){
+          showToast("Every phrase-bank question needs a published Phrase before this lesson can be staged");
+          return false;
+        }
+        if (q.kind === "comprehend" && !q.question.trim()){
+          showToast("Every comprehend question needs a prompt, even when it's phrase-sourced");
+          return false;
+        }
+      } else if (!q.question.trim() || !q.correctAnswer.trim() || q.distractors.length < 1){
+        showToast("Every question needs prompt text, a correct answer, and at least one distractor");
+        return false;
+      }
     }
   }
 
@@ -3164,8 +3330,8 @@ function screenAdminLesson(payload){
       ` : ""}
     ` : ""}
 
-    <label class="field-label" style="margin-top:24px;">Questions (${questions.length}${questions.length < 5 ? " — needs 5+ to submit" : ""})</label>
-    ${questions.map((q, i) => adminQuestionCardHtml(q, i)).join("")}
+    <label class="field-label" style="margin-top:24px;">Questions (${questions.length}${questions.length < 5 ? " — needs 5+ to stage" : ""})</label>
+    ${questions.map((q, i) => adminQuestionCardHtml(q, i, view.data)).join("")}
     <button type="button" class="btn-secondary" data-action="admin-lesson-add-question">+ Add question</button>
   ` : `
     <div style="font-weight:800;font-size:19px;margin-top:14px;">${escapeHtml(view.data.title)}</div>
@@ -3174,18 +3340,19 @@ function screenAdminLesson(payload){
 
 
   const previewQ = questions[adminLessonPreviewIndex];
+  const previewBeat = previewQ ? adminQuestionToBeat(previewQ, view.data) : null;
   // The shared "beat-answer" click handler (see EVENT DELEGATION below)
   // reads the module-level `currentBeat`/`beatResult` that screenLesson()
   // normally sets — mirror that here so the reused renderBeat() markup
   // is actually interactive in the preview, not just a static mockup.
-  if (previewQ){
-    currentBeat = adminQuestionToBeat(previewQ);
+  if (previewBeat){
+    currentBeat = previewBeat;
     beatResult = null;
   }
   const previewHtml = previewQ ? `
     <div class="admin-preview">
       <div class="admin-preview__label">Live preview — reuses the real traveler beat renderer, and the option buttons below actually work</div>
-      ${renderBeat(adminQuestionToBeat(previewQ))}
+      ${previewBeat ? renderBeat(previewBeat) : `<div class="admin-empty">Pick a published phrase above to preview this question.</div>`}
       <div class="admin-actions" style="margin-top:10px;">
         <button class="btn-secondary" data-action="admin-lesson-preview-step" data-dir="-1" ${adminLessonPreviewIndex === 0 ? "disabled" : ""}>Prev</button>
         <button class="btn-secondary" data-action="admin-lesson-preview-step" data-dir="1" ${adminLessonPreviewIndex >= questions.length - 1 ? "disabled" : ""}>Next</button>
@@ -3224,7 +3391,22 @@ function screenAdminLesson(payload){
   `;
 }
 
-function adminQuestionCardHtml(q, i){
+// A phrase-sourced preview line so an author can see what will actually
+// render without needing to jump to the live preview below — mirrors
+// exactly what adminQuestionToBeat() will derive at render time.
+function phraseQuestionPreviewText(q, phrase){
+  if (!phrase) return "Pick a phrase above.";
+  if (q.kind === "comprehend") return `Hears: ${phrase.data.local} → ${phrase.data.en}`;
+  return `Prompt: How do you say "${phrase.data.en}"? → ${phrase.data.local}`;
+}
+
+function adminQuestionCardHtml(q, i, lessonData){
+  const canUsePhraseBank = (q.kind === "produce" || q.kind === "comprehend")
+    && lessonData.scope === "country-specific" && !!lessonData.languageId;
+  const usingPhraseBank = canUsePhraseBank && q.source === "phrase";
+  const phrasePool = canUsePhraseBank ? phrasesForLesson(lessonData) : [];
+  const selectedPhrase = usingPhraseBank && q.phraseId ? adminPhrases.find(p => p.id === q.phraseId) : null;
+
   return `
     <div class="admin-question-card">
       <div class="admin-question-card__head">
@@ -3249,20 +3431,179 @@ function adminQuestionCardHtml(q, i){
           ${Object.keys(SYMBOLS).map(key => `<option value="${key}" ${q.symbol === key ? "selected" : ""}>${key}</option>`).join("")}
         </select>
       ` : ""}
-      ${q.kind === "comprehend" ? `
+
+      ${canUsePhraseBank ? `
+        <label class="field-label">Content source</label>
+        <select class="admin-select" id="q-source-${i}">
+          <option value="custom" ${q.source === "custom" ? "selected" : ""}>Custom text</option>
+          <option value="phrase" ${q.source === "phrase" ? "selected" : ""}>From phrase bank</option>
+        </select>
+      ` : ""}
+
+      ${usingPhraseBank ? `
+        <label class="field-label">Phrase</label>
+        <select class="admin-select" id="q-phrase-${i}">
+          <option value="">— pick a phrase —</option>
+          ${phrasePool.map(p => `<option value="${p.id}" ${q.phraseId === p.id ? "selected" : ""}>${escapeHtml(p.data.en)} — ${escapeHtml(p.data.local)}${p.status !== "published" ? ` (${ADMIN_STATUS_LABELS[p.status]})` : ""}</option>`).join("")}
+        </select>
+        ${!phrasePool.length ? `<p class="admin-hint">No phrases authored yet for this Lesson's country/language — add one from the Country or Language page.</p>` : ""}
+        <p class="admin-hint">${escapeHtml(phraseQuestionPreviewText(q, selectedPhrase))}</p>
+      ` : ""}
+
+      ${(!usingPhraseBank && q.kind === "comprehend") ? `
         <label class="field-label">What they say (local phrase)</label>
         <input class="text-input" id="q-heard-${i}" value="${escapeHtml(q.heard)}" placeholder="e.g. Nan-ban-sen desu ka?">
       ` : ""}
 
-      <label class="field-label">Question prompt</label>
-      <input class="text-input" id="q-question-${i}" value="${escapeHtml(q.question)}" placeholder="e.g. What are they asking?">
+      ${(!usingPhraseBank || q.kind === "comprehend") ? `
+        <label class="field-label">Question prompt</label>
+        <input class="text-input" id="q-question-${i}" value="${escapeHtml(q.question)}" placeholder="e.g. What are they asking?">
+      ` : ""}
 
-      <label class="field-label">Correct answer</label>
-      <input class="text-input" id="q-answer-${i}" value="${escapeHtml(q.correctAnswer)}" placeholder="The right option">
+      ${!usingPhraseBank ? `
+        <label class="field-label">Correct answer</label>
+        <input class="text-input" id="q-answer-${i}" value="${escapeHtml(q.correctAnswer)}" placeholder="The right option">
 
-      <label class="field-label">Distractors (comma-separated)</label>
-      <input class="text-input" id="q-distractors-${i}" value="${escapeHtml((q.distractors || []).join(", "))}" placeholder="Wrong option one, wrong option two">
+        <label class="field-label">Distractors (comma-separated)</label>
+        <input class="text-input" id="q-distractors-${i}" value="${escapeHtml((q.distractors || []).join(", "))}" placeholder="Wrong option one, wrong option two">
+      ` : ""}
     </div>
+  `;
+}
+
+/* ================================================================
+   ADMIN SCREENS — Phrase (§2/§7)
+
+   The reusable content-library entity ADMIN-CONTENT-PLAN.md §7
+   describes: a Phrase carries the same draft/staged/published/archived
+   lifecycle as everything else (§6), and a Lesson's produce/comprehend
+   Questions can attach to one by reference instead of hand-typing
+   prompt/answer/distractors (see phrasesForLesson / adminQuestionToBeat
+   in the Lesson section above). Unlike Module/Lesson, a Phrase has no
+   "generic" scope — it's always text in one specific local language, so
+   it's always either pinned to one Country or language-wide.
+   ================================================================ */
+function blankAdminPhrase(){
+  return { en: "", local: "", translit: "", tags: [], languageId: null, languageWide: false, countryKey: null };
+}
+
+function readAdminPhraseForm(){
+  const d = adminPhraseDraft.data;
+  d.en = document.getElementById("admin-phrase-en").value.trim();
+  d.local = document.getElementById("admin-phrase-local").value.trim();
+  d.translit = document.getElementById("admin-phrase-translit").value.trim();
+  d.tags = document.getElementById("admin-phrase-tags").value.split(",").map(s => s.trim()).filter(Boolean);
+  d.languageId = document.getElementById("admin-phrase-language").value || null;
+  const wideEl = document.getElementById("admin-phrase-languagewide");
+  d.languageWide = wideEl ? wideEl.checked : false;
+  const countryEl = document.getElementById("admin-phrase-country");
+  d.countryKey = (!d.languageWide && countryEl) ? (countryEl.value || null) : null;
+}
+
+function commitAdminPhraseDraft(status){
+  readAdminPhraseForm();
+  const d = adminPhraseDraft.data;
+  if (!d.en){ showToast("English text is required"); return false; }
+  if (!d.local){ showToast("Local-language text is required"); return false; }
+  if (!d.languageId){ showToast("Pick a language for this phrase"); return false; }
+  if (!d.languageWide && !d.countryKey){ showToast("Pick a country, or tick 'applies to all countries using this language'"); return false; }
+  if (status === "staged" && !d.translit){ showToast("Transliteration is required before this phrase can be staged"); return false; }
+
+  if (!adminPhraseDraft.id){
+    adminPhraseDraft.id = nextAdminId("phr");
+    adminPhraseDraft.version = 1;
+    adminPhrases.push(adminPhraseDraft);
+  } else {
+    const idx = adminPhrases.findIndex(p => p.id === adminPhraseDraft.id);
+    if (idx >= 0) adminPhrases[idx] = adminPhraseDraft;
+  }
+  adminPhraseDraft.status = status;
+  return true;
+}
+
+function screenAdminPhrase(payload){
+  const id = payload && payload.id;
+  const record = id ? adminPhrases.find(p => p.id === id) : null;
+  const canEdit = !record || record.status === "draft";
+
+  if (canEdit && (!adminPhraseDraft || adminPhraseDraft.id !== id)){
+    adminPhraseDraft = record ? JSON.parse(JSON.stringify(record)) : adminPhraseDraft;
+  }
+  const view = canEdit ? adminPhraseDraft : record;
+  if (!view) return `<div class="admin-empty">Phrase not found.</div>`;
+
+  const phraseLangCountries = view.data.languageId ? activeCountriesForLanguage(view.data.languageId) : [];
+  const fields = canEdit ? `
+    <label class="field-label" for="admin-phrase-en">English</label>
+    <input class="text-input" id="admin-phrase-en" value="${escapeHtml(view.data.en)}" placeholder="e.g. Hello">
+
+    <label class="field-label" for="admin-phrase-local">Local phrase</label>
+    <input class="text-input" id="admin-phrase-local" value="${escapeHtml(view.data.local)}" placeholder="e.g. Konnichiwa">
+
+    <label class="field-label" for="admin-phrase-translit">Transliteration</label>
+    <input class="text-input" id="admin-phrase-translit" value="${escapeHtml(view.data.translit)}" placeholder="e.g. こんにちは">
+
+    <label class="field-label" for="admin-phrase-tags">Tags (comma-separated)</label>
+    <input class="text-input" id="admin-phrase-tags" value="${escapeHtml((view.data.tags || []).join(", "))}" placeholder="greeting, essentials">
+
+    <label class="field-label" for="admin-phrase-language">Language</label>
+    <select class="admin-select" id="admin-phrase-language">
+      <option value="">— pick a language —</option>
+      ${adminLanguages.map(l => `<option value="${l.id}" ${view.data.languageId === l.id ? "selected" : ""}>${escapeHtml(l.name)}</option>`).join("")}
+    </select>
+
+    <label class="admin-checkbox-row" for="admin-phrase-languagewide">
+      <input type="checkbox" id="admin-phrase-languagewide" ${view.data.languageWide ? "checked" : ""}>
+      This phrase applies to all countries using this language
+    </label>
+
+    ${!view.data.languageWide ? `
+      <label class="field-label" for="admin-phrase-country">Country</label>
+      <select class="admin-select" id="admin-phrase-country">
+        <option value="">— pick a country —</option>
+        ${phraseLangCountries.map(d => `<option value="${d.countryKey}" ${view.data.countryKey === d.countryKey ? "selected" : ""}>${escapeHtml(d.data.name)}</option>`).join("")}
+      </select>
+      ${!phraseLangCountries.length ? `<p class="admin-hint">${view.data.languageId ? "No countries use this language yet." : "Pick a language first."}</p>` : ""}
+    ` : ""}
+  ` : `
+    <div style="font-weight:800;font-size:19px;margin-top:14px;">${escapeHtml(view.data.en)}</div>
+    <div style="font-size:13px;color:var(--slate);margin-bottom:10px;">${phraseScopeLabel(view)}</div>
+  `;
+
+  const previewHtml = `
+    <div class="admin-preview">
+      <div class="admin-preview__label">Live preview</div>
+      <div class="vocab-grid">${vocabCardHtml(view.data)}</div>
+    </div>
+  `;
+
+  let actionsHtml = "";
+  if (canEdit){
+    actionsHtml = `
+      <div class="sticky-cta admin-actions">
+        <button class="btn-secondary" data-action="admin-phrase-save-draft">Save Draft</button>
+        <button class="btn-primary" data-action="admin-phrase-stage">Stage</button>
+      </div>`;
+  } else if (record && record.status === "staged"){
+    actionsHtml = `
+      <div class="sticky-cta admin-actions">
+        <button class="btn-secondary" data-action="admin-phrase-unstage">Back to Draft</button>
+        <button class="btn-primary" data-action="admin-phrase-publish">Publish</button>
+      </div>`;
+  } else if (record && record.status === "published"){
+    actionsHtml = `<div class="sticky-cta admin-actions"><button class="btn-secondary" data-action="admin-phrase-new-version">Create new draft version</button></div>`;
+  } else if (record && record.status === "archived"){
+    actionsHtml = `<p class="admin-hint">Archived — superseded by a newer published version.</p>`;
+  }
+
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 2px 4px;">
+      <span style="font-size:12px;color:var(--slate);font-family:var(--font-mono);">${record ? "v" + record.version : "New phrase"}</span>
+      ${adminStatusChip(view.status)}
+    </div>
+    ${fields}
+    ${previewHtml}
+    ${actionsHtml}
   `;
 }
 
@@ -3419,15 +3760,23 @@ function screenAdminBlueprint(payload){
         ${view.data.legs.map((leg, li) => `
           <div style="font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);margin:16px 2px 6px;">${escapeHtml(leg.name) || (LEG_LADDER[li] || `Leg ${li + 1}`)}</div>
           <div class="week-list">
-            ${leg.moduleGates.length ? leg.moduleGates.map(gate => {
+            ${leg.moduleGates.length ? leg.moduleGates.flatMap(gate => {
               const mod = adminModules.find(m => m.id === gate.moduleId);
-              const lesson = resolveBlueprintGateLesson(gate, adminBlueprintPreviewCountry);
-              return `
+              const lessons = resolveBlueprintGateLessons(gate, adminBlueprintPreviewCountry);
+              if (!lessons.length){
+                return [`
+                  <div class="week-row" style="cursor:default;">
+                    <span class="week-row__num" data-done="false">&ndash;</span>
+                    <span class="week-row__title">${mod ? escapeHtml(mod.data.name) : "Unknown module"} — not yet resolved</span>
+                    <span class="week-row__tag">${mod ? escapeHtml(mod.data.name) : ""} · Tier ${gate.tier}</span>
+                  </div>`];
+              }
+              return lessons.map(lesson => `
                 <div class="week-row" style="cursor:default;">
-                  <span class="week-row__num" data-done="${lesson ? "true" : "false"}">${lesson ? "&#10003;" : "&ndash;"}</span>
-                  <span class="week-row__title">${lesson ? escapeHtml(lesson.data.title) : `${mod ? escapeHtml(mod.data.name) : "Unknown module"} — not yet resolved`}</span>
+                  <span class="week-row__num" data-done="true">&#10003;</span>
+                  <span class="week-row__title">${escapeHtml(lesson.data.title)}</span>
                   <span class="week-row__tag">${mod ? escapeHtml(mod.data.name) : ""} · Tier ${gate.tier}</span>
-                </div>`;
+                </div>`);
             }).join("") : `<div class="admin-empty">No modules gated into this leg yet.</div>`}
           </div>
         `).join("")}
@@ -3495,6 +3844,7 @@ const SCREENS = {
   "admin-destination": screenAdminDestination,
   "admin-module": screenAdminModule,
   "admin-lesson": screenAdminLesson,
+  "admin-phrase": screenAdminPhrase,
   "admin-blueprints": screenAdminBlueprints,
   "admin-blueprint": screenAdminBlueprint
 };
@@ -3741,6 +4091,10 @@ document.addEventListener("click", (e) => {
       const rec = adminModules.find(m => m.id === stack[stack.length - 1].payload.id);
       if (!moduleIsComplete(rec)){ showToast("Tier ladder isn't fully published yet"); break; }
       rec.status = "published";
+      if (rec.supersedesId){
+        const prev = adminModules.find(m => m.id === rec.supersedesId);
+        if (prev) prev.status = "archived";
+      }
       showToast(`${rec.data.name} is now live`);
       render();
       break;
@@ -3752,6 +4106,7 @@ document.addEventListener("click", (e) => {
       copy.id = nextAdminId("mod");
       copy.version = rec.version + 1;
       copy.status = "draft";
+      copy.supersedesId = rec.id;
       adminModules.push(copy);
       showToast("New draft version created");
       adminModuleDraft = null;
@@ -3760,15 +4115,10 @@ document.addEventListener("click", (e) => {
     }
 
     // ---- Lesson (§3) ----
-    case "admin-new-lesson":
-      adminLessonDraft = {
-        id: null, status: "draft", version: 1,
-        data: { title: "", type: "Phrase", moduleId: null, tier: 1, scope: "generic", languageId: null, languageWide: false, countryKey: null, questions: [] }
-      };
-      adminLessonPreviewIndex = 0;
-      push("admin-lesson", { id: null });
-      break;
-
+    // Lessons are only created from inside a Module's tier grid — the
+    // grid cell's dataset already pins moduleId/tier/countryKey, so
+    // there's no free-standing "pick a module from a dropdown after
+    // the fact" flow to keep in sync with the grid it feeds.
     case "admin-new-lesson-for-module": {
       const countryKey = el.dataset.country || null;
       const country = countryKey ? countryByKey(countryKey) : null;
@@ -3780,30 +4130,6 @@ document.addEventListener("click", (e) => {
           languageId: country ? country.data.languageId : null, languageWide: false,
           countryKey, questions: []
         }
-      };
-      adminLessonPreviewIndex = 0;
-      push("admin-lesson", { id: null });
-      break;
-    }
-
-    // Same inherited-language logic as admin-new-module-for-country/
-    // -for-language above, applied to Lessons.
-    case "admin-new-lesson-for-country": {
-      const countryKey = el.dataset.country;
-      const country = countryByKey(countryKey);
-      adminLessonDraft = {
-        id: null, status: "draft", version: 1,
-        data: { title: "", type: "Phrase", moduleId: null, tier: 1, scope: "country-specific", languageId: country ? country.data.languageId : null, languageWide: false, countryKey, questions: [] }
-      };
-      adminLessonPreviewIndex = 0;
-      push("admin-lesson", { id: null });
-      break;
-    }
-
-    case "admin-new-lesson-for-language": {
-      adminLessonDraft = {
-        id: null, status: "draft", version: 1,
-        data: { title: "", type: "Phrase", moduleId: null, tier: 1, scope: "country-specific", languageId: el.dataset.language, languageWide: true, countryKey: null, questions: [] }
       };
       adminLessonPreviewIndex = 0;
       push("admin-lesson", { id: null });
@@ -3870,6 +4196,10 @@ document.addEventListener("click", (e) => {
     case "admin-lesson-publish": {
       const rec = adminLessons.find(l => l.id === stack[stack.length - 1].payload.id);
       rec.status = "published";
+      if (rec.supersedesId){
+        const prev = adminLessons.find(l => l.id === rec.supersedesId);
+        if (prev) prev.status = "archived";
+      }
       showToast(`${rec.data.title} is now live`);
       render();
       break;
@@ -3881,11 +4211,94 @@ document.addEventListener("click", (e) => {
       copy.id = nextAdminId("lsn");
       copy.version = rec.version + 1;
       copy.status = "draft";
+      copy.supersedesId = rec.id;
       adminLessons.push(copy);
       showToast("New draft version created");
       adminLessonDraft = null;
       adminLessonPreviewIndex = 0;
       push("admin-lesson", { id: copy.id });
+      break;
+    }
+
+    // ---- Phrase (§2/§7) ----
+    case "admin-new-phrase":
+      adminPhraseDraft = { id: null, status: "draft", version: 1, supersedesId: null, data: blankAdminPhrase() };
+      push("admin-phrase", { id: null });
+      break;
+
+    case "admin-new-phrase-for-country": {
+      const countryKey = el.dataset.country;
+      const country = countryByKey(countryKey);
+      adminPhraseDraft = {
+        id: null, status: "draft", version: 1, supersedesId: null,
+        data: { ...blankAdminPhrase(), languageId: country ? country.data.languageId : null, countryKey }
+      };
+      push("admin-phrase", { id: null });
+      break;
+    }
+
+    case "admin-new-phrase-for-language":
+      adminPhraseDraft = {
+        id: null, status: "draft", version: 1, supersedesId: null,
+        data: { ...blankAdminPhrase(), languageId: el.dataset.language, languageWide: true }
+      };
+      push("admin-phrase", { id: null });
+      break;
+
+    case "admin-open-phrase":
+      adminPhraseDraft = null;
+      push("admin-phrase", { id: el.dataset.id });
+      break;
+
+    case "admin-phrase-save-draft": {
+      if (commitAdminPhraseDraft("draft")){
+        showToast("Draft saved");
+        stack[stack.length - 1].payload = { id: adminPhraseDraft.id };
+        render();
+      }
+      break;
+    }
+
+    case "admin-phrase-stage": {
+      if (commitAdminPhraseDraft("staged")){
+        showToast("Staged");
+        stack[stack.length - 1].payload = { id: adminPhraseDraft.id };
+        render();
+      }
+      break;
+    }
+
+    case "admin-phrase-unstage": {
+      const rec = adminPhrases.find(p => p.id === stack[stack.length - 1].payload.id);
+      rec.status = "draft";
+      showToast("Back to draft");
+      render();
+      break;
+    }
+
+    case "admin-phrase-publish": {
+      const rec = adminPhrases.find(p => p.id === stack[stack.length - 1].payload.id);
+      rec.status = "published";
+      if (rec.supersedesId){
+        const prev = adminPhrases.find(p => p.id === rec.supersedesId);
+        if (prev) prev.status = "archived";
+      }
+      showToast(`"${rec.data.en}" is now live`);
+      render();
+      break;
+    }
+
+    case "admin-phrase-new-version": {
+      const rec = adminPhrases.find(p => p.id === stack[stack.length - 1].payload.id);
+      const copy = JSON.parse(JSON.stringify(rec));
+      copy.id = nextAdminId("phr");
+      copy.version = rec.version + 1;
+      copy.status = "draft";
+      copy.supersedesId = rec.id;
+      adminPhrases.push(copy);
+      showToast("New draft version created");
+      adminPhraseDraft = null;
+      push("admin-phrase", { id: copy.id });
       break;
     }
 
@@ -3951,6 +4364,10 @@ document.addEventListener("click", (e) => {
       const rec = adminBlueprints.find(b => b.id === stack[stack.length - 1].payload.id);
       if (!blueprintIsPublishable(rec)){ showToast("Every gated module needs to be published first"); break; }
       rec.status = "published";
+      if (rec.supersedesId){
+        const prev = adminBlueprints.find(b => b.id === rec.supersedesId);
+        if (prev) prev.status = "archived";
+      }
       showToast(`${TRIP_TYPES[rec.data.tripKey].label} blueprint is now live`);
       render();
       break;
@@ -3962,6 +4379,7 @@ document.addEventListener("click", (e) => {
       copy.id = nextAdminId("bp");
       copy.version = rec.version + 1;
       copy.status = "draft";
+      copy.supersedesId = rec.id;
       adminBlueprints.push(copy);
       showToast("New draft version created");
       adminBlueprintDraft = null;
@@ -4154,8 +4572,11 @@ document.addEventListener("change", (e) => {
       e.target.id === "admin-lesson-language" || e.target.id === "admin-lesson-languagewide"){
     deferredAdminRerender(e.target.id, readAdminLessonForm);
   }
-  if (/^q-kind-\d+$/.test(e.target.id)){
+  if (/^q-kind-\d+$/.test(e.target.id) || /^q-source-\d+$/.test(e.target.id) || /^q-phrase-\d+$/.test(e.target.id)){
     deferredAdminRerender(e.target.id, readAdminLessonForm);
+  }
+  if (e.target.id === "admin-phrase-language" || e.target.id === "admin-phrase-languagewide"){
+    deferredAdminRerender(e.target.id, readAdminPhraseForm);
   }
   if (e.target.id === "admin-dest-pane-filter"){
     const newFilter = e.target.value;
