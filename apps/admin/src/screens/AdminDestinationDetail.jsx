@@ -1,20 +1,21 @@
-import FlagIcon from "../../components/FlagIcon";
-import AdminStatusChip from "../../components/AdminStatusChip";
-import ContentListRows from "../../components/ContentListRows";
-import { FLAG_PATTERNS, buildFlagSvg } from "../../data/admin";
+import FlagIcon from "../components/FlagIcon";
+import AdminStatusChip from "../components/AdminStatusChip";
+import ContentListRows from "../components/ContentListRows";
+import { FLAG_PATTERNS } from "../data/admin";
+import { buildFlagSvg } from "@holaday/content-engine";
 import {
-  state, primeAdminDestinationDraft, patchAdminDraft, adminFlagMarkup, languageName,
+  state, primeAdminDestinationDraft, patchAdminDraft, flagMarkup, languageName,
   saveDraftDestination, stageDestination, unstageDestination, publishDestination, newDestinationVersion,
   newAdminModuleForCountry, newAdminPhraseForCountry,
   moduleAppliesToCountry, lessonAppliesToCountry, phraseAppliesToCountry
-} from "../../store";
+} from "../store";
 
 export default function AdminDestinationDetail({ payload }){
   const id = payload && payload.id;
   const { record, canEdit, view } = primeAdminDestinationDraft(id);
   if (!view) return <div className="admin-empty">Destination not found.</div>;
 
-  const flagSvg = canEdit ? buildFlagSvg(view.data.flagPattern || "vertical-tricolor", view.data.colours) : adminFlagMarkup(view);
+  const flagSvg = canEdit ? buildFlagSvg(view.data.flagPattern || "vertical-tricolor", view.data.colours) : flagMarkup(view);
 
   return (
     <>

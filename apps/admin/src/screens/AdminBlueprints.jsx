@@ -1,7 +1,7 @@
-import AdminListRow from "../../components/AdminListRow";
-import { state, newAdminBlueprint, openAdminBlueprint } from "../../store";
-import { TRIP_TYPES } from "../../data/tripTypes";
-import { LEG_LADDER } from "../../data/admin";
+import AdminListRow from "../components/AdminListRow";
+import { state, newAdminBlueprint, openAdminBlueprint } from "../store";
+import { TRIP_TYPES } from "../data/tripTypes";
+import { LEG_LADDER } from "../data/admin";
 
 export default function AdminBlueprints(){
   const rows = state.adminBlueprints

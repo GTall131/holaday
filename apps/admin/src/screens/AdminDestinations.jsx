@@ -1,12 +1,12 @@
-import AdminPaneTabBar from "../../components/AdminPaneTabBar";
-import AdminListRow from "../../components/AdminListRow";
-import ContentListRows from "../../components/ContentListRows";
-import FilterSelect from "../../components/FilterSelect";
+import AdminPaneTabBar from "../components/AdminPaneTabBar";
+import AdminListRow from "../components/AdminListRow";
+import ContentListRows from "../components/ContentListRows";
+import FilterSelect from "../components/FilterSelect";
 import {
-  state, adminFlagMarkup, languageName, setAdminDestinationsTab, setAdminDestinationsFilterCountry,
+  state, flagMarkup, languageName, setAdminDestinationsTab, setAdminDestinationsFilterCountry,
   newAdminDestination, openAdminDestination, openAdminBlueprints, newAdminModule, newAdminPhrase,
   moduleAppliesToCountry, lessonAppliesToCountry, phraseAppliesToCountry
-} from "../../store";
+} from "../store";
 
 // Destinations pane: Countries is the primary tab, with Modules/
 // Lessons nested here as filterable tabs (filter by country) rather
@@ -43,8 +43,8 @@ export default function AdminDestinations(){
       </>
     );
   } else if (tab === "lessons"){
-    // Lessons are only created from inside a Module's tier grid (§4,
-    // see AdminModuleDetail.jsx) — this tab is browse/filter only, no
+    // Lessons are only created from inside a Module's tier grid, see
+    // AdminModuleDetail.jsx — this tab is browse/filter only, no
     // "+ New lesson" here.
     const lessons = filter ? state.adminLessons.filter(l => lessonAppliesToCountry(l, filter)) : state.adminLessons;
     body = (
@@ -70,7 +70,7 @@ export default function AdminDestinations(){
         {rows.length ? rows.map(d => (
           <AdminListRow
             key={d.id}
-            flagMarkup={adminFlagMarkup(d)}
+            flagMarkup={flagMarkup(d)}
             name={d.data.name + (d.legacy ? " (legacy)" : "")}
             sub={`${d.data.capital} · ${languageName(d.data.languageId)} · v${d.version}`}
             status={d.status}

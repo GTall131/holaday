@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import BeatCard from "../components/BeatCard";
 import { travelerCountry, courseLessonBeats, lessonStepContinue } from "../store";
 
@@ -28,10 +28,11 @@ import { travelerCountry, courseLessonBeats, lessonStepContinue } from "../store
    MIXED QUESTION STYLES, NOT ONE REPEATED DRILL: "How do you say X?"
    five times in a row is still just a flashcard deck wearing a
    scenario costume. A Lesson's authored Questions mix question kinds
-   (see store.js adminQuestionToBeat, which turns an admin-authored
-   Question into the beat shape this screen renders), all
-   scenario-framed so it still reads as one situation playing out, not
-   five disconnected drills:
+   (see packages/shared/content-engine's questionToBeat, which turns an
+   authored Question into the beat shape this screen renders — the same
+   function the admin app's live preview uses), all scenario-framed so
+   it still reads as one situation playing out, not five disconnected
+   drills:
      - "produce"     — "How do you say X?" — English prompt, answer in
        the local language. Tests recall/production.
      - "comprehend"  — a local phrase is quoted as something someone
@@ -66,16 +67,24 @@ export default function Lesson({ payload }){
   const entry = c.syllabus[week - 1];
   const meta = { title: entry.title, type: entry.type + " lesson" };
 
-  // Computed once per (course, week) — matches the original's "fresh
+  // Fetched once per (course, week) — matches the original's "fresh
   // shuffle each time you open this lesson" without redoing the work
   // on every question navigated within the same lesson visit.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const beats = useMemo(() => courseLessonBeats(c, week), [c.id, week]);
+  const [beats, setBeats] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    setBeats(null);
+    courseLessonBeats(c, week).then(b => { if (!cancelled) setBeats(b); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [c.id, week]);
+
+  const [answered, setAnswered] = useState(false);
+
+  if (!beats) return null;
   const total = beats.length;
   const isLast = stepIndex + 1 >= total;
   const currentBeat = beats[stepIndex];
-
-  const [answered, setAnswered] = useState(false);
   const pct = Math.round((stepIndex / total) * 100);
 
   return (

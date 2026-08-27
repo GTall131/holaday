@@ -26,7 +26,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const [{ data: destination }, { data: blueprint }, { data: tripType }] = await Promise.all([
-    supabase.from("destinations").select("language_id").eq("country_key", countryKey).maybeSingle(),
+    supabase.from("destinations").select("language_id").eq("country_key", countryKey).eq("status", "published").maybeSingle(),
     supabase.from("blueprints").select("*").eq("trip_key", tripKey).eq("status", "published").maybeSingle(),
     supabase.from("trip_types").select("*").eq("id", tripKey).maybeSingle()
   ]);

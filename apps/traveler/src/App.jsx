@@ -29,8 +29,7 @@
    - Finite and disposable by design: a course "completes" before
      departure and is archived, rather than continuing indefinitely.
    - Culture, not just vocabulary: etiquette/customs content is a
-     first-class lesson type alongside phrases (see Lesson.jsx,
-     week 3 "Public Transport & Getting Around").
+     first-class lesson type alongside phrases.
    - Visual identity of each course is themed from the destination's
      national flag colours (see the --flag-* CSS vars applied in the
      `flagStyle()` helper below), so a user's course list is instantly
@@ -45,17 +44,19 @@
        -> Course dashboard          — screens/Dashboard.jsx
        -> Lesson (one question per page) — screens/Lesson.jsx
        -> Phrasebook / Feedback     — screens/Phrasebook.jsx, Feedback.jsx
-     A parallel "Admin" tab (screens/admin/*) is a demo-phase content
-     authoring surface — see store.js.
+     Content authoring (Destinations/Modules/Lessons/Phrases/
+     Blueprints/Personas) is a separate app, apps/admin — this app only
+     ever reads published content (see store.js's loadDestinations/
+     travelerCountry/courseLessonBeats), never authors it.
 
    MVP SCOPE: the "Explore"/"Profile" tabs (TabBar.jsx) and the
    phrasebook's "Download for offline use" button (store.js,
    downloadPhrasebook) are intentional disabled/stub entry points —
    they exist to signal planned-but-out-of-scope surface area, not to
-   be wired up in this prototype.
+   be wired up yet.
    ================================================================ */
 import { useStoreVersion } from "./useStore";
-import { state, top, travelerCountry } from "./store";
+import { top, travelerCountry } from "./store";
 import AppBar from "./components/AppBar";
 import TabBar from "./components/TabBar";
 import Toast from "./components/Toast";
@@ -74,24 +75,6 @@ import Dashboard from "./screens/Dashboard";
 import Lesson from "./screens/Lesson";
 import Phrasebook from "./screens/Phrasebook";
 import Feedback from "./screens/Feedback";
-
-import AdminHome from "./screens/admin/AdminHome";
-import AdminLanguages from "./screens/admin/AdminLanguages";
-import AdminLanguageDetail from "./screens/admin/AdminLanguageDetail";
-import AdminDestinations from "./screens/admin/AdminDestinations";
-import AdminStaged from "./screens/admin/AdminStaged";
-import AdminDestinationDetail from "./screens/admin/AdminDestinationDetail";
-import AdminModuleDetail from "./screens/admin/AdminModuleDetail";
-import AdminLessonDetail from "./screens/admin/AdminLessonDetail";
-import AdminPhraseDetail from "./screens/admin/AdminPhraseDetail";
-import AdminBlueprints from "./screens/admin/AdminBlueprints";
-import AdminBlueprintDetail from "./screens/admin/AdminBlueprintDetail";
-import AdminPersonas from "./screens/admin/AdminPersonas";
-import AdminPersonaDetail from "./screens/admin/AdminPersonaDetail";
-import AdminPersonaGenerating from "./screens/admin/AdminPersonaGenerating";
-import AdminPersonaGenerateContent from "./screens/admin/AdminPersonaGenerateContent";
-import AdminPersonaGeneratingContent from "./screens/admin/AdminPersonaGeneratingContent";
-import AdminPersonaGeneratedContent from "./screens/admin/AdminPersonaGeneratedContent";
 
 // Mirrors the original's SCREENS map + render() dispatch. Traveler
 // screens that ride flag theming get a `key` derived from whatever
@@ -116,40 +99,18 @@ function Screen({ top: t }){
     case "lesson": return <Lesson key={`${t.payload.course.id}-${t.payload.week}-${t.payload.stepIndex}`} payload={t.payload} />;
     case "phrasebook": return <Phrasebook payload={t.payload} />;
     case "feedback": return <Feedback payload={t.payload} />;
-    case "admin-home": return <AdminHome />;
-    case "admin-languages": return <AdminLanguages />;
-    case "admin-language": return <AdminLanguageDetail payload={t.payload} />;
-    case "admin-destinations": return <AdminDestinations />;
-    case "admin-staged": return <AdminStaged />;
-    case "admin-destination": return <AdminDestinationDetail payload={t.payload} />;
-    case "admin-module": return <AdminModuleDetail payload={t.payload} />;
-    case "admin-lesson": return <AdminLessonDetail payload={t.payload} />;
-    case "admin-phrase": return <AdminPhraseDetail payload={t.payload} />;
-    case "admin-blueprints": return <AdminBlueprints />;
-    case "admin-blueprint": return <AdminBlueprintDetail payload={t.payload} />;
-    case "admin-personas": return <AdminPersonas />;
-    case "admin-persona": return <AdminPersonaDetail payload={t.payload} />;
-    case "admin-persona-generating": return <AdminPersonaGenerating payload={t.payload} />;
-    case "admin-persona-generate-content": return <AdminPersonaGenerateContent payload={t.payload} />;
-    case "admin-persona-generating-content": return <AdminPersonaGeneratingContent payload={t.payload} />;
-    case "admin-persona-generated-content": return <AdminPersonaGeneratedContent payload={t.payload} />;
     default: return null;
   }
 }
 
 function flagStyle(t){
-  let colours = null;
-  if (t.name === "dashboard" || t.name === "lesson" || t.name === "phrasebook"){
-    colours = travelerCountry(t.payload.course.countryKey).colours;
-  } else if (t.name === "admin-blueprint" && state.adminBlueprintPreviewCountry){
-    const previewDest = state.adminDestinations.find(d => d.countryKey === state.adminBlueprintPreviewCountry);
-    if (previewDest) colours = previewDest.data.colours;
-  }
-  if (!colours) return undefined;
+  if (t.name !== "dashboard" && t.name !== "lesson" && t.name !== "phrasebook") return undefined;
+  const country = travelerCountry(t.payload.course.countryKey);
+  if (!country) return undefined;
   return {
-    "--flag-primary": colours.primary,
-    "--flag-secondary": colours.secondary,
-    "--flag-tertiary": colours.tertiary
+    "--flag-primary": country.colours.primary,
+    "--flag-secondary": country.colours.secondary,
+    "--flag-tertiary": country.colours.tertiary
   };
 }
 
@@ -161,11 +122,10 @@ const PRE_AUTH_SCREENS = new Set([
 export default function App(){
   useStoreVersion();
   const t = top();
-  const activeTab = t.name.startsWith("admin") ? "go-admin" : "go-home";
   const preAuth = PRE_AUTH_SCREENS.has(t.name);
 
   return (
-    <div className={`app-shell${t.name.startsWith("admin") ? " is-admin" : ""}${preAuth ? " no-tabbar" : ""}`}>
+    <div className={`app-shell${preAuth ? " no-tabbar" : ""}`}>
       <div className="statusbar">
         <span>9:41</span>
         <span className="statusbar__icons">
@@ -180,7 +140,7 @@ export default function App(){
         <Screen top={t} />
       </main>
 
-      {preAuth ? null : <TabBar activeTab={activeTab} />}
+      {preAuth ? null : <TabBar activeTab="go-home" />}
       <Toast />
     </div>
   );

@@ -1,18 +1,18 @@
-import AdminPaneTabBar from "../../components/AdminPaneTabBar";
-import AdminListRow from "../../components/AdminListRow";
-import ContentListRows from "../../components/ContentListRows";
-import FilterSelect from "../../components/FilterSelect";
-import { state, setAdminLanguagesTab, setAdminLanguagesFilterLanguage, newAdminLanguage, openAdminLanguage } from "../../store";
+import AdminPaneTabBar from "../components/AdminPaneTabBar";
+import AdminListRow from "../components/AdminListRow";
+import ContentListRows from "../components/ContentListRows";
+import FilterSelect from "../components/FilterSelect";
+import { state, setAdminLanguagesTab, setAdminLanguagesFilterLanguage, newAdminLanguage, openAdminLanguage } from "../store";
 
 // Language is deliberately reference taxonomy, not staged/published
 // content like Country/Module/Lesson/Blueprint (see store.js's
 // ensureLanguage) — a Language is something a Country points at, not
-// itself authored/reviewed content per §6. Modules and Lessons nest
-// here as filterable tabs too (filter by language) — the Destinations-
-// pane and Languages-pane Modules/Lessons tabs (AdminDestinations.jsx)
-// are two different filtered views over the same underlying lists,
-// not two separate sets of content. No Blueprints tab here — see the
-// note on AdminDestinations.jsx's TABS.
+// itself authored/reviewed content. Modules and Lessons nest here as
+// filterable tabs too (filter by language) — the Destinations-pane and
+// Languages-pane Modules/Lessons tabs (AdminDestinations.jsx) are two
+// different filtered views over the same underlying lists, not two
+// separate sets of content. No Blueprints tab here — see the note on
+// AdminDestinations.jsx's TABS.
 const TABS = [
   { key: "languages", label: "Languages" },
   { key: "modules", label: "Modules" },

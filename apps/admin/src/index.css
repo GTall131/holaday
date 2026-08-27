@@ -1,3 +1,10 @@
+/* Duplicated from apps/traveler/src/index.css (same ink/paper/amber
+   design system — both apps' preview sections render literal
+   traveler-facing markup: country-card, ticket, culture-card, vocab-
+   card, beat-card/quiz). packages/shared/ui-tokens is where this
+   should live as one shared stylesheet instead of two copies — not
+   done yet, flagged as follow-up cleanup, not a correctness issue. */
+
 /* ============================================================
    DESIGN TOKENS
    Palette is deliberately airport/signage-inspired (ink, paper,
@@ -517,11 +524,145 @@ textarea.notes:focus{ outline:none; border-color:var(--ink); }
   font-size:11px; color: var(--green-ok); font-weight:700; margin-top:10px;
 }
 
-/* Generic empty-state message — still used here (Phrasebook.jsx); the
-   rest of the old "ADMIN SURFACE" rule set (admin-list-row, admin-card,
-   admin-question-card, etc.) moved to apps/admin's own copy of this
-   stylesheet along with the screens that used them. */
+/* ============================================================
+   ADMIN SURFACE — this app always renders as .app-shell.is-admin
+   (see App.jsx): the 400px phone frame is a poor fit for review
+   queues and forms, so the frame widens and the status bar
+   disappears unconditionally, not just for some screens.
+   ============================================================ */
+@media (min-width: 640px){
+  .app-shell.is-admin{
+    width: 100%; max-width: 1080px; height: auto; min-height: 100vh;
+    border-radius: 0; box-shadow: none;
+  }
+}
+.app-shell.is-admin .statusbar{ display:none; }
+.app-shell.is-admin main#app{ padding: 4px 28px 96px; max-width: 900px; margin: 0 auto; width:100%; }
+
+.admin-tab-bar{ display:flex; gap:8px; margin: 6px 2px 20px; }
+.admin-tab-bar button{
+  flex:1; padding:10px; border-radius: var(--radius-m); border:1.5px solid var(--paper-line);
+  background:#fff; font-weight:700; font-size:12.5px; cursor:pointer; color: var(--slate);
+}
+.admin-tab-bar button[data-active="true"]{ background: var(--ink); color: var(--amber); border-color: var(--ink); }
+
+.admin-card{
+  display:block; width:100%; text-align:left; background:#fff; border:1.5px solid var(--paper-line);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-m); padding:16px; margin-bottom:10px; cursor:pointer;
+}
+.admin-card:active{ transform: scale(0.99); }
+.admin-card[disabled]{ opacity:.5; cursor:default; }
+.admin-card__title{ font-weight:800; font-size:15px; }
+.admin-card__meta{ font-size:12px; color: var(--slate); margin-top:4px; font-family: var(--font-mono); }
+
+.admin-status{
+  font-family: var(--font-mono); font-size:10.5px; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; padding:3px 8px; border-radius:4px; display:inline-block; white-space:nowrap;
+}
+.admin-status--missing{ background: var(--paper-dim); color: var(--slate); }
+.admin-status--draft{ background: var(--paper-dim); color: var(--slate); }
+.admin-status--staged{ background: rgba(30,143,95,.15); color: var(--green-ok); }
+.admin-status--published{ background: var(--ink); color: var(--amber); }
+.admin-status--archived{ background: var(--paper-dim); color: var(--slate); }
+
+.admin-list-row{
+  display:flex; align-items:center; gap:12px; background:#fff; border:1.5px solid var(--paper-line);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-m); padding:12px 14px; margin-bottom:8px; cursor:pointer; width:100%; text-align:left;
+}
+.admin-list-row:active{ transform: scale(0.99); }
+.admin-list-row__flag{ width:30px; height:20px; flex-shrink:0; }
+.admin-list-row__mid{ flex:1; min-width:0; }
+.admin-list-row__name{ font-weight:700; font-size:14px; }
+.admin-list-row__sub{ font-size:11.5px; color: var(--slate); margin-top:2px; font-family: var(--font-mono); }
+
 .admin-empty{
   border: 1.5px dashed var(--paper-line); border-radius: var(--radius-m);
   padding: 20px 16px; text-align:center; color: var(--slate); font-size:13px; margin-top:6px;
 }
+
+/* Module -> Lesson -> Phrase generation tree (AdminPersonaGeneratedContent) —
+   indentation + a connecting rule so the three content types read as a
+   nested hierarchy, not a flat list of same-weight rows. */
+.admin-hierarchy-group{ margin-bottom:26px; }
+.admin-hierarchy-kicker{
+  font-family: var(--font-mono); font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color: var(--slate); margin: 0 2px 6px;
+}
+.admin-hierarchy-nest{
+  margin: 10px 0 0 18px; padding-left:16px; border-left:2px solid var(--paper-line);
+}
+.admin-hierarchy-nest .admin-list-row{ background: var(--paper-dim); }
+.admin-hierarchy-nest .admin-hierarchy-nest .admin-list-row{ background:#fff; }
+
+.text-input{
+  width:100%; border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+  box-shadow: var(--shadow-card);
+  padding:12px; font-family:inherit; font-size:13.5px; background:#fff; color: var(--ink);
+}
+.text-input:focus{ outline:none; border-color:var(--ink); }
+.admin-form-grid{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+.admin-colour-field{ display:flex; flex-direction:column; gap:4px; }
+.admin-colour-field label{ font-size:10.5px; color: var(--slate); font-family: var(--font-mono); text-transform:uppercase; letter-spacing:.05em; }
+.admin-colour-field input[type="color"]{
+  width:100%; height:38px; border:1.5px solid var(--paper-line); border-radius: var(--radius-s);
+  padding:2px; background:#fff; cursor:pointer;
+}
+select.admin-select{
+  width:100%; border:1.5px solid var(--paper-line); border-radius: var(--radius-m); padding:11px 12px;
+  box-shadow: var(--shadow-card);
+  font-family:inherit; font-size:13.5px; background:#fff; color: var(--ink);
+}
+.admin-checkbox-row{
+  display:flex; align-items:center; gap:10px; margin:16px 2px 6px;
+  font-size:13px; font-weight:700; color: var(--ink); cursor:pointer;
+}
+.admin-checkbox-row input[type="checkbox"]{ width:18px; height:18px; flex-shrink:0; }
+
+.admin-preview{ margin-top:24px; padding-top:18px; border-top:1.5px dashed var(--paper-line); }
+.admin-preview__label{ font-family: var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color: var(--slate); margin-bottom:10px; }
+.admin-preview .country-card{ margin-bottom:14px; }
+.admin-preview .ticket{ margin-bottom:14px; }
+
+.admin-actions{ display:flex; gap:10px; }
+.admin-actions .btn-primary, .admin-actions .btn-secondary{ margin:0; }
+.admin-hint{ font-size:12.5px; color: var(--slate); margin-top:16px; padding:12px; background: var(--paper-dim); border-radius: var(--radius-m); }
+
+/* Module completeness grid (§4) and Lesson question editor (§3) */
+.admin-grid-scroll{ overflow-x:auto; margin-top:12px; }
+.admin-grid-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:360px; }
+.admin-grid-table th, .admin-grid-table td{ border:1px solid var(--paper-line); padding:0; text-align:center; }
+.admin-grid-table th{
+  background: var(--paper-dim); font-family: var(--font-mono); font-size:10.5px;
+  text-transform:uppercase; letter-spacing:.04em; color:var(--slate); padding:8px 6px;
+}
+.admin-grid-table td.admin-grid-row-label{
+  text-align:left; font-weight:700; background: var(--paper-dim); padding:8px 10px; white-space:nowrap;
+}
+.admin-grid-cell-stack{ display:flex; flex-direction:column; gap:2px; padding:4px; align-items:stretch; }
+.admin-grid-cell{
+  cursor:pointer; border:none; background:none; width:100%; padding:6px 4px; font:inherit;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+}
+.admin-grid-cell:hover{ background: color-mix(in srgb, var(--amber) 12%, white); }
+.admin-grid-cell__title{
+  font-size:9.5px; color:var(--slate); max-width:100%; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap;
+}
+.admin-grid-cell-add{
+  cursor:pointer; border:1px dashed var(--paper-line); background:none; border-radius:4px;
+  font:inherit; font-size:11px; color:var(--slate); padding:3px; width:100%;
+}
+.admin-grid-cell-add:hover{ background: color-mix(in srgb, var(--amber) 12%, white); border-color: var(--amber-deep); }
+
+.admin-question-card{
+  border:1.5px solid var(--paper-line); border-radius: var(--radius-m);
+  box-shadow: var(--shadow-card);
+  padding:14px; margin-bottom:12px; background:#fff;
+}
+.admin-question-card__head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.admin-question-card__index{ font-family: var(--font-mono); font-size:11px; color:var(--slate); font-weight:700; text-transform:uppercase; }
+.admin-remove-btn{ appearance:none; border:none; background:none; color: var(--red-alert); font-size:12px; font-weight:700; cursor:pointer; padding:2px 4px; }
+.admin-question-card .field-label{ margin:12px 2px 6px; }
+.admin-question-card .field-label:first-of-type{ margin-top:0; }

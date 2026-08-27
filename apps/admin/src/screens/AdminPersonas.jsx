@@ -1,5 +1,5 @@
-import AdminListRow from "../../components/AdminListRow";
-import { state, newAdminPersona, openAdminPersona } from "../../store";
+import AdminListRow from "../components/AdminListRow";
+import { state, newAdminPersona, openAdminPersona } from "../store";
 
 export default function AdminPersonas(){
   const rows = state.adminPersonas

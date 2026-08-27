@@ -1,17 +1,16 @@
-import AdminListRow from "../../components/AdminListRow";
-import { state, moduleScopeLabel, openAdminModule, openAdminLesson, openAdminPhrase } from "../../store";
+import AdminListRow from "../components/AdminListRow";
+import { state, moduleScopeLabel, openAdminModule, openAdminLesson, openAdminPhrase } from "../store";
 
 /* ================================================================
    Shows what was generated for a Persona as an actual tree — Module
    at the top, its Lessons nested under it, and each Lesson's Phrases
    (resolved via that lesson's questions, the real FK relationship —
    see store.js's Question.phraseId) nested one level deeper still.
-   Deliberately its own screen (not inline on AdminPersonaDetail, see
-   store.js's finalizeContentGeneration) and its own layout (not the
-   flat ContentListRows used elsewhere) — a generated bundle is exactly
-   one Module -> N Lessons -> N Phrases, so the nesting itself is what
-   makes "these are three different kinds of thing" obvious, rather
-   than relying on a text label to say so.
+   Deliberately its own screen (not inline on AdminPersonaDetail) and
+   its own layout (not the flat ContentListRows used elsewhere) — a
+   generated bundle is exactly one Module -> N Lessons -> N Phrases, so
+   the nesting itself is what makes "these are three different kinds
+   of thing" obvious, rather than relying on a text label to say so.
    ================================================================ */
 export default function AdminPersonaGeneratedContent({ payload }){
   const persona = state.adminPersonas.find(p => p.id === payload.personaId);

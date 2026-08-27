@@ -1,12 +1,12 @@
-import AdminStatusChip from "../../components/AdminStatusChip";
-import LegCard from "./LegCard";
+import AdminStatusChip from "../components/AdminStatusChip";
+import LegCard from "../components/LegCard";
 import {
   state, primeAdminBlueprintDraft, patchAdminBlueprintDraft, ensureBlueprintPreviewCountry, setBlueprintPreviewCountry,
   resolveBlueprintGateLessons, blueprintIsPublishable, addBlueprintLeg,
   saveDraftBlueprint, stageBlueprint, unstageBlueprint, publishBlueprint, newBlueprintVersion
-} from "../../store";
-import { TRIP_TYPES } from "../../data/tripTypes";
-import { LEG_LADDER } from "../../data/admin";
+} from "../store";
+import { TRIP_TYPES } from "../data/tripTypes";
+import { LEG_LADDER } from "../data/admin";
 
 export default function AdminBlueprintDetail({ payload }){
   const id = payload && payload.id;
@@ -51,7 +51,7 @@ export default function AdminBlueprintDetail({ payload }){
       )}
 
       <div className="admin-preview">
-        <div className="admin-preview__label">Dry-run preview — resolves this Blueprint's Legs against a real country, the way a traveler's syllabus will (§8/§9)</div>
+        <div className="admin-preview__label">Dry-run preview — resolves this Blueprint's Legs against a real country, the way a traveler's syllabus will</div>
         {dests.length ? (
           <>
             <label className="field-label" htmlFor="admin-bp-preview-country" style={{ marginTop: 0 }}>Preview country</label>

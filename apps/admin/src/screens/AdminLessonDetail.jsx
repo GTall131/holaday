@@ -1,12 +1,12 @@
-import AdminStatusChip from "../../components/AdminStatusChip";
-import BeatCard from "../../components/BeatCard";
-import QuestionCard from "./QuestionCard";
+import AdminStatusChip from "../components/AdminStatusChip";
+import BeatCard from "../components/BeatCard";
+import QuestionCard from "../components/QuestionCard";
 import {
   state, primeAdminLessonDraft, patchAdminLessonDraft, lessonScopeLabel, activeCountriesForLanguage,
   phrasesForLesson, adminQuestionToBeat, addLessonQuestion, stepLessonPreview,
   saveDraftLesson, stageLesson, unstageLesson, publishLesson, newLessonVersion
-} from "../../store";
-import { SYMBOLS } from "../../data/flags";
+} from "../store";
+import { SYMBOLS } from "../data/flags";
 
 export default function AdminLessonDetail({ payload }){
   const id = payload && payload.id;

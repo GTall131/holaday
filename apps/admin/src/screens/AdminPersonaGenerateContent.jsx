@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { state, publishedDestinations, push } from "../../store";
-import { TRIP_TYPES } from "../../data/tripTypes";
+import { state, publishedDestinations, push } from "../store";
+import { TRIP_TYPES } from "../data/tripTypes";
 
 export default function AdminPersonaGenerateContent({ payload }){
   const persona = state.adminPersonas.find(p => p.id === payload.personaId);

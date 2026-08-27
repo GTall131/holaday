@@ -1,6 +1,6 @@
 import FlagIcon from "../components/FlagIcon";
 import StepProgress from "../components/StepProgress";
-import { publishedDestinations, adminFlagMarkup, selectCountry } from "../store";
+import { publishedDestinations, flagMarkup, selectCountry } from "../store";
 
 /* ================================================================
    SCREEN: COUNTRY PICKER
@@ -33,7 +33,7 @@ export default function CountryPicker(){
       <div className="country-grid">
         {publishedDestinations().map(d => (
           <button key={d.countryKey} className="country-card" onClick={() => selectCountry(d.countryKey)}>
-            <FlagIcon markup={adminFlagMarkup(d)} className="country-card__flag" />
+            <FlagIcon markup={flagMarkup(d)} className="country-card__flag" />
             <span className="country-card__body">
               <div className="country-card__name">{d.data.name}</div>
               <div className="country-card__capital">{d.data.capital}</div>

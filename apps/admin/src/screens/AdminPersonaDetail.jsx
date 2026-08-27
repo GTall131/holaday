@@ -1,4 +1,4 @@
-import { state, primeAdminPersonaDraft, patchAdminPersonaDraft, saveAdminPersona, startPersonaGeneration, push } from "../../store";
+import { state, primeAdminPersonaDraft, patchAdminPersonaDraft, saveAdminPersona, startPersonaGeneration, push } from "../store";
 
 export default function AdminPersonaDetail({ payload }){
   const id = payload && payload.id;

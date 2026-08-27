@@ -1,6 +1,6 @@
-import AdminListRow from "../../components/AdminListRow";
-import { allRecordsByStatus, openRecord, adminFlagMarkup } from "../../store";
-import { TRIP_TYPES } from "../../data/tripTypes";
+import AdminListRow from "../components/AdminListRow";
+import { allRecordsByStatus, openRecord, flagMarkup } from "../store";
+import { TRIP_TYPES } from "../data/tripTypes";
 
 const TYPE_LABEL = { destination: "Destination", module: "Module", lesson: "Lesson", blueprint: "Blueprint", phrase: "Phrase" };
 
@@ -23,7 +23,7 @@ export default function AdminStaged(){
       {rows.length ? rows.map(({ type, record }) => (
         <AdminListRow
           key={`${type}-${record.id}`}
-          flagMarkup={type === "destination" ? adminFlagMarkup(record) : null}
+          flagMarkup={type === "destination" ? flagMarkup(record) : null}
           name={nameFor(type, record)}
           sub={`${TYPE_LABEL[type]} · v${record.version}`}
           status={record.status}

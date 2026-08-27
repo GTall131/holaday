@@ -1,10 +1,10 @@
-import AdminStatusChip from "../../components/AdminStatusChip";
+import AdminStatusChip from "../components/AdminStatusChip";
 import {
   state, primeAdminModuleDraft, patchAdminModuleDraft, moduleScopeLabel, moduleGridRows,
   moduleLessonCandidates, moduleIsComplete, activeCountriesForLanguage,
   saveDraftModule, stageModule, unstageModule, publishModule, newModuleVersion,
   newAdminLessonForModule, openAdminLesson
-} from "../../store";
+} from "../store";
 
 export default function AdminModuleDetail({ payload }){
   const id = payload && payload.id;

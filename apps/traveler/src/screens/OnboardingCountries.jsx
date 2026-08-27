@@ -1,6 +1,6 @@
 import FlagIcon from "../components/FlagIcon";
 import StepProgress from "../components/StepProgress";
-import { state, publishedDestinations, adminFlagMarkup, toggleOnboardingCountry, continueOnboardingCountries } from "../store";
+import { state, publishedDestinations, flagMarkup, toggleOnboardingCountry, continueOnboardingCountries } from "../store";
 
 /* ================================================================
    SCREEN: ONBOARDING — COUNTRIES VISITED (step 1 of 3)
@@ -30,7 +30,7 @@ export default function OnboardingCountries(){
             data-selected={selected.includes(d.countryKey)}
             onClick={() => toggleOnboardingCountry(d.countryKey)}
           >
-            <FlagIcon markup={adminFlagMarkup(d)} className="country-card__flag" />
+            <FlagIcon markup={flagMarkup(d)} className="country-card__flag" />
             <span className="country-card__body">
               <div className="country-card__name">{d.data.name}</div>
               <div className="country-card__capital">{d.data.capital}</div>

@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import FlagIcon from "../components/FlagIcon";
 import VocabCard from "../components/VocabCard";
-import { travelerCountry, downloadPhrasebook } from "../store";
+import { travelerCountry, fetchCountryPhrases, downloadPhrasebook } from "../store";
 import { TRIP_TYPES } from "../data/tripTypes";
 
 /* ================================================================
@@ -17,11 +18,11 @@ import { TRIP_TYPES } from "../data/tripTypes";
    partially-finished course still has a partial phrasebook), but
    "completed only" is the simplest version that proves the feature.
 
-   Content is compiled, not separately authored: it's the same country
-   phrasebank + transport phrasebank + cultureTip + transport
-   etiquette already used across the lessons (see store.js
-   travelerCountry), reassembled into one reference page — there is no
-   new content model here, just a new view over existing data.
+   Content is compiled, not separately authored: it's the same
+   published Phrase bank + culture tip already used across the lessons
+   (see store.js's travelerCountry/fetchCountryPhrases), reassembled
+   into one reference page — there is no new content model here, just a
+   new view over existing data.
 
    The "Download for offline use" button is an intentional stub (see
    store.js downloadPhrasebook) — it shows a toast instead of
@@ -53,6 +54,15 @@ export default function Phrasebook({ payload }){
   const country = travelerCountry(c.countryKey);
   const trip = TRIP_TYPES[c.tripKey];
 
+  const [phrases, setPhrases] = useState(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    fetchCountryPhrases(c.countryKey).then(p => { if (!cancelled) setPhrases(p); });
+    return () => { cancelled = true; };
+  }, [c.countryKey]);
+
+  if (phrases === undefined) return null;
+
   return (
     <>
       <div className="ticket">
@@ -68,30 +78,16 @@ export default function Phrasebook({ payload }){
 
       <p className="lesson-intro">Every phrase and etiquette tip from your {trip.label.toLowerCase()} course, in one place — no signal needed once it's downloaded.</p>
 
-      {country.phrases ? (
+      {phrases ? (
         <>
           <div className="section-label">Essentials</div>
           <div className="vocab-grid">
-            {country.phrases.map((p, i) => <VocabCard key={i} phrase={p} />)}
+            {phrases.map((p, i) => <VocabCard key={i} phrase={p} />)}
           </div>
-
-          {country.transport ? (
-            <>
-              <div className="section-label" style={{ marginTop: "20px" }}>Getting around</div>
-              <div className="vocab-grid">
-                {country.transport.phrases.map((p, i) => <VocabCard key={i} phrase={p} />)}
-              </div>
-            </>
-          ) : null}
 
           <div className="culture-card" style={{ marginTop: "20px" }}>
             <div className="culture-card__label">Good to know</div>
             <div className="culture-card__body">{country.cultureTip}</div>
-            {country.transport ? (
-              <ul className="etiquette-list" style={{ marginTop: "10px" }}>
-                {country.transport.etiquette.map((item, i) => <li key={i}>{item}</li>)}
-              </ul>
-            ) : null}
           </div>
         </>
       ) : (

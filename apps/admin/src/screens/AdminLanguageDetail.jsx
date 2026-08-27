@@ -1,9 +1,9 @@
-import AdminListRow from "../../components/AdminListRow";
-import ContentListRows from "../../components/ContentListRows";
+import AdminListRow from "../components/AdminListRow";
+import ContentListRows from "../components/ContentListRows";
 import {
   state, primeAdminLanguageDraft, patchAdminLanguageDraft, saveAdminLanguage,
-  openAdminDestination, newAdminModuleForLanguage, newAdminPhraseForLanguage, adminFlagMarkup
-} from "../../store";
+  openAdminDestination, newAdminModuleForLanguage, newAdminPhraseForLanguage, flagMarkup
+} from "../store";
 
 export default function AdminLanguageDetail({ payload }){
   const id = payload && payload.id;
@@ -36,7 +36,7 @@ export default function AdminLanguageDetail({ payload }){
               ? countries.map(d => (
                   <AdminListRow
                     key={d.id}
-                    flagMarkup={adminFlagMarkup(d)}
+                    flagMarkup={flagMarkup(d)}
                     name={d.data.name}
                     status={d.status}
                     onClick={() => openAdminDestination(d.id)}

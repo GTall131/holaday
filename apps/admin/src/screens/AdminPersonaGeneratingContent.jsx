@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
-import { finalizePersonaGeneration } from "../../store";
+import { finalizeContentGeneration } from "../store";
 
-// Same "signature motion" split-flap treatment as the traveler-facing
-// Generating.jsx (see that file's rationale) — reused here rather than
-// invented fresh, so the two async-feeling moments in the app read as
-// one visual language, not two.
-const STEPS = ["READING OUTLINE", "DRAFTING TRAVELER PROFILE", "CHECKING TONE & DETAIL"];
+const STEPS = ["READING PERSONA", "DRAFTING MODULE & LESSON", "WRITING PHRASES", "SAVING TO CONTENT BANK"];
 
-export default function AdminPersonaGenerating({ payload }){
+export default function AdminPersonaGeneratingContent({ payload }){
   const [stepIndex, setStepIndex] = useState(0);
 
   useEffect(() => {
@@ -18,7 +14,7 @@ export default function AdminPersonaGenerating({ payload }){
     }, 380);
     const timeout = setTimeout(() => {
       clearInterval(iv);
-      finalizePersonaGeneration(payload.id);
+      finalizeContentGeneration(payload);
     }, 380 * STEPS.length + 250);
     return () => { clearInterval(iv); clearTimeout(timeout); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -28,7 +24,7 @@ export default function AdminPersonaGenerating({ payload }){
     <div className="generating">
       <div className="flap">{STEPS[stepIndex]}</div>
       <div className="spinner-dots"><span></span><span></span><span></span></div>
-      <div className="generating__sub">Stub: fleshing out this persona from your outline — no live model call in this prototype yet.</div>
+      <div className="generating__sub">Stub: generating a starter Module, Lesson, and Phrases — no live model call yet.</div>
     </div>
   );
 }

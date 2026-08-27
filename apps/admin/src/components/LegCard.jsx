@@ -1,5 +1,5 @@
-import { state, moduleScopeLabel, patchBlueprintLeg, removeBlueprintLeg, toggleBlueprintGate, setBlueprintGateTier } from "../../store";
-import { LEG_LADDER } from "../../data/admin";
+import { state, moduleScopeLabel, patchBlueprintLeg, removeBlueprintLeg, toggleBlueprintGate, setBlueprintGateTier } from "../store";
+import { LEG_LADDER } from "../data/admin";
 
 export default function LegCard({ leg, li }){
   return (

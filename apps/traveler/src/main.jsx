@@ -2,12 +2,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
-import { initAuth } from './store'
+import { initAuth, loadDestinations } from './store'
 
-// Restores a signed-in session (if any) before the first render, so
-// the app opens straight to Home/onboarding instead of flashing
-// Welcome first — see store.js's initAuth for what this resolves.
-initAuth().finally(() => {
+// Restores a signed-in session (if any) and loads the published
+// destinations cache before the first render — the country picker and
+// dashboard theming both need it synchronously during render (see
+// store.js's travelerCountry/publishedDestinations).
+Promise.all([initAuth(), loadDestinations()]).finally(() => {
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <App />

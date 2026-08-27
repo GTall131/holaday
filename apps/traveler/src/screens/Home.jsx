@@ -1,7 +1,7 @@
 import BoardRow from "../components/BoardRow";
 import NoTripRow from "../components/NoTripRow";
 import FlagIcon from "../components/FlagIcon";
-import { state, quickStartCourse, publishedDestinations, adminFlagMarkup } from "../store";
+import { state, quickStartCourse, publishedDestinations, flagMarkup } from "../store";
 
 /* ================================================================
    SCREEN: HOME — "MY TRIPS" DEPARTURE BOARD
@@ -64,7 +64,7 @@ export default function Home(){
                 style={{ ["--flag-primary"]: d.data.colours.primary }}
                 onClick={() => quickStartCourse(d.countryKey)}
               >
-                <FlagIcon markup={adminFlagMarkup(d)} className="dest-teaser__flag" />
+                <FlagIcon markup={flagMarkup(d)} className="dest-teaser__flag" />
                 {d.data.name}
               </button>
             ))}

@@ -1,9 +1,9 @@
-import AdminStatusChip from "../../components/AdminStatusChip";
-import VocabCard from "../../components/VocabCard";
+import AdminStatusChip from "../components/AdminStatusChip";
+import VocabCard from "../components/VocabCard";
 import {
   state, primeAdminPhraseDraft, patchAdminPhraseDraft, phraseScopeLabel, activeCountriesForLanguage,
   saveDraftPhrase, stagePhrase, unstagePhrase, publishPhrase, newPhraseVersion
-} from "../../store";
+} from "../store";
 
 export default function AdminPhraseDetail({ payload }){
   const id = payload && payload.id;

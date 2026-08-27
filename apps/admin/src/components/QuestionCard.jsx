@@ -1,6 +1,6 @@
-import { SYMBOLS } from "../../data/flags";
-import { ADMIN_STATUS_LABELS } from "../../data/admin";
-import { patchLessonQuestion, removeLessonQuestion } from "../../store";
+import { SYMBOLS } from "../data/flags";
+import { ADMIN_STATUS_LABELS } from "../data/admin";
+import { patchLessonQuestion, removeLessonQuestion } from "../store";
 
 function phraseQuestionPreviewText(q, phrase){
   if (!phrase) return "Pick a phrase above.";

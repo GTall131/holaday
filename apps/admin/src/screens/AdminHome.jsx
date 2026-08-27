@@ -1,4 +1,4 @@
-import { state, openAdminDestinations, openAdminLanguages, openAdminPersonas, push } from "../../store";
+import { state, openAdminDestinations, openAdminLanguages, openAdminPersonas, logout, push } from "../store";
 
 export default function AdminHome(){
   const destCounts = { draft: 0, staged: 0, published: 0, archived: 0 };
@@ -12,7 +12,10 @@ export default function AdminHome(){
 
   return (
     <>
-      <p style={{ fontSize: "13px", color: "var(--slate)", margin: "6px 2px 20px" }}>Demo-phase content authoring surface.</p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "6px 2px 20px" }}>
+        <p style={{ fontSize: "13px", color: "var(--slate)", margin: 0 }}>{state.account ? state.account.email : ""}</p>
+        <button className="btn-secondary" style={{ width: "auto", padding: "8px 14px" }} onClick={logout}>Log out</button>
+      </div>
 
       <div className="section-label">Content</div>
       <button className="admin-card" onClick={openAdminLanguages}>
