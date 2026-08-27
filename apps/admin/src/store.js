@@ -39,6 +39,22 @@ async function callPublishRecord(type, id){
   if (!res.ok) throw new Error(json.error || "Publish failed");
 }
 
+// persona-flesh and persona-generate-content (see
+// supabase/admin/functions) live in this same project, unlike
+// publish-record — so this just hits our own project's functions URL
+// with the current session, no separate env var needed.
+async function callAdminFunction(name, body){
+  const { data: { session } } = await supabase.auth.getSession();
+  const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify(body)
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || "Request failed");
+  return json;
+}
+
 // ----------------------------------------------------------------
 // Subscriber plumbing
 // ----------------------------------------------------------------
@@ -1229,112 +1245,62 @@ export async function saveAdminPersona(){
   notify();
 }
 
-// --- STUB -------------------------------------------------------
-// Stands in for a real "call an LLM to flesh out this persona"
-// request. Deterministic and outline-driven only so the review step
-// has something plausible to look at and edit — swap this out for a
-// real model call later; everything downstream only depends on the
-// returned field shape, not on how it's produced.
-// ------------------------------------------------------------------
-function fakeGeneratePersonaDetails(outline){
-  const words = (outline || "").trim().split(/\s+/).filter(Boolean);
-  const seed = words.find(w => w.replace(/[^a-zA-Z]/g, "").length > 3) || "Traveler";
-  const label = seed.replace(/[^a-zA-Z]/g, "");
-  const name = `The ${label.charAt(0).toUpperCase()}${label.slice(1).toLowerCase()}`;
-  return {
-    name,
-    summary: `Generated from the outline: "${outline.trim()}". This is stub output — replace with a real model call, and treat every field here as a first draft to edit, not a final persona.`,
-    ageRange: "25–40",
-    travelStyle: "Independent, moderate budget, prefers authentic local experiences over tourist traps",
-    motivations: "Wants to travel respectfully, avoid embarrassing mistakes, connect with locals",
-    painPoints: "Limited time to prepare, anxious about language barriers, easily overwhelmed by grammar-heavy apps",
-    vocabFocus: "greetings, directions, food ordering, politeness"
-  };
-}
 export function startPersonaGeneration(id){
   push("admin-persona-generating", { id });
 }
+// Calls the real persona-flesh Edge Function (supabase/admin/functions
+// — Claude generates a structured profile via a forced tool call, with
+// an explicit instruction against AI-generated writing tells, same as
+// persona-generate-content below). On failure, pops back to the
+// persona detail screen with a toast rather than leaving the author
+// stuck on the generating animation.
 export async function finalizePersonaGeneration(id){
   const persona = state.adminPersonas.find(p => p.id === id);
   if (!persona){ pop(); return; }
-  const details = fakeGeneratePersonaDetails(persona.data.outline);
-  Object.assign(persona.data, details, { generated: true });
-  const { error } = await supabase.from("personas").update(personaPayload(persona.data)).eq("id", id);
-  if (error){ showToast("Couldn't save generated persona details"); }
+  let result;
+  try {
+    result = await callAdminFunction("persona-flesh", { personaId: id });
+  } catch (e){
+    pop();
+    showToast(e.message || "Couldn't generate persona details");
+    return;
+  }
+  Object.assign(persona.data, rowToPersona(result.persona).data);
   if (state.adminPersonaDraft && state.adminPersonaDraft.id === id) state.adminPersonaDraft = clone(persona);
   pop();
   showToast("Persona details generated — review before use");
   notify();
 }
 
-// --- STUB -------------------------------------------------------
-// Stands in for a real "generate lesson content for this persona +
-// country + trip type" pipeline (LLM + phrase-bank retrieval). Creates
-// one bespoke Module, one Lesson under its first Tier, and a handful
-// of Phrases, all tagged with generatedFromPersonaId for traceability
-// and all landing as ordinary Drafts — same review/staging/publish
-// gate as hand-authored content, which is also why the lesson only
-// gets 3 questions here: staging still requires 5+ of mixed kinds, so
-// a human has to open and finish it before it can go live.
-//
-// FEATURE NOTE (not built): the real version of this generator should
-// be an LLM-as-Judge pipeline, not a single generate-and-accept pass —
-// a separate model call should score each generated Module/Lesson/
-// Phrase against the persona (relevance, tone, factual plausibility)
-// and reject/retry low-scoring output before it's written to the
-// content bank, rather than relying on the human Draft-review step to
-// be the only quality gate.
-// ------------------------------------------------------------------
+// Calls the real persona-generate-content Edge Function: a
+// generate-then-judge pipeline (a second, independent model call
+// scores the candidate against relevance/tone/plausibility/no-AI-tells
+// before anything is written — see that function's header comment for
+// the full rationale) rather than a single generate-and-accept pass.
+// Creates one bespoke Module, one Lesson, and 5-8 Phrases, all tagged
+// generated_from_persona_id and landing as ordinary Drafts — same
+// review/staging/publish gate as hand-authored content.
 export async function generateContentFromPersona({ personaId, countryKey, tripKey }){
-  const persona = state.adminPersonas.find(p => p.id === personaId);
-  const country = countryByKey(countryKey);
-  const trip = TRIP_TYPES[tripKey];
-  if (!persona || !country || !trip) return null;
-
-  const personaLabel = persona.data.name || "this persona";
-
-  const { data: modRow, error: modError } = await supabase.from("modules").insert({
-    status: "draft", version: 1, name: `${persona.data.name || "Persona"} — ${trip.label}`,
-    kind: "bespoke", tier_count: 1, language_id: country.data.languageId, language_wide: false,
-    country_key: countryKey, generated_from_persona_id: persona.id
-  }).select().single();
-  if (modError){ showToast("Couldn't generate content"); return null; }
-  const mod = rowToModule(modRow);
+  let result;
+  try {
+    result = await callAdminFunction("persona-generate-content", { personaId, countryKey, tripKey });
+  } catch (e){
+    showToast(e.message || "Couldn't generate content");
+    return null;
+  }
+  const mod = rowToModule(result.module);
+  const phrases = result.phrases.map(rowToPhrase);
+  const lesson = rowToLesson(result.lesson);
   state.adminModules.push(mod);
-
-  const { data: phraseRows, error: phraseError } = await supabase.from("phrases").insert(
-    [1, 2, 3].map(n => ({
-      status: "draft", version: 1,
-      en: `[Generated] Phrase ${n} for ${personaLabel}`, local: "[translation pending]", translit: null,
-      tags: ["generated"], language_id: country.data.languageId, language_wide: false, country_key: countryKey,
-      generated_from_persona_id: persona.id
-    }))
-  ).select();
-  if (phraseError){ showToast("Couldn't generate content"); return null; }
-  const phrases = phraseRows.map(rowToPhrase);
   phrases.forEach(p => state.adminPhrases.push(p));
-
-  const { data: lessonRow, error: lessonError } = await supabase.from("lessons").insert({
-    status: "draft", version: 1, title: `${trip.label}: ${personaLabel} essentials`,
-    type: "Phrase", module_id: mod.id, tier: 1, scope: "country-specific",
-    language_id: country.data.languageId, language_wide: false, country_key: countryKey,
-    questions: phrases.map(phrase => ({
-      kind: "produce", context: `Generated for ${personaLabel}'s ${trip.label.toLowerCase()}.`,
-      question: "", correctAnswer: "", distractors: "", symbol: "", heard: "",
-      source: "phrase", phraseId: phrase.id
-    })),
-    generated_from_persona_id: persona.id
-  }).select().single();
-  if (lessonError){ showToast("Couldn't generate content"); return null; }
-  const lesson = rowToLesson(lessonRow);
   state.adminLessons.push(lesson);
-
   showToast(`Generated 1 module, 1 lesson, ${phrases.length} phrases as Drafts`);
   return { moduleId: mod.id, lessonId: lesson.id, phraseIds: phrases.map(p => p.id) };
 }
 export async function finalizeContentGeneration(payload){
-  await generateContentFromPersona(payload);
+  const result = await generateContentFromPersona(payload);
   pop();
   pop();
-  push("admin-persona-generated-content", { personaId: payload.personaId });
+  if (result) push("admin-persona-generated-content", { personaId: payload.personaId });
+  else push("admin-persona", { id: payload.personaId });
 }

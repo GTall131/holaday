@@ -24,7 +24,7 @@ export default function AdminPersonaGeneratingContent({ payload }){
     <div className="generating">
       <div className="flap">{STEPS[stepIndex]}</div>
       <div className="spinner-dots"><span></span><span></span><span></span></div>
-      <div className="generating__sub">Stub: generating a starter Module, Lesson, and Phrases — no live model call yet.</div>
+      <div className="generating__sub">Claude is generating a starter Module, Lesson, and Phrases, then reviewing its own work before saving — this can take up to 30 seconds.</div>
     </div>
   );
 }

@@ -28,7 +28,7 @@ export default function AdminPersonaGenerating({ payload }){
     <div className="generating">
       <div className="flap">{STEPS[stepIndex]}</div>
       <div className="spinner-dots"><span></span><span></span><span></span></div>
-      <div className="generating__sub">Stub: fleshing out this persona from your outline — no live model call yet.</div>
+      <div className="generating__sub">Claude is fleshing out this persona from your outline — this can take a few seconds.</div>
     </div>
   );
 }

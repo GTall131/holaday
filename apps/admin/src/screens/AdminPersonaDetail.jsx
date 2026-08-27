@@ -52,7 +52,7 @@ export default function AdminPersonaDetail({ payload }){
           <input className="text-input" id="persona-vocab" value={view.data.vocabFocus}
             onChange={e => patchAdminPersonaDraft({ vocabFocus: e.target.value })} />
 
-          <p className="admin-hint">Generated from your outline — this is a stub, not a live model call yet. Review and edit before generating lesson content.</p>
+          <p className="admin-hint">Generated from your outline by Claude — review and edit before generating lesson content.</p>
         </>
       ) : (
         <p className="admin-hint">Save this persona, then generate its full profile from the outline above.</p>
