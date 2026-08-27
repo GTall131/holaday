@@ -1,10 +1,16 @@
 // ================================================================
 // STORE
-// A single external mutable store (state + business logic), ported
-// 1:1 from the original prototype's module-level `let` variables and
-// pure functions. React components subscribe via useStore() (see
-// useStore.js) and call the action functions exported below instead
-// of dispatching data-action clicks through DOM delegation.
+// A single external mutable store (state + business logic). React
+// components subscribe via useStore() (see useStore.js) and call the
+// action functions exported below instead of dispatching data-action
+// clicks through DOM delegation. `state` still holds navigation
+// (`stack`), in-progress form drafts, and toast state exactly as the
+// original prototype did — but account/courses (this section) are now
+// backed by real Supabase Auth + Postgres (holaday-content; see
+// supabase/README.md) instead of in-memory-only `let` variables. The
+// admin-authoring section further down (adminDestinations,
+// adminModules, …) is still in-memory-only pending its own move to
+// holaday-admin.
 //
 // Two things the original did with direct DOM manipulation are
 // deliberately NOT ported here, because idiomatic React already
@@ -18,11 +24,9 @@
 //     which gives "going back re-presents the question fresh" for
 //     free via a `key`-remount instead of a manual reset.
 // ================================================================
-import { COUNTRIES, COUNTRY_LANGUAGES } from "./data/countries";
-import { TRIP_TYPES, syllabus } from "./data/tripTypes";
-import { FLAGS } from "./data/flags";
-import { ARRIVAL_BEAT_PLAN, EXPLORE_BEAT_PLAN } from "./data/beatPlans";
+import { TRIP_TYPES } from "./data/tripTypes";
 import { buildFlagSvg } from "./data/admin";
+import { supabase } from "./lib/supabaseClient";
 
 // ----------------------------------------------------------------
 // Subscriber plumbing — a version counter is the "snapshot" handed
@@ -132,37 +136,7 @@ export function ensureLanguage(name){
   return lang;
 }
 
-// ----------------------------------------------------------------
-// Seeded with the one remaining hardcoded COUNTRIES entry (Japan) as
-// a read-only-by-default "published" legacy row — kept only so the
-// traveler-facing flow has something to generate a course against out
-// of the box; every other destination is meant to be authored through
-// this flow from a genuinely empty bank. A legacy row can still be revised
-// via "Create new draft version" (newDestinationVersion below), which
-// produces a normal (non-legacy) draft that, once published, archives
-// the legacy row. See travelerCountry() below for how a newly
-// published destination becomes selectable in the traveler app
-// immediately, without needing a matching COUNTRIES entry.
-// ----------------------------------------------------------------
-Object.values(COUNTRY_LANGUAGES).forEach(ensureLanguage);
-state.adminDestinations = Object.entries(COUNTRIES).map(([key, c]) => ({
-  id: nextAdminId("dest"),
-  countryKey: key,
-  status: "published",
-  version: 1,
-  legacy: true,
-  data: {
-    name: c.name,
-    capital: c.capital,
-    colours: { ...c.colours },
-    flagPattern: null,
-    cultureTip: c.cultureTip,
-    languageId: ensureLanguage(COUNTRY_LANGUAGES[key]).id
-  }
-}));
-
 export function adminFlagMarkup(record){
-  if (record.legacy) return FLAGS[record.countryKey];
   return buildFlagSvg(record.data.flagPattern || "vertical-tricolor", record.data.colours);
 }
 
@@ -170,22 +144,21 @@ export function publishedDestinations(){
   return state.adminDestinations.filter(d => d.status === "published");
 }
 
-// Unified country lookup for every traveler-facing screen: prefers the
-// published Admin Destination record so a country authored and
+// Unified country lookup for every traveler-facing screen: the
+// published Admin Destination record, so a country authored and
 // published through the admin surface "pulls through" into the
-// traveler app immediately.
+// traveler app immediately. Returns null until one exists — a fresh
+// system starts with an empty content bank, no seeded example country.
 export function travelerCountry(countryKey){
   const dest = state.adminDestinations.find(d => d.countryKey === countryKey && d.status === "published");
-  const legacy = COUNTRIES[countryKey];
-  if (!dest && !legacy) return null;
+  if (!dest) return null;
   return {
-    name: dest ? dest.data.name : legacy.name,
-    capital: dest ? dest.data.capital : legacy.capital,
-    colours: dest ? dest.data.colours : legacy.colours,
-    cultureTip: dest ? dest.data.cultureTip : legacy.cultureTip,
-    flag: dest ? adminFlagMarkup(dest) : FLAGS[countryKey],
-    phrases: legacy ? legacy.phrases : travelerPhraseBank(countryKey),
-    transport: legacy ? legacy.transport : null
+    name: dest.data.name,
+    capital: dest.data.capital,
+    colours: dest.data.colours,
+    cultureTip: dest.data.cultureTip,
+    flag: adminFlagMarkup(dest),
+    phrases: travelerPhraseBank(countryKey)
   };
 }
 
@@ -341,47 +314,6 @@ export function makeQuestion(promptText, correctText, distractorTexts){
   const options = shuffle([correctText, ...distractorTexts]);
   return { q: promptText, options, correctIndex: options.indexOf(correctText) };
 }
-function produceBeat(phraseBank, index, context, distractorCount){
-  const p = phraseBank[index];
-  const pool = phraseBank.filter((_, i) => i !== index);
-  const distractors = shuffle(pool).slice(0, distractorCount).map(x => x.local);
-  const mq = makeQuestion(`How do you say "${p.en}"?`, p.local, distractors);
-  return { kind:"produce", context, ...mq };
-}
-function comprehendBeat(phraseBank, index, context, question, distractorCount){
-  const p = phraseBank[index];
-  const pool = phraseBank.filter((_, i) => i !== index);
-  const distractors = shuffle(pool).slice(0, distractorCount).map(x => x.en);
-  const mq = makeQuestion(question, p.en, distractors);
-  return { kind:"comprehend", context, heard:p.local, ...mq };
-}
-function symbolBeat(context, symbol, question, correct, distractors){
-  const mq = makeQuestion(question, correct, distractors);
-  return { kind:"symbol", context, symbol, ...mq };
-}
-function situationalBeat(scenario, context){
-  const distractors = scenario.options.filter((_, i) => i !== scenario.correctIndex);
-  const mq = makeQuestion(scenario.q, scenario.options[scenario.correctIndex], distractors);
-  return { kind:"situational", context, ...mq };
-}
-function buildBeat(entry, phraseBank, distractorCount, scenario){
-  switch (entry.kind){
-    case "produce": return produceBeat(phraseBank, entry.phraseIndex, entry.context, distractorCount);
-    case "comprehend": return comprehendBeat(phraseBank, entry.phraseIndex, entry.context, entry.question, distractorCount);
-    case "symbol": return symbolBeat(entry.context, entry.symbol, entry.question, entry.correct, entry.distractors);
-    case "situational": return situationalBeat(scenario, entry.context);
-    default: return null;
-  }
-}
-export function buildLessonBeats(country, trip, week){
-  if (week === 3){
-    const t = country.transport;
-    return t.beatPlan.map(entry => buildBeat(entry, t.phrases, 2, t.scenario));
-  }
-  const plan = week === 1 ? ARRIVAL_BEAT_PLAN : EXPLORE_BEAT_PLAN;
-  return plan.map(entry => buildBeat(entry, country.phrases, 2));
-}
-
 // Turns an admin-authored Question row into the exact beat shape the
 // traveler lesson renderer expects, via the same path the Lesson
 // editor's live preview uses — the traveler is looking at literally
@@ -408,18 +340,14 @@ function adminLessonBeats(lessonId){
   const lesson = state.adminLessons.find(l => l.id === lessonId);
   return lesson ? lesson.data.questions.map(q => adminQuestionToBeat(q, lesson.data)).filter(Boolean) : [];
 }
+// A syllabus entry only has real question content once it's resolved
+// from a published Blueprint against an authored Lesson (`source ===
+// "authored"`) — an unauthored trip type's generic syllabus shell has
+// none yet, and Dashboard.jsx's `built` check already keeps those weeks
+// locked/unopenable rather than sending a traveler here for them.
 export function courseLessonBeats(course, week){
   const entry = course.syllabus[week - 1];
-  if (entry && entry.source === "authored") return adminLessonBeats(entry.lessonId);
-  const country = travelerCountry(course.countryKey);
-  if (!country.phrases) return [];
-  const trip = TRIP_TYPES[course.tripKey];
-  return buildLessonBeats(country, trip, week);
-}
-export function lessonMeta(week, country, trip){
-  if (week === 3) return { title:"Public Transport & Getting Around", type:"Culture lesson" };
-  if (week === 1) return { title:"Airport & Arrival Essentials", type:"Phrase lesson" };
-  return { title:trip.lesson2, type:"Phrase lesson" };
+  return entry && entry.source === "authored" ? adminLessonBeats(entry.lessonId) : [];
 }
 
 // ----------------------------------------------------------------
@@ -516,15 +444,17 @@ export function showToast(msg){
 // AUTH + ONBOARDING
 //
 // Two milestones: 'Account Created' (submitSignup, below) then
-// 'Account Onboarded' (finishOnboarding). Onboarding always runs
+// 'Account Onboarded' (finishOnboarding), persisted on the
+// holaday-content `profiles` row (see supabase/content/migrations),
+// not just in memory for the session. Onboarding always runs
 // country -> trip types -> "got a trip booked?" in that order; the
 // last answer branches into the existing trip-creation flow
 // (startCourse) or straight to Home, per the product brief.
 //
-// There's no backend/persisted user store in this prototype (see the
-// STORE header) — an account only exists in memory for the current
-// session — so submitLogin can only mean "resume the account created
-// earlier this session," not a real credential check.
+// Supabase Auth requires email confirmation by default, so a fresh
+// signUp() may come back with no session yet ("check your email") —
+// submitSignup routes to Login in that case instead of straight into
+// onboarding.
 // ----------------------------------------------------------------
 export function goWelcome(){ state.stack = [{ name: "welcome" }]; notify(); }
 export function goLogin(){ state.loginDraft = { email: "", password: "" }; push("login"); }
@@ -534,34 +464,99 @@ export function patchLoginDraft(patch){ Object.assign(state.loginDraft, patch); 
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function submitSignup(){
+function rowToAccount(profile, authUser){
+  return {
+    id: authUser.id,
+    firstName: profile.first_name || "",
+    email: authUser.email,
+    milestone: profile.onboarded ? "onboarded" : "created",
+    countriesVisited: profile.countries_visited || [],
+    tripTypes: profile.trip_types || [],
+    hasBookedTrip: profile.has_booked_trip
+  };
+}
+async function loadAccount(authUser){
+  const { data: profile, error } = await supabase.from("profiles").select("*").eq("id", authUser.id).single();
+  if (error){ showToast("Couldn't load your account"); return null; }
+  state.account = rowToAccount(profile, authUser);
+  return state.account;
+}
+
+function rowToCourse(row){
+  return {
+    id: row.id,
+    countryKey: row.country_key,
+    tripKey: row.trip_key,
+    weeks: row.weeks,
+    syllabus: row.syllabus,
+    legs: row.legs,
+    currentWeek: row.current_week,
+    status: row.status,
+    notes: row.notes || "",
+    travelStart: row.travel_start,
+    travelEnd: row.travel_end,
+    feedbackSubmitted: row.feedback_submitted,
+    feedback: row.feedback
+  };
+}
+async function loadCourses(){
+  const { data, error } = await supabase.from("courses").select("*").order("created_at", { ascending: false });
+  if (error){ showToast("Couldn't load your trips"); return; }
+  state.courses = data.map(rowToCourse);
+}
+
+// Restores a signed-in session on app load (see main.jsx) so refreshing
+// the page doesn't drop the account, replacing the prototype's old
+// "account only exists for the current session" constraint.
+export async function initAuth(){
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session){
+    await loadAccount(session.user);
+    if (state.account.milestone === "onboarded"){
+      await loadCourses();
+      state.stack = [{ name: "home" }];
+    } else {
+      state.onboardingDraft = { countriesVisited: state.account.countriesVisited, tripTypes: state.account.tripTypes };
+      state.stack = [{ name: "onboarding-countries" }];
+    }
+  }
+  notify();
+}
+
+export async function submitSignup(){
   const d = state.signupDraft;
   const firstName = d.firstName.trim();
   const email = d.email.trim();
   if (!firstName){ showToast("Enter your first name"); return; }
   if (!EMAIL_RE.test(email)){ showToast("Enter a valid email address"); return; }
   if (d.password.length < 6){ showToast("Password needs at least 6 characters"); return; }
-  state.account = {
-    firstName, email, password: d.password,
-    milestone: "created",
-    countriesVisited: [], tripTypes: [], hasBookedTrip: null
-  };
+  const { data, error } = await supabase.auth.signUp({
+    email, password: d.password, options: { data: { first_name: firstName } }
+  });
+  if (error){ showToast(error.message); return; }
+  if (!data.session){
+    showToast("Check your email to confirm your account, then log in");
+    goLogin();
+    return;
+  }
+  await loadAccount(data.user);
   state.onboardingDraft = { countriesVisited: [], tripTypes: [] };
   push("onboarding-countries");
 }
 
-export function submitLogin(){
+export async function submitLogin(){
   const d = state.loginDraft;
   const email = d.email.trim();
   if (!email || !d.password){ showToast("Enter your email and password"); return; }
-  if (!state.account || state.account.email.toLowerCase() !== email.toLowerCase()){
-    showToast("No account found for that email in this demo — try signing up");
-    return;
-  }
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password: d.password });
+  if (error){ showToast(error.message); return; }
+  await loadAccount(data.user);
   if (state.account.milestone !== "onboarded"){
+    state.onboardingDraft = { countriesVisited: state.account.countriesVisited, tripTypes: state.account.tripTypes };
     push("onboarding-countries");
     return;
   }
+  await loadCourses();
   resetToHome();
 }
 
@@ -587,12 +582,19 @@ export function continueOnboardingTripTypes(){ push("onboarding-trip-booked"); }
 // trip already booked — immediately starts the existing trip-creation
 // flow on top of it, so back-navigation from the country picker lands
 // on Home rather than back into onboarding.
-export function finishOnboarding(hasBookedTrip){
+export async function finishOnboarding(hasBookedTrip){
   const account = state.account;
   account.countriesVisited = state.onboardingDraft.countriesVisited;
   account.tripTypes = state.onboardingDraft.tripTypes;
   account.hasBookedTrip = hasBookedTrip;
   account.milestone = "onboarded";
+  const { error } = await supabase.from("profiles").update({
+    onboarded: true,
+    countries_visited: account.countriesVisited,
+    trip_types: account.tripTypes,
+    has_booked_trip: hasBookedTrip
+  }).eq("id", account.id);
+  if (error){ showToast("Couldn't save your onboarding answers"); }
   state.stack = [{ name: "home" }];
   if (hasBookedTrip) startCourse();
   else notify();
@@ -631,37 +633,30 @@ export function confirmTrip({ notes, startDate, endDate }){
 // pacing still comes from the trip-type default, not from the date
 // range — see the OPEN QUESTION note in TripDetails.jsx.
 //
-// Resolves the traveler's Trip Type against a *published* Blueprint
-// rather than the flat TRIP_TYPES.weeks constant, when one exists for
-// this Trip Type. `course.syllabus` is
-// snapshotted here (each entry's `lessonId`, not a live Blueprint/
-// Module lookup) so a Blueprint published later doesn't retroactively
-// change the syllabus of a trip already in progress — the same effect
-// the plan's "pin a templateVersion" note calls for, achieved by
-// pinning the resolved Lesson ids instead of re-resolving from the
-// Blueprint at render time. Trip Types with no published Blueprint
-// yet fall back to the legacy hardcoded syllabus() (data/tripTypes.js)
-// so the rest of the prototype's trip types keep working unauthored.
-export function finalizeCourse(payload){
-  const resolved = resolveBlueprintSyllabus(payload.countryKey, payload.tripKey);
-  const syllabusWeeks = resolved
-    ? resolved.weeks
-    : syllabus(payload.tripKey).map(w => ({ title: w.title, type: w.type, source: "legacy", legIndex: null, lessonId: null }));
-  const course = {
-    id: "c" + Date.now(),
-    countryKey: payload.countryKey,
-    tripKey: payload.tripKey,
-    weeks: syllabusWeeks.length,
-    syllabus: syllabusWeeks,
-    legs: resolved ? resolved.legs : null,
-    currentWeek: 1,
-    status: "active",
-    notes: payload.notes || "",
-    travelStart: payload.startDate,
-    travelEnd: payload.endDate,
-    feedbackSubmitted: false,
-    feedback: null
-  };
+// Resolution now happens server-side, in the finalize-course Edge
+// Function (supabase/content/functions/finalize-course): it resolves
+// the traveler's Trip Type against a *published* Blueprint when one
+// exists, pinning the resolved Lesson ids into `course.syllabus` so a
+// Blueprint published later doesn't retroactively change the syllabus
+// of a trip already in progress, and falls back to a generic syllabus
+// shell (packages/shared/content-engine's legacySyllabus) for Trip
+// Types with no published Blueprint yet.
+export async function finalizeCourse(payload){
+  const { data, error } = await supabase.functions.invoke("finalize-course", {
+    body: {
+      countryKey: payload.countryKey,
+      tripKey: payload.tripKey,
+      notes: payload.notes,
+      startDate: payload.startDate,
+      endDate: payload.endDate
+    }
+  });
+  if (error){
+    showToast("Couldn't generate your course — try again");
+    pop();
+    return;
+  }
+  const course = rowToCourse(data);
   state.courses.unshift(course);
   state.stack.pop();
   push("dashboard", { course });
@@ -716,6 +711,13 @@ export function submitFeedback(notesText){
     cultureHelped: state.feedbackDraft.cultureHelped,
     notes: notesText
   };
+  // Fire-and-forget: the UI already reflects the change (`course` is
+  // the same object referenced from state.courses), this just
+  // persists it — matches lessonStepContinue's sync below.
+  supabase.from("courses")
+    .update({ feedback_submitted: true, feedback: course.feedback })
+    .eq("id", course.id)
+    .then(({ error }) => { if (error) showToast("Feedback saved, but couldn't sync — try again later"); });
   showToast("Thanks for sharing your trip feedback");
   pop();
 }
@@ -733,6 +735,10 @@ export function lessonStepContinue({ course, week, stepIndex, total }){
   } else if (courseJustCompleted){
     course.status = "completed";
   }
+  supabase.from("courses")
+    .update({ current_week: course.currentWeek, status: course.status })
+    .eq("id", course.id)
+    .then(({ error }) => { if (error) showToast("Progress saved, but couldn't sync — try again later"); });
   let toastMsg = "Lesson complete";
   if (course.legs){
     const finishedEntry = course.syllabus[week - 1];

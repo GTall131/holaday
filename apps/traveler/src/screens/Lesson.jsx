@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import BeatCard from "../components/BeatCard";
-import { travelerCountry, courseLessonBeats, lessonMeta, lessonStepContinue } from "../store";
-import { TRIP_TYPES } from "../data/tripTypes";
+import { travelerCountry, courseLessonBeats, lessonStepContinue } from "../store";
 
 /* ================================================================
    SCREEN: LESSON — a sequence of one-question-per-page "beats"
@@ -28,8 +27,9 @@ import { TRIP_TYPES } from "../data/tripTypes";
 
    MIXED QUESTION STYLES, NOT ONE REPEATED DRILL: "How do you say X?"
    five times in a row is still just a flashcard deck wearing a
-   scenario costume. Each lesson mixes three question styles across
-   its beats (see store.js buildBeat/buildLessonBeats), all
+   scenario costume. A Lesson's authored Questions mix question kinds
+   (see store.js adminQuestionToBeat, which turns an admin-authored
+   Question into the beat shape this screen renders), all
    scenario-framed so it still reads as one situation playing out, not
    five disconnected drills:
      - "produce"     — "How do you say X?" — English prompt, answer in
@@ -40,28 +40,17 @@ import { TRIP_TYPES } from "../data/tripTypes";
        listening/comprehension, the reverse direction of "produce."
      - "symbol"      — a sign or icon is shown ("You notice this on a
        seat — what does it mean?") with a small inline SVG (SYMBOLS in
-       data/flags.js, same font-independent rationale as FLAGS — see
-       that file) standing in for a real transit/customs sign. Tests
-       recognition of non-verbal cues, not just vocabulary.
-     - "situational" — week 3 (Public Transport) only, "what would you
-       do?" judgement calls. Reuses each country's existing
-       `transport.scenario` content unchanged, just delivered as one
-       beat among the others instead of a bonus quiz question tacked
-       onto the end.
+       data/flags.js) standing in for a real transit/customs sign.
+       Tests recognition of non-verbal cues, not just vocabulary.
+     - "situational" — "what would you do?" judgement calls.
 
-   Weeks 1 and 2 pull from generic, shared beat plans
-   (data/beatPlans.js: ARRIVAL_BEAT_PLAN, EXPLORE_BEAT_PLAN) applied to
-   each country's 8-phrase bank (see the content-model note at the top
-   of data/countries.js) —
-   only the scene-setting context flexes per country (week 1) or trip
-   type (week 2, via TRIP_TYPES.exploreIntro). Week 3 (Public
-   Transport) is bespoke per country (`transport.beatPlan` on each
-   Country in data/countries.js), because its phrases/etiquette were
-   already bespoke per country and the symbol/situational beats are
-   tied to a specific country's real transit rules (e.g. Japan's quiet
-   carriages) — a generic prompt wouldn't fit every destination.
+   Only a syllabus entry resolved from a published Blueprint against a
+   real, authored Lesson (`source === "authored"`) has beats to show —
+   see courseLessonBeats in store.js and the `built` gating in
+   Dashboard.jsx, which keeps unauthored weeks locked rather than
+   sending a traveler here for them.
 
-   Every built lesson IS a 5-question multiple-choice sequence, one
+   Every built lesson IS a multiple-choice question sequence, one
    question per page, mixing question styles rather than one repeated
    drill. "Mark lesson complete" only appears on the final question
    and stays disabled until it's answered (see the `answered` state
@@ -72,11 +61,10 @@ import { TRIP_TYPES } from "../data/tripTypes";
 export default function Lesson({ payload }){
   const c = payload.course;
   const country = travelerCountry(c.countryKey);
-  const trip = TRIP_TYPES[c.tripKey];
   const week = payload.week;
   const stepIndex = payload.stepIndex || 0;
   const entry = c.syllabus[week - 1];
-  const meta = entry.source === "authored" ? { title: entry.title, type: entry.type + " lesson" } : lessonMeta(week, country, trip);
+  const meta = { title: entry.title, type: entry.type + " lesson" };
 
   // Computed once per (course, week) — matches the original's "fresh
   // shuffle each time you open this lesson" without redoing the work

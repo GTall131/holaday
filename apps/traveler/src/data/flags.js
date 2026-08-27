@@ -1,23 +1,15 @@
 /* ================================================================
-   FLAG ICONS
-   Deliberately NOT Unicode flag emoji: those are font-dependent —
-   several common platforms (older Windows, many Linux desktops
-   without a colour-emoji font) fall back to rendering a flag
-   sequence as plain two-letter text, which defeats the entire point
-   of "flag = instant visual identity" (see the airport-board metaphor
-   note in screens/Home.jsx, and the beat-symbol rationale in
-   screens/Lesson.jsx). These are small inline SVGs instead, so every
-   user sees the same coloured flag regardless of OS/font support.
+   SYMBOL ICONS
+   Small inline SVG line-icons for "symbol" beats — deliberately NOT
+   Unicode emoji: those are font-dependent (several common platforms
+   fall back to rendering a glyph sequence as plain text), which
+   defeats the point of a sign being instantly recognisable regardless
+   of OS/font support. These aren't meant as pixel-accurate
+   pictograms, just legible enough to read as "a sign you'd actually
+   see." Every published destination's flag is instead a hand-built
+   SVG from its three brand colours — see data/admin.js's
+   buildFlagSvg() and store.js's adminFlagMarkup().
    ================================================================ */
-export const FLAGS = {
-  japan: `<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#BC002D"/></svg>`
-};
-
-// Small inline SVG line-icons for "symbol" beats — same rationale as
-// FLAGS above (font-independent, renders identically across platforms
-// rather than falling back to an emoji glyph). These aren't meant as
-// pixel-accurate pictograms, just legible enough to read as "a sign
-// you'd actually see."
 export const SYMBOLS = {
   baggage: `<svg viewBox="0 0 48 48" fill="none"><rect x="10" y="18" width="28" height="20" rx="3" stroke="currentColor" stroke-width="2.5"/><path d="M18 18v-5a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v5" stroke="currentColor" stroke-width="2.5"/><line x1="24" y1="24" x2="24" y2="32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>`,
   noPhoto: `<svg viewBox="0 0 48 48" fill="none"><rect x="7" y="14" width="34" height="22" rx="3" stroke="currentColor" stroke-width="2.5"/><circle cx="24" cy="25" r="6" stroke="currentColor" stroke-width="2.5"/><line x1="6" y1="8" x2="42" y2="40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>`,

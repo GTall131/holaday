@@ -48,11 +48,14 @@ export default function Dashboard({ payload }){
   const weeks = c.syllabus;
   const doneCount = c.status === "completed" ? c.weeks : Math.max(0, c.currentWeek - 1);
   const pct = Math.round((doneCount / c.weeks) * 100);
-  const hasLegacyContent = !!country.phrases;
 
   function weekMeta(week, idx){
     const num = idx + 1;
-    const built = week.source === "authored" || (num <= 3 && hasLegacyContent);
+    // Only a syllabus entry resolved from a published Blueprint
+    // against a real authored Lesson has beats to show yet (see
+    // store.js courseLessonBeats) — an unauthored trip type's generic
+    // syllabus shell stays locked until that content exists.
+    const built = week.source === "authored";
     const done = c.status === "completed" || num < c.currentWeek;
     const locked = !built || (c.status !== "completed" && num > c.currentWeek);
     return { num, built, done, locked };
