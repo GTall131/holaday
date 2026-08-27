@@ -46,7 +46,7 @@
        -> Lesson (one question per page) — screens/Lesson.jsx
        -> Phrasebook / Feedback     — screens/Phrasebook.jsx, Feedback.jsx
      A parallel "Admin" tab (screens/admin/*) is a demo-phase content
-     authoring surface — see store.js and ADMIN-CONTENT-PLAN.md.
+     authoring surface — see store.js.
 
    MVP SCOPE: the "Explore"/"Profile" tabs (TabBar.jsx) and the
    phrasebook's "Download for offline use" button (store.js,

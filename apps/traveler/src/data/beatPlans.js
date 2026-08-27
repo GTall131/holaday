@@ -25,7 +25,7 @@
 // adminQuestionToBeat) now does for produce/comprehend questions; a
 // symbol/situational Question, or a produce/comprehend one an author
 // chooses not to phrase-link, still authors its content inline on the
-// Lesson. See ADMIN-CONTENT-PLAN.md §2/§3/§7.
+// Lesson.
 // ================================================================
 export const ARRIVAL_BEAT_PLAN = [
   { kind:"produce", phraseIndex:0, context:"You step up to passport control." },

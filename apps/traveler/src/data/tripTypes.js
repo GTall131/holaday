@@ -15,7 +15,7 @@
 // sum of each Leg's length, and later Legs repeat the same core
 // Modules at a harder Tier rather than introducing all-new topics. As
 // a reviewer, I need Leg `blurb` copy quality to be a real review
-// criterion, not skippable polish. See ADMIN-CONTENT-PLAN.md §5/§8.
+// criterion, not skippable polish.
 // This TODO is now partially resolved by store.js's
 // resolveBlueprintSyllabus() — a published Blueprint overrides
 // syllabus() below for its Trip Type; only unauthored Trip Types still
@@ -49,7 +49,7 @@ export const TRIP_TYPES = {
 // Blueprint against the country I'm traveling to, not slicing a fixed
 // array by week count. store.js's resolveBlueprintSyllabus() is that
 // resolution; this function is only the fallback for Trip Types with
-// no published Blueprint yet. See ADMIN-CONTENT-PLAN.md §5.
+// no published Blueprint yet.
 export function syllabus(tripKey){
   const t = TRIP_TYPES[tripKey];
   const all = [

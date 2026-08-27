@@ -23,15 +23,18 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: app/package-lock.json
+          cache-dependency-path: apps/traveler/package-lock.json
       - run: npm ci
-        working-directory: app
+        working-directory: apps/traveler
       - run: npm run build
-        working-directory: app
+        working-directory: apps/traveler
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: app/dist
+          path: apps/traveler/dist
 
   deploy:
     needs: build

@@ -21,8 +21,8 @@ export const ADMIN_STATUS_RANK = { missing:0, archived:0, draft:1, staged:2, pub
 
 // Per the iconography rationale in data/flags.js, flags are hand-built
 // shapes from the destination's three colours, not an upload/photo
-// picker — this is the "small in-app tool" called for in
-// ADMIN-CONTENT-PLAN.md §2a step 2, applied to whichever colours the
+// picker — this is the small in-app tool the destination-creation flow
+// needs, applied to whichever colours the
 // author has picked so far (see screens/admin/AdminDestinationDetail.jsx's
 // live preview).
 export function buildFlagSvg(pattern, colours){

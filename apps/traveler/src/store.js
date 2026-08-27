@@ -48,8 +48,7 @@ function notify(){ version++; listeners.forEach(fn => fn()); }
 // `currentLeg`/`totalLegs`/`legName` alongside the existing
 // `currentWeek`/`weeks` (total weeks still matters for pacing against
 // the travel date — see finalizeCourse below for where these get
-// set). See ADMIN-CONTENT-PLAN.md §9, and the matching TODO in
-// components/BoardRow.jsx.
+// set), matching the TODO in components/BoardRow.jsx.
 // ----------------------------------------------------------------
 export const state = {
   // auth / onboarding — account.milestone tracks the two milestones
@@ -69,12 +68,12 @@ export const state = {
   toastMsg: "",
   toastVisible: false,
 
-  // admin — content bank (demo-phase, in-memory; see ADMIN-CONTENT-PLAN.md).
+  // admin — content bank (demo-phase, in-memory).
   // Every content type below (Destination/Module/Lesson/Phrase/
   // Blueprint) shares the same status lifecycle:
   //   draft -> staged -> published -> archived
   //   (staged can drop back to draft for further edits, no separate
-  //   review/approval step — see ADMIN-CONTENT-PLAN.md §6)
+  //   review/approval step)
   adminIdSeq: 1,
   adminLanguages: [],
   adminLanguageDraft: null,
@@ -138,8 +137,7 @@ export function ensureLanguage(name){
 // a read-only-by-default "published" legacy row — kept only so the
 // traveler-facing flow has something to generate a course against out
 // of the box; every other destination is meant to be authored through
-// this flow from a genuinely empty bank, the exact motivating example
-// from ADMIN-CONTENT-PLAN.md §1/§2a. A legacy row can still be revised
+// this flow from a genuinely empty bank. A legacy row can still be revised
 // via "Create new draft version" (newDestinationVersion below), which
 // produces a normal (non-legacy) draft that, once published, archives
 // the legacy row. See travelerCountry() below for how a newly
@@ -634,8 +632,8 @@ export function confirmTrip({ notes, startDate, endDate }){
 // range — see the OPEN QUESTION note in TripDetails.jsx.
 //
 // Resolves the traveler's Trip Type against a *published* Blueprint
-// (ADMIN-CONTENT-PLAN.md §8/§9) rather than the flat TRIP_TYPES.weeks
-// constant, when one exists for this Trip Type. `course.syllabus` is
+// rather than the flat TRIP_TYPES.weeks constant, when one exists for
+// this Trip Type. `course.syllabus` is
 // snapshotted here (each entry's `lessonId`, not a live Blueprint/
 // Module lookup) so a Blueprint published later doesn't retroactively
 // change the syllabus of a trip already in progress — the same effect
@@ -1144,11 +1142,11 @@ export function newLessonVersion(id){
 }
 
 // ----------------------------------------------------------------
-// ADMIN — Phrase (§2/§7)
+// ADMIN — Phrase
 //
-// The reusable content-library entity ADMIN-CONTENT-PLAN.md §7
-// describes: a Phrase carries the same draft/staged/published/archived
-// lifecycle as everything else (§6), and a Lesson's produce/comprehend
+// The reusable content-library entity: a Phrase carries the same
+// draft/staged/published/archived lifecycle as everything else, and a
+// Lesson's produce/comprehend
 // Questions can attach to one by reference instead of hand-typing
 // prompt/answer/distractors (see phrasesForLesson / adminQuestionToBeat
 // in the Lesson section above). Unlike Module/Lesson, a Phrase has no
@@ -1403,9 +1401,8 @@ export function openRecord(type, id){
 // it's always directly editable, saved with a single "Save" action.
 // The content it generates, though, lands as ordinary Drafts in the
 // real Module/Lesson/Phrase tables, so it goes through the exact same
-// review/staging/publish gate as anything hand-authored (see
-// ADMIN-CONTENT-PLAN.md §6) rather than skipping review because a
-// machine produced it.
+// review/staging/publish gate as anything hand-authored, rather than
+// skipping review because a machine produced it.
 // ----------------------------------------------------------------
 function blankAdminPersonaData(){
   return {
@@ -1495,12 +1492,12 @@ export function finalizePersonaGeneration(id){
 // one bespoke Module, one Lesson under its first Tier, and a handful
 // of Phrases, all tagged with generatedFromPersonaId for traceability
 // and all landing as ordinary Drafts — same review/staging/publish
-// gate as hand-authored content (ADMIN-CONTENT-PLAN.md §6), which is
+// gate as hand-authored content, which is
 // also why the lesson only gets 3 questions here: staging still
 // requires 5+ of mixed kinds (see commitAdminLessonDraft), so a human
 // has to open and finish it before it can go live.
 //
-// FEATURE NOTE (not built — see ADMIN-CONTENT-PLAN.md §12): the real
+// FEATURE NOTE (not built): the real
 // version of this generator should be an LLM-as-Judge pipeline, not a
 // single generate-and-accept pass — a separate model call should score
 // each generated Module/Lesson/Phrase against the persona (relevance,

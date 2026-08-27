@@ -25,7 +25,7 @@ import { TRIP_TYPES } from "../data/tripTypes";
    unlocked-all-weeks variant.
 
    Course progression is Leg-grouped whenever `course.legs` is present
-   (ADMIN-CONTENT-PLAN.md §8/§9) — i.e. the course was resolved from a
+   — i.e. the course was resolved from a
    published Blueprint rather than the legacy hardcoded syllabus() (see
    store.js finalizeCourse/resolveBlueprintSyllabus):
      - Ticket stats: "Leg n of N" is shown alongside total weeks (kept

@@ -8,7 +8,7 @@ import { travelerCountry, needsFeedback, openCourse } from "../store";
 // finalizeCourse). The Home board is the other place progression
 // should be legible at a glance, not just inside the dashboard
 // (Dashboard.jsx already does Leg-grouping when `course.legs` is
-// present). See ADMIN-CONTENT-PLAN.md §9.
+// present).
 export default function BoardRow({ course: c }){
   const country = travelerCountry(c.countryKey);
   const statusClass = c.status === "completed" ? "status--landed" : (c.currentWeek <= 1 ? "status--boarding" : "status--progress");

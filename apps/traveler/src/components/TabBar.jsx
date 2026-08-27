@@ -4,7 +4,7 @@ import { resetToHome, goAdmin, stubTab } from "../store";
 // App.jsx MVP SCOPE note); they're visible-but-disabled to signal
 // planned surface area rather than removed entirely.
 //
-// Admin entry point (see ADMIN-CONTENT-PLAN.md §10): the "Admin" tab
+// Admin entry point: the "Admin" tab
 // drops into the admin stack (screens/admin/*), rendered full-width —
 // see .app-shell.is-admin in index.css and App.jsx's flagStyle/is-admin
 // toggling. STILL NOT the intended end state: this is demo-phase

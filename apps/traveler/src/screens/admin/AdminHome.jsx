@@ -12,7 +12,7 @@ export default function AdminHome(){
 
   return (
     <>
-      <p style={{ fontSize: "13px", color: "var(--slate)", margin: "6px 2px 20px" }}>Demo-phase content authoring surface (ADMIN-CONTENT-PLAN.md).</p>
+      <p style={{ fontSize: "13px", color: "var(--slate)", margin: "6px 2px 20px" }}>Demo-phase content authoring surface.</p>
 
       <div className="section-label">Content</div>
       <button className="admin-card" onClick={openAdminLanguages}>

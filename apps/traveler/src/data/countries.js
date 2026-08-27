@@ -35,15 +35,13 @@
    (`{ id, countryKey, en, local, translit, tags[] }`) instead of
    position-indexed arrays, so a single Phrase can be looked up and
    reused by ID from multiple Questions/Lessons rather than duplicated
-   per lesson. See ADMIN-CONTENT-PLAN.md §2/§7 — this is now partially
-   built: store.js's admin Phrase content type (adminPhrases,
+   per lesson. This is now partially built: store.js's admin Phrase content type (adminPhrases,
    phrasesForLesson) is exactly that addressable table, just not (yet)
    backfilled onto this legacy Japan entry.
 
    This is the one remaining hardcoded legacy country (Japan) — every
    other destination is meant to be authored through the admin
-   surface, the exact motivating example from ADMIN-CONTENT-PLAN.md
-   §1/§2a. See store.js's travelerCountry() for how a published
+   surface. See store.js's travelerCountry() for how a published
    admin-authored country "pulls through" to the traveler app instead,
    and how it falls back to this legacy bank only for Japan.
    ================================================================ */
