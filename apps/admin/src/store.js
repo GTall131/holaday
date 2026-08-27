@@ -20,6 +20,26 @@ import { supabase } from "./lib/supabaseClient";
 import { TRIP_TYPES } from "./data/tripTypes";
 
 // ----------------------------------------------------------------
+// PUBLISH PIPELINE — every Publish button calls this instead of
+// flipping status directly, so the sync into holaday-content (see
+// supabase/content/functions/publish-record) and the server-side
+// re-validation of the gating rule happen atomically with the status
+// flip, not just in this client. Lives in holaday-content (not here)
+// so it can use that project's own service-role credentials for the
+// cross-project write — see that function's header comment.
+// ----------------------------------------------------------------
+async function callPublishRecord(type, id){
+  const { data: { session } } = await supabase.auth.getSession();
+  const res = await fetch(`${import.meta.env.VITE_CONTENT_FUNCTIONS_URL}/publish-record`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({ type, id })
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || "Publish failed");
+}
+
+// ----------------------------------------------------------------
 // Subscriber plumbing
 // ----------------------------------------------------------------
 let version = 0;
@@ -450,12 +470,13 @@ export async function unstageDestination(id){
 export async function publishDestination(id){
   const rec = state.adminDestinations.find(d => d.id === id);
   const siblings = state.adminDestinations.filter(d => d.countryKey === rec.countryKey && d.status === "published" && d.id !== rec.id);
-  const { error } = await supabase.from("destinations").update({ status: "published" }).eq("id", id);
-  if (error){ showToast("Couldn't publish destination"); return; }
-  if (siblings.length){
-    await supabase.from("destinations").update({ status: "archived" }).in("id", siblings.map(s => s.id));
-    siblings.forEach(d => { d.status = "archived"; });
+  try {
+    await callPublishRecord("destination", id);
+  } catch (e){
+    showToast(e.message || "Couldn't publish destination");
+    return;
   }
+  siblings.forEach(d => { d.status = "archived"; });
   rec.status = "published";
   showToast(`${rec.data.name} is now live`);
   notify();
@@ -629,11 +650,14 @@ export async function unstageModule(id){
 export async function publishModule(id){
   const rec = state.adminModules.find(m => m.id === id);
   if (!moduleIsComplete(rec)){ showToast("Tier ladder isn't fully published yet"); return; }
-  const { error } = await supabase.from("modules").update({ status: "published" }).eq("id", id);
-  if (error){ showToast("Couldn't publish module"); return; }
+  try {
+    await callPublishRecord("module", id);
+  } catch (e){
+    showToast(e.message || "Couldn't publish module");
+    return;
+  }
   rec.status = "published";
   if (rec.supersedesId){
-    await supabase.from("modules").update({ status: "archived" }).eq("id", rec.supersedesId);
     const prev = state.adminModules.find(m => m.id === rec.supersedesId);
     if (prev) prev.status = "archived";
   }
@@ -784,11 +808,14 @@ export async function unstageLesson(id){
 }
 export async function publishLesson(id){
   const rec = state.adminLessons.find(l => l.id === id);
-  const { error } = await supabase.from("lessons").update({ status: "published" }).eq("id", id);
-  if (error){ showToast("Couldn't publish lesson"); return; }
+  try {
+    await callPublishRecord("lesson", id);
+  } catch (e){
+    showToast(e.message || "Couldn't publish lesson");
+    return;
+  }
   rec.status = "published";
   if (rec.supersedesId){
-    await supabase.from("lessons").update({ status: "archived" }).eq("id", rec.supersedesId);
     const prev = state.adminLessons.find(l => l.id === rec.supersedesId);
     if (prev) prev.status = "archived";
   }
@@ -904,11 +931,14 @@ export async function unstagePhrase(id){
 }
 export async function publishPhrase(id){
   const rec = state.adminPhrases.find(p => p.id === id);
-  const { error } = await supabase.from("phrases").update({ status: "published" }).eq("id", id);
-  if (error){ showToast("Couldn't publish phrase"); return; }
+  try {
+    await callPublishRecord("phrase", id);
+  } catch (e){
+    showToast(e.message || "Couldn't publish phrase");
+    return;
+  }
   rec.status = "published";
   if (rec.supersedesId){
-    await supabase.from("phrases").update({ status: "archived" }).eq("id", rec.supersedesId);
     const prev = state.adminPhrases.find(p => p.id === rec.supersedesId);
     if (prev) prev.status = "archived";
   }
@@ -1074,11 +1104,14 @@ export async function unstageBlueprint(id){
 export async function publishBlueprint(id){
   const rec = state.adminBlueprints.find(b => b.id === id);
   if (!blueprintIsPublishable(rec)){ showToast("Every gated module needs to be published first"); return; }
-  const { error } = await supabase.from("blueprints").update({ status: "published" }).eq("id", id);
-  if (error){ showToast("Couldn't publish blueprint"); return; }
+  try {
+    await callPublishRecord("blueprint", id);
+  } catch (e){
+    showToast(e.message || "Couldn't publish blueprint");
+    return;
+  }
   rec.status = "published";
   if (rec.supersedesId){
-    await supabase.from("blueprints").update({ status: "archived" }).eq("id", rec.supersedesId);
     const prev = state.adminBlueprints.find(b => b.id === rec.supersedesId);
     if (prev) prev.status = "archived";
   }
