@@ -39,13 +39,16 @@ async function callPublishRecord(type, id){
   if (!res.ok) throw new Error(json.error || "Publish failed");
 }
 
-// persona-flesh and persona-generate-content (see
-// supabase/admin/functions) live in this same project, unlike
-// publish-record — so this just hits our own project's functions URL
-// with the current session, no separate env var needed.
-async function callAdminFunction(name, body){
+// persona-flesh and persona-generate-content are Cloudflare Pages
+// Functions co-located with this app (see apps/admin/functions) —
+// same origin as the admin site itself, so a bare relative path is
+// enough: no separate functions-URL env var, no CORS. They hold the
+// Anthropic API key as a native Cloudflare Pages secret (project
+// Settings > Environment variables), rather than a Supabase Edge
+// Function, which has no tool to set a custom secret.
+async function callAdminPagesFunction(path, body){
   const { data: { session } } = await supabase.auth.getSession();
-  const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`, {
+  const res = await fetch(`/${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
     body: JSON.stringify(body)
@@ -1259,7 +1262,7 @@ export async function finalizePersonaGeneration(id){
   if (!persona){ pop(); return; }
   let result;
   try {
-    result = await callAdminFunction("persona-flesh", { personaId: id });
+    result = await callAdminPagesFunction("persona-flesh", { personaId: id });
   } catch (e){
     pop();
     showToast(e.message || "Couldn't generate persona details");
@@ -1283,7 +1286,7 @@ export async function finalizePersonaGeneration(id){
 export async function generateContentFromPersona({ personaId, countryKey, tripKey }){
   let result;
   try {
-    result = await callAdminFunction("persona-generate-content", { personaId, countryKey, tripKey });
+    result = await callAdminPagesFunction("persona-generate-content", { personaId, countryKey, tripKey });
   } catch (e){
     showToast(e.message || "Couldn't generate content");
     return null;
