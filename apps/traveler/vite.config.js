@@ -2,11 +2,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => ({
+export default defineConfig(() => ({
   plugins: [react()],
-  // Only the production build is served from GitHub Pages as a project
-  // site (https://gtall131.github.io/holaday/), not the domain root, so
-  // only `vite build` needs the repo-name prefix on asset URLs — `vite
-  // dev` keeps serving at "/" so the local dev URL doesn't change.
-  base: command === 'build' ? '/holaday/' : '/',
+  // Cloudflare Pages serves this app from the domain root (unlike the
+  // old GitHub Pages project-site path), and a later Capacitor build
+  // (capacitor://) needs a root-relative base too — so no path prefix.
 }))
