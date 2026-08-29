@@ -140,26 +140,37 @@ export async function onRequestPost({ request, env }){
       ? `${brief}\n\n${tripContext}`
       : `${brief}\n\n${tripContext}\n\nYour previous attempt was rejected by review. Feedback: ${lastFeedback}\nRevise accordingly and try again.`;
 
-    const genResponse = await anthropic.messages.create({
-      model: "claude-opus-5",
-      max_tokens: 4000,
-      system: GENERATE_SYSTEM,
-      tools: [GENERATE_TOOL],
-      tool_choice: { type: "tool", name: "content_bundle" },
-      messages: [{ role: "user", content: userTurn }]
-    });
+    let genResponse, judgeResponse;
+    try {
+      genResponse = await anthropic.messages.create({
+        model: "claude-opus-5",
+        max_tokens: 4000,
+        system: GENERATE_SYSTEM,
+        tools: [GENERATE_TOOL],
+        tool_choice: { type: "tool", name: "content_bundle" },
+        messages: [{ role: "user", content: userTurn }]
+      });
+    } catch (err) {
+      console.error("persona-generate-content: generate call failed", err);
+      return json({ error: `Anthropic generate call failed: ${err.message || err}` }, 502);
+    }
     const genToolUse = genResponse.content.find(b => b.type === "tool_use");
     if (!genToolUse) return json({ error: "Model did not return a content bundle" }, 502);
     const bundle = genToolUse.input;
 
-    const judgeResponse = await anthropic.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 1500,
-      system: JUDGE_SYSTEM,
-      tools: [JUDGE_TOOL],
-      tool_choice: { type: "tool", name: "judge_verdict" },
-      messages: [{ role: "user", content: `${brief}\n\n${tripContext}\n\nCandidate bundle:\n${JSON.stringify(bundle, null, 2)}` }]
-    });
+    try {
+      judgeResponse = await anthropic.messages.create({
+        model: "claude-sonnet-5",
+        max_tokens: 1500,
+        system: JUDGE_SYSTEM,
+        tools: [JUDGE_TOOL],
+        tool_choice: { type: "tool", name: "judge_verdict" },
+        messages: [{ role: "user", content: `${brief}\n\n${tripContext}\n\nCandidate bundle:\n${JSON.stringify(bundle, null, 2)}` }]
+      });
+    } catch (err) {
+      console.error("persona-generate-content: judge call failed", err);
+      return json({ error: `Anthropic judge call failed: ${err.message || err}` }, 502);
+    }
     const judgeToolUse = judgeResponse.content.find(b => b.type === "tool_use");
     if (!judgeToolUse) return json({ error: "Judge did not return a verdict" }, 502);
     const verdict = judgeToolUse.input;

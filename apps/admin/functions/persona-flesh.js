@@ -55,14 +55,20 @@ export async function onRequestPost({ request, env }){
 
   if (!env.ANTHROPIC_API_KEY) return json({ error: "Anthropic API key not configured" }, 500);
   const anthropic = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-  const response = await anthropic.messages.create({
-    model: "claude-opus-5",
-    max_tokens: 2000,
-    system: SYSTEM,
-    tools: [TOOL],
-    tool_choice: { type: "tool", name: "persona_profile" },
-    messages: [{ role: "user", content: `Outline: ${persona.outline}` }]
-  });
+  let response;
+  try {
+    response = await anthropic.messages.create({
+      model: "claude-opus-5",
+      max_tokens: 2000,
+      system: SYSTEM,
+      tools: [TOOL],
+      tool_choice: { type: "tool", name: "persona_profile" },
+      messages: [{ role: "user", content: `Outline: ${persona.outline}` }]
+    });
+  } catch (err) {
+    console.error("persona-flesh: Anthropic call failed", err);
+    return json({ error: `Anthropic call failed: ${err.message || err}` }, 502);
+  }
 
   const toolUse = response.content.find(b => b.type === "tool_use");
   if (!toolUse) return json({ error: "Model did not return a profile" }, 502);
