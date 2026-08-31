@@ -12,7 +12,8 @@ Migrations for each live under `content/migrations/` and
 `admin/migrations/` respectively and are applied with the Supabase
 MCP/CLI (`apply_migration`), not run by hand against the dashboard.
 
-To add an admin user: sign up through `apps/admin` once auth is wired
-up, then insert their `auth.users.id` into `holaday-admin`'s
-`admin_users` table (service role — there's no self-serve path, by
-design).
+To add an admin user: create their account directly in `holaday-admin`'s
+Supabase dashboard (Authentication → Users → Add user, with Auto Confirm
+User checked), then insert their `auth.users.id` into `holaday-admin`'s
+`admin_users` table (service role — `apps/admin` has no signup form on
+purpose; see its `Login.jsx`).

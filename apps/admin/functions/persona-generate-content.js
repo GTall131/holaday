@@ -38,7 +38,8 @@ const GENERATE_TOOL = {
       moduleName: { type: "string" },
       lessonTitle: { type: "string" },
       phrases: {
-        type: "array", minItems: 5, maxItems: 8,
+        type: "array",
+        description: "Exactly 5 to 8 phrases.",
         items: {
           type: "object",
           properties: {
@@ -52,7 +53,8 @@ const GENERATE_TOOL = {
         }
       },
       questions: {
-        type: "array", minItems: 5,
+        type: "array",
+        description: "At least 5 questions.",
         items: {
           type: "object",
           properties: {
@@ -157,6 +159,14 @@ export async function onRequestPost({ request, env }){
     const genToolUse = genResponse.content.find(b => b.type === "tool_use");
     if (!genToolUse) return json({ error: "Model did not return a content bundle" }, 502);
     const bundle = genToolUse.input;
+
+    const phraseCount = bundle.phrases?.length ?? 0;
+    const questionCount = bundle.questions?.length ?? 0;
+    const indexInRange = (bundle.questions || []).every(q => q.phraseIndex >= 0 && q.phraseIndex < phraseCount);
+    if (phraseCount < 5 || phraseCount > 8 || questionCount < 5 || !indexInRange){
+      lastFeedback = `Bundle must have 5-8 phrases (got ${phraseCount}) and at least 5 questions (got ${questionCount}) with phraseIndex values that point into the phrases array.`;
+      continue;
+    }
 
     try {
       judgeResponse = await anthropic.messages.create({

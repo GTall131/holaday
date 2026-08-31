@@ -7,9 +7,21 @@ import { resolveBlueprintSyllabus, legacySyllabus } from "./content-engine.js";
 // instead of an in-memory array, and the insert happens under the
 // caller's own JWT (no service role needed — RLS's "own courses
 // insert" policy already scopes this to auth.uid()).
+//
+// apps/traveler (Cloudflare Pages) calls this cross-origin via
+// supabase.functions.invoke, so the browser sends a CORS preflight
+// before the real POST — see supabase/content/functions/publish-record
+// for the same fix, applied here for the same reason.
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+};
+
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS_HEADERS });
+
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response("Unauthorized", { status: 401 });
+  if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS_HEADERS });
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -18,11 +30,11 @@ Deno.serve(async (req: Request) => {
   );
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) return new Response("Unauthorized", { status: 401 });
+  if (userError || !user) return new Response("Unauthorized", { status: 401, headers: CORS_HEADERS });
 
   const { countryKey, tripKey, notes, startDate, endDate } = await req.json();
   if (!countryKey || !tripKey) {
-    return new Response(JSON.stringify({ error: "countryKey and tripKey are required" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "countryKey and tripKey are required" }), { status: 400, headers: CORS_HEADERS });
   }
 
   const [{ data: destination }, { data: blueprint }, { data: tripType }] = await Promise.all([
@@ -46,7 +58,7 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!resolved && !tripType) {
-    return new Response(JSON.stringify({ error: `Unknown trip type "${tripKey}"` }), { status: 400 });
+    return new Response(JSON.stringify({ error: `Unknown trip type "${tripKey}"` }), { status: 400, headers: CORS_HEADERS });
   }
   const syllabusWeeks = resolved ? resolved.weeks : legacySyllabus(tripType);
 
@@ -70,6 +82,6 @@ Deno.serve(async (req: Request) => {
     .select()
     .single();
 
-  if (insertError) return new Response(JSON.stringify({ error: insertError.message }), { status: 400 });
-  return new Response(JSON.stringify(course), { status: 200, headers: { "Content-Type": "application/json" } });
+  if (insertError) return new Response(JSON.stringify({ error: insertError.message }), { status: 400, headers: CORS_HEADERS });
+  return new Response(JSON.stringify(course), { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
 });

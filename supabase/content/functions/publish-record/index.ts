@@ -20,6 +20,15 @@ import { moduleIsComplete, blueprintIsPublishable } from "./content-engine.js";
 const ADMIN_URL = "https://ckombvjqrqayhtadwrkz.supabase.co";
 const ADMIN_ANON_KEY = "sb_publishable_OviLLebWKubdNwIfmbBehQ_JRWUCx0y";
 
+// holaday-admin (Cloudflare Pages) calls this cross-origin, so the
+// browser sends a CORS preflight before the real POST — with no
+// Access-Control-Allow-Origin on the response, that preflight fails
+// and the actual request never goes out.
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+};
+
 const TABLES: Record<string, string> = {
   destination: "destinations",
   module: "modules",
@@ -62,23 +71,25 @@ function toContentRow(type: string, r: any) {
 }
 
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS_HEADERS });
+
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS_HEADERS });
 
   const adminClient = createClient(ADMIN_URL, ADMIN_ANON_KEY, { global: { headers: { Authorization: authHeader } } });
   const { data: { user }, error: userError } = await adminClient.auth.getUser();
-  if (userError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  if (userError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS_HEADERS });
   const { data: isAdmin } = await adminClient.rpc("is_admin");
-  if (!isAdmin) return new Response(JSON.stringify({ error: "Not an admin user" }), { status: 403 });
+  if (!isAdmin) return new Response(JSON.stringify({ error: "Not an admin user" }), { status: 403, headers: CORS_HEADERS });
 
   const { type, id } = await req.json();
   const table = TABLES[type];
-  if (!table || !id) return new Response(JSON.stringify({ error: "Invalid type or id" }), { status: 400 });
+  if (!table || !id) return new Response(JSON.stringify({ error: "Invalid type or id" }), { status: 400, headers: CORS_HEADERS });
 
   const { data: record, error: fetchError } = await adminClient.from(table).select("*").eq("id", id).single();
-  if (fetchError || !record) return new Response(JSON.stringify({ error: "Record not found" }), { status: 404 });
+  if (fetchError || !record) return new Response(JSON.stringify({ error: "Record not found" }), { status: 404, headers: CORS_HEADERS });
   if (record.status !== "staged") {
-    return new Response(JSON.stringify({ error: "Only a staged record can be published" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "Only a staged record can be published" }), { status: 400, headers: CORS_HEADERS });
   }
 
   // Re-validate the gating rule server-side, not just trusting the
@@ -90,19 +101,19 @@ Deno.serve(async (req: Request) => {
       adminClient.from("destinations").select("*").eq("status", "published")
     ]);
     if (!moduleIsComplete(record, lessons ?? [], destinations ?? [])) {
-      return new Response(JSON.stringify({ error: "Tier ladder isn't fully published yet" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "Tier ladder isn't fully published yet" }), { status: 400, headers: CORS_HEADERS });
     }
   } else if (type === "blueprint") {
     const moduleIds = [...new Set(record.legs.flatMap((leg: any) => leg.moduleGates.map((g: any) => g.moduleId)))];
     const { data: modules } = await adminClient.from("modules").select("*").in("id", moduleIds);
     if (!blueprintIsPublishable(record, modules ?? [])) {
-      return new Response(JSON.stringify({ error: "Every gated module needs to be published first" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "Every gated module needs to be published first" }), { status: 400, headers: CORS_HEADERS });
     }
   }
 
   // --- holaday-admin side: flip status, archive whatever this supersedes ---
   const { error: publishError } = await adminClient.from(table).update({ status: "published" }).eq("id", id);
-  if (publishError) return new Response(JSON.stringify({ error: publishError.message }), { status: 400 });
+  if (publishError) return new Response(JSON.stringify({ error: publishError.message }), { status: 400, headers: CORS_HEADERS });
 
   let archivedIds: string[] = [];
   if (type === "destination") {
@@ -129,10 +140,10 @@ Deno.serve(async (req: Request) => {
   }
 
   const { error: upsertError } = await contentClient.from(table).upsert(toContentRow(type, record));
-  if (upsertError) return new Response(JSON.stringify({ error: upsertError.message }), { status: 500 });
+  if (upsertError) return new Response(JSON.stringify({ error: upsertError.message }), { status: 500, headers: CORS_HEADERS });
   if (archivedIds.length){
     await contentClient.from(table).update({ status: "archived" }).in("id", archivedIds);
   }
 
-  return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
 });
